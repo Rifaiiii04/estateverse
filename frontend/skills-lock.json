@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "skills": {
+    "aframe-webxr": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/aframe-webxr/SKILL.md",
+      "computedHash": "f8004363f0d9f7d1f57d8bbbcd3e6318ff4965c041dd677a86532d6464621425"
+    },
+    "animejs": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/animejs/SKILL.md",
+      "computedHash": "468ed993be0d281fe4069e11a1a030cc6bc15d294b6ca20bcdcbc2924de91791"
+    },
+    "babylonjs-engine": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/babylonjs-engine/SKILL.md",
+      "computedHash": "1335c8c182b1b99f65fc5db5eb4142e74be544527371f7f881998ae6a8520749"
+    },
+    "barba-js": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/barba-js/SKILL.md",
+      "computedHash": "42507eb6a94d783161e2042e0e29bf1da2a19d581f740e01362646190d0a68b7"
+    },
+    "code-reviewer": {
+      "source": "Emmraan/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/testing-quality/code-reviewer/SKILL.md",
+      "computedHash": "785b888b87fd9a25d9b702b0d3239cfe8bd9c51d110bb2830d5b9315883b4667"
+    },
+    "code-simplification": {
+      "source": "Emmraan/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/testing-quality/code-simplification/SKILL.md",
+      "computedHash": "fca1172439ade4ec57b699ccbcebd5a3d0fad4a840ed5dd2ac18b17f66b6a300"
+    },
+    "docs-diagrams": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/docs-diagrams/SKILL.md",
+      "computedHash": "75890e80436ba9fd0d8843497abf44ff4388921888ec52af20ddb186513d9870"
+    },
+    "game-developer": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/game-developer/SKILL.md",
+      "computedHash": "f3fe0ec8a36bf09f2e4fc9d55f213160acfce2b6400976f5455d1a513f2b7f5b"
+    },
+    "gsap-core": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/gsap-core/SKILL.md",
+      "computedHash": "4580b3cce4cc5aa3f170c3d580ad792a444961a302364c038558ecf45688ad48"
+    },
+    "gsap-frameworks": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/gsap-frameworks/SKILL.md",
+      "computedHash": "7eabfb188cea320800012c4210fa7fed3093824da422f06c0036446ab0aaf91d"
+    },
+    "gsap-performance": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/gsap-performance/SKILL.md",
+      "computedHash": "b54fcd0dfc634bd678d80ebdb62a610d49c6e8e70511485f95fecf5c1f877b32"
+    },
+    "gsap-plugins": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/gsap-plugins/SKILL.md",
+      "computedHash": "70c7bd34eba825468287801c44df38deb15001776d245f090dd24262ad1946e5"
+    },
+    "gsap-react": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/gsap-react/SKILL.md",
+      "computedHash": "d200c5229de2968d13afe63522d82a1c90c1abbbd1f919a02d96f890e938039d"
+    },
+    "gsap-scrolltrigger": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/gsap-scrolltrigger/SKILL.md",
+      "computedHash": "38080bc17295e15b295af2f4dc7db0c1be8b56cfaa86b9027f8401810629cd42"
+    },
+    "gsap-timeline": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/gsap-timeline/SKILL.md",
+      "computedHash": "6bbe35afbeca3a28471b6bb81a36cc48c94f86f194364d4be95c10c954adcc89"
+    },
+    "gsap-utils": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/gsap-utils/SKILL.md",
+      "computedHash": "fb4833457131a2a5945a4cfb44236737f20b09e0f8ee785ad8ec7fc44d715280"
+    },
+    "incremental-implementation": {
+      "source": "Emmraan/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/agent-meta/incremental-implementation/SKILL.md",
+      "computedHash": "9d6891eb8df3c0d8422ebd623a2440591320c02f9fa65dc48c58e5c8d85abf8f"
+    },
+    "lottie-animations": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/lottie-animations/SKILL.md",
+      "computedHash": "2c1fdcc57576bef5701ab80430cbb21a839599cd6e615d2e3c86a4050c51b2a5"
+    },
+    "microinteractions": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/microinteractions/SKILL.md",
+      "computedHash": "ea3179480ecf165792629015f2faebbe8bc60c8b169c0860e4702e668e002324"
+    },
+    "motion": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/motion/SKILL.md",
+      "computedHash": "15d8afbcdd7703be98eec8e51e60d3a5bb066d6733a18a9ec7d1c7b5c30b21e7"
+    },
+    "next-bundle-optimizer": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-bundle-optimizer/SKILL.md",
+      "computedHash": "c6b7c0bcc589582d7c142c20febe4a0501b8e65e2d239abef86b4c59b680b039"
+    },
+    "next-cache-components-adoption": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-cache-components-adoption/SKILL.md",
+      "computedHash": "38eb3cb9e625b46b54493459a106ac410bc0fe59b124903d55f5090c959d292f"
+    },
+    "next-cache-components-optimizer": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-cache-components-optimizer/SKILL.md",
+      "computedHash": "45a4f4ad46ce791d42f310c4734795c9ff4e26fbf27ed0285a43a903ef469000"
+    },
+    "next-dev-loop": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-dev-loop/SKILL.md",
+      "computedHash": "c305c83b726212e0284930c65cded2c4a4ab85f9bfccfa83b62274247fe3580e"
+    },
+    "next-partial-prefetching-adoption": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-partial-prefetching-adoption/SKILL.md",
+      "computedHash": "e523f1aec1789b3a1f4ca881898d99416427f9d853b3b1841f0e13657bc38f77"
+    },
+    "next-partial-prefetching-optimizer": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-partial-prefetching-optimizer/SKILL.md",
+      "computedHash": "97b935496e9f821417229fd4afe153dc57732911991b48144371b15b11716fbe"
+    },
+    "pixijs-2d": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/pixijs-2d/SKILL.md",
+      "computedHash": "38b7d687a0cb7981ba456b1b1034f4e41cb7707fbdb8b25b46525cab25e088d4"
+    },
+    "planning-and-task-breakdown": {
+      "source": "Emmraan/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/agent-meta/planning-and-task-breakdown/SKILL.md",
+      "computedHash": "fb978015a416c88091c2d752c998cac7f06c19d69bc2376aadb7f3b32e31d939"
+    },
+    "playcanvas-engine": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/playcanvas-engine/SKILL.md",
+      "computedHash": "fe076259c2bbbca37dce705ac95e0f90540fbf2c99441907ac23675f89770de2"
+    },
+    "react-spring-physics": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/react-spring-physics/SKILL.md",
+      "computedHash": "32838785a801c9c9b24fe66c0d7fb651b81984e6668d59bce0303b7c2b04c999"
+    },
+    "react-three-fiber": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/react-three-fiber/SKILL.md",
+      "computedHash": "9da363a62d743b69c33368b3f8050b6834db61dca88561fceb164dfc42858ccb"
+    },
+    "steve-jobs-design-review": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/steve-jobs-design-review/SKILL.md",
+      "computedHash": "d44c6d36c20a22f3b5bc01b05b78c4a8bfea700a938cde24beb353e827f19f89"
+    },
+    "testing": {
+      "source": "Emmraan/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/testing-quality/testing/SKILL.md",
+      "computedHash": "0ca75113774dbd217bd91a59c6e7dc84e2c864d7cbe0e55931e1e7a925222dc5"
+    },
+    "threejs-webgl": {
+      "source": "Emmraan/agent-skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/animation-webgl/threejs-webgl/SKILL.md",
+      "computedHash": "343d89bf61c11718d1000f2c8a3557d0228fb6580c84004101f302ba43d7873a"
+    },
+    "version-control": {
+      "source": "Emmraan/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/devops-cloud/version-control/SKILL.md",
+      "computedHash": "ee35e8d3f7073d2e4089522dda685e315e0a00756ae7c705b6dd6134a80e53ac"
+    }
+  }
+}

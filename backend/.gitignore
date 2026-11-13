@@ -1,0 +1,24 @@
+# Environment variables
+.env
+*.env.local
+
+# Executables and build output
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Uploaded storage files (except gitkeep)
+storage/uploads/*
+!storage/uploads/.gitkeep
+!storage/uploads/images/.gitkeep
+!storage/uploads/models/.gitkeep
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

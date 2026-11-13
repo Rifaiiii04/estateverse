@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@source "../**/*.{js,ts,jsx,tsx}";
+
+@theme {
+  /* 10% Calming Botanical Sage Green Accent Palette ("Hijau Adem Ayem") */
+  --color-sage-50: #f3f7f5;
+  --color-sage-100: #e3ede9;
+  --color-sage-200: #c8dcd4;
+  --color-sage-300: #a2c3b7;
+  --color-sage-400: #76a495;
+  --color-sage-500: #4f8575;
+  --color-sage-600: #356859;
+  --color-sage-700: #295246;
+  --color-sage-800: #214138;
+  --color-sage-900: #1b352e;
+}
+
+:root {
+  /* 60% Main Color: Clean Architectural White & Alabaster */
+  --background: #ffffff;
+  --surface-subtle: #f9fbfa;
+
+  /* 30% Second Color: Deep Charcoal Ink & Soft Stone Structure */
+  --foreground: #141715;
+  --surface-secondary: #f2f5f3;
+  --border-secondary: #e2e8e5;
+
+  /* 10% Accent Color: Calming Sage Green */
+  --accent-primary: #356859;
+  --accent-hover: #295246;
+  --accent-soft: #e3ede9;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.012em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Harmonized form controls and interactive triggers */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  letter-spacing: inherit;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+/* Custom scrollbars for clean luxury presentation */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f2f5f3;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c8dcd4;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #356859;
+}
+
+/* Elegant styles for select and option elements */
+select {
+  font-family: inherit;
+}
+
+select option {
+  background-color: #ffffff;
+  color: #141715;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+select option:checked {
+  background-color: #e3ede9;
+  color: #214138;
+  font-weight: 600;
+}
