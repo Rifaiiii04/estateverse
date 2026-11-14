@@ -38,7 +38,7 @@ export function classifyArchitectureElements(
   let wallCount = 0;
 
   object.traverse((child) => {
-    const isMesh = Boolean((child as any).isMesh || child.type === "Mesh");
+    const isMesh = Boolean((child as THREE.Mesh).isMesh || child.type === "Mesh");
     const nameLower = child.name.toLowerCase();
     const parentNameLower = child.parent?.name.toLowerCase() || "";
 

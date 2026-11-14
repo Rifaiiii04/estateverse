@@ -26,10 +26,10 @@ func NewLeadRepository(db *sql.DB) LeadRepository {
 
 // Create inserts a new buyer inquiry into the database.
 func (r *mysqlLeadRepo) Create(ctx context.Context, lead *models.Lead) error {
-	query := `INSERT INTO leads (property_id, owner_id, name, phone, budget, note, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT INTO leads (property_id, owner_id, name, phone, budget, note, viewed_tour, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 	res, err := r.db.ExecContext(ctx, query,
-		lead.PropertyID, lead.OwnerID, lead.Name, lead.Phone, lead.Budget, lead.Note, lead.Status,
+		lead.PropertyID, lead.OwnerID, lead.Name, lead.Phone, lead.Budget, lead.Note, lead.ViewedTour, lead.Status,
 	)
 	if err != nil {
 		return fmt.Errorf("failed inserting lead: %w", err)
@@ -43,7 +43,7 @@ func (r *mysqlLeadRepo) Create(ctx context.Context, lead *models.Lead) error {
 
 // ListByOwner retrieves all buyer leads belonging to properties owned by a seller.
 func (r *mysqlLeadRepo) ListByOwner(ctx context.Context, ownerID int64) ([]models.Lead, error) {
-	query := `SELECT l.id, l.property_id, l.owner_id, l.name, l.phone, l.budget, l.note,
+	query := `SELECT l.id, l.property_id, l.owner_id, l.name, l.phone, l.budget, l.note, l.viewed_tour,
 		l.status, l.created_at, l.updated_at, COALESCE(p.title, ''), COALESCE(p.slug, '')
 		FROM leads l
 		JOIN properties p ON p.id = l.property_id
@@ -60,7 +60,7 @@ func (r *mysqlLeadRepo) ListByOwner(ctx context.Context, ownerID int64) ([]model
 		var item models.Lead
 		err := rows.Scan(
 			&item.ID, &item.PropertyID, &item.OwnerID, &item.Name, &item.Phone,
-			&item.Budget, &item.Note, &item.Status, &item.CreatedAt, &item.UpdatedAt,
+			&item.Budget, &item.Note, &item.ViewedTour, &item.Status, &item.CreatedAt, &item.UpdatedAt,
 			&item.PropertyTitle, &item.PropertySlug,
 		)
 		if err != nil {

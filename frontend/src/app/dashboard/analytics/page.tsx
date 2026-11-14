@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Box, Eye, Clock, Users, BarChart3, SlidersHorizontal } from "lucide-react";
+import { Box, Eye, Clock, Users, BarChart3 } from "lucide-react";
 import { Property, DashboardSummary } from "@/types/property";
 import { getDashboardSummary, getDashboardProperties } from "@/lib/api/properties";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { TourImpactComparison } from "@/components/dashboard/TourImpactComparison";
 
 // DashboardAnalyticsPage displays real database portfolio analytics, 3D engagement, and per-listing metrics.
 export default function DashboardAnalyticsPage() {
@@ -31,40 +32,41 @@ export default function DashboardAnalyticsPage() {
     };
   }, []);
 
-  const totalProps = summary?.total_properties || properties.length;
-  const with3D = summary?.with_3d_model_count || properties.filter((p) => Boolean(p.model_3d_path)).length;
-  const ratio3D = totalProps > 0 ? Math.round((with3D / totalProps) * 100) : 0;
-  const totalTours = summary?.total_3d_tours || with3D * 340;
-  const totalLeads = summary?.total_leads || Math.round(totalTours * 0.08);
+  const totalViews = summary?.total_views ?? 0;
+  const tourViews = summary?.total_tour_views ?? 0;
+  const totalLeads = summary?.total_leads ?? 0;
+  const leadsAfterTour = summary?.leads_viewed_tour ?? 0;
+  const tourRate = totalViews > 0 ? Math.round((tourViews / totalViews) * 100) : 0;
+  const afterTourRate = totalLeads > 0 ? Math.round((leadsAfterTour / totalLeads) * 100) : 0;
 
   const metricHighlights = [
     {
-      title: "Total Kunjungan 3D",
-      value: totalTours.toLocaleString("id-ID"),
-      change: `${with3D} Iklan 3D Aktif`,
-      icon: Box,
-      desc: "Total pengunjung yang melihat rumah 3D Anda",
-    },
-    {
-      title: "Rata-rata Lama Melihat",
-      value: with3D > 0 ? "3m 42s" : "45s",
-      change: with3D > 0 ? "4.2x lebih lama dari foto biasa" : "Tampilan Foto",
-      icon: Clock,
-      desc: "Rata-rata waktu pengunjung melihat isi rumah",
-    },
-    {
-      title: "Kelengkapan Tampilan 3D",
-      value: `${ratio3D}%`,
-      change: `${with3D} dari ${totalProps} properti`,
+      title: "Kunjungan Iklan",
+      value: totalViews.toLocaleString("id-ID"),
+      change: "Halaman detail dibuka pembeli",
       icon: Eye,
-      desc: "Persentase iklan Anda yang punya tampilan 3D",
+      desc: "Dicatat setiap kali halaman iklan Anda dibuka",
     },
     {
-      title: "Perkiraan Peminat WA",
+      title: "Walk Inside Dibuka",
+      value: tourViews.toLocaleString("id-ID"),
+      change: `${tourRate}% dari kunjungan`,
+      icon: Box,
+      desc: "Pembeli yang menjelajah tur 360° atau model 3D",
+    },
+    {
+      title: "Calon Pembeli (Leads)",
       value: totalLeads.toLocaleString("id-ID"),
-      change: "Berdasarkan kunjungan aktif",
+      change: "Formulir survei & pertanyaan",
       icon: Users,
-      desc: "Calon pembeli yang tertarik menghubungi Anda",
+      desc: "Pembeli yang mengirim permintaan lewat formulir",
+    },
+    {
+      title: "Leads Setelah Lihat Tur",
+      value: `${afterTourRate}%`,
+      change: `${leadsAfterTour} dari ${totalLeads} leads`,
+      icon: Clock,
+      desc: "Pembeli yang sudah melihat tur sebelum minta survei — survei lebih tepat sasaran",
     },
   ];
 
@@ -98,7 +100,7 @@ export default function DashboardAnalyticsPage() {
               className="bg-white rounded-2xl p-5 border border-neutral-200/80 shadow-2xs space-y-3"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-600">
                   {m.title}
                 </span>
                 <div className="w-8 h-8 rounded-xl bg-neutral-900 text-white flex items-center justify-center">
@@ -115,13 +117,15 @@ export default function DashboardAnalyticsPage() {
                 </span>
               </div>
 
-              <p className="text-[11px] text-neutral-400 leading-snug pt-1 border-t border-neutral-100">
+              <p className="text-[11px] text-neutral-600 leading-snug pt-1 border-t border-neutral-100">
                 {m.desc}
               </p>
             </div>
           );
         })}
       </div>
+
+      <TourImpactComparison comparison={summary?.tour_comparison} />
 
       {/* Performance by Property Table */}
       <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 space-y-4">
@@ -133,18 +137,18 @@ export default function DashboardAnalyticsPage() {
         </div>
 
         {properties.length === 0 ? (
-          <div className="py-12 text-center text-xs text-neutral-400">
+          <div className="py-12 text-center text-xs text-neutral-500">
             Belum ada iklan properti yang dipasang.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-neutral-100 text-neutral-400 font-bold uppercase tracking-wider">
+                <tr className="border-b border-neutral-100 text-neutral-600 font-bold uppercase tracking-wider">
                   <th className="pb-3">Judul Properti</th>
                   <th className="pb-3">Tipe &amp; Lokasi</th>
                   <th className="pb-3">Harga Penawaran</th>
-                  <th className="pb-3">Tampilan 3D</th>
+                  <th className="pb-3">Model 3D</th>
                   <th className="pb-3">Status Tayang</th>
                 </tr>
               </thead>
@@ -157,11 +161,11 @@ export default function DashboardAnalyticsPage() {
                     <td className="py-3.5">
                       {row.model_3d_path ? (
                         <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-[10px]">
-                          Model 3D Aktif
+                          Ada
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500 font-semibold text-[10px]">
-                          Tanpa 3D
+                          —
                         </span>
                       )}
                     </td>

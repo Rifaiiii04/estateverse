@@ -1,151 +1,54 @@
 "use client";
 
-import React, { useState } from "react";
-import { User, Phone, Mail, Building, Bell, Save, CheckCircle2 } from "lucide-react";
+import React from "react";
+import Link from "next/link";
+import { Info, Smartphone, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/context/ToastContext";
 
-// DashboardSettingsPage provides account profile management and WhatsApp inquiry channel configuration.
+// DashboardSettingsPage shows the seller's account details and where each setting is managed.
 export default function DashboardSettingsPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
-
-  const [agencyName, setAgencyName] = useState("Horizon Luxury Realty");
-  const [whatsapp, setWhatsapp] = useState("628123456789");
-  const [city, setCity] = useState("Bogor & Bali");
-  const [emailAlerts, setEmailAlerts] = useState(true);
-  const [waAlerts, setWaAlerts] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      toast.success("Pengaturan profil penjual dan nomor WhatsApp berhasil disimpan.");
-    }, 500);
-  };
 
   return (
-    <div className="max-w-3xl space-y-6">
-      {/* Page Header */}
+    <div className="space-y-6 max-w-3xl">
       <div className="border-b border-neutral-200/80 pb-5">
-        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-950">
-          Pengaturan Akun &amp; Kontak Penjual
-        </h1>
-        <p className="text-xs sm:text-sm text-neutral-500 font-normal mt-0.5">
-          Atur identitas bisnis dan nomor WhatsApp aktif yang menerima prospek dari halaman 3D.
-        </p>
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-950">Akun Penjual</h1>
+        <p className="text-sm text-neutral-700 mt-0.5">Informasi akun yang Anda pakai untuk memasang iklan di EstateVerse.</p>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
-        {/* Profile Details Card */}
-        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 space-y-4">
-          <h2 className="text-sm font-bold text-neutral-950 flex items-center gap-2">
-            <User className="w-4 h-4 text-neutral-900" />
-            <span>Identitas Seller Terverifikasi</span>
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-neutral-700 block mb-1">
-                Nama Lengkap
-              </label>
-              <input
-                type="text"
-                defaultValue={user?.name || "Admin Seller"}
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3.5 py-2 text-xs text-neutral-900 font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-neutral-700 block mb-1">
-                Nama Agensi / Developer
-              </label>
-              <input
-                type="text"
-                value={agencyName}
-                onChange={(e) => setAgencyName(e.target.value)}
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3.5 py-2 text-xs text-neutral-900 font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-neutral-700 block mb-1">
-                Email Terdaftar
-              </label>
-              <input
-                type="email"
-                disabled
-                defaultValue={user?.email || "seller@estateverse.com"}
-                className="w-full bg-neutral-100 border border-neutral-200 rounded-xl px-3.5 py-2 text-xs text-neutral-500 font-medium cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-neutral-700 block mb-1">
-                Nomor WhatsApp untuk Prospek
-              </label>
-              <input
-                type="text"
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                placeholder="62812xxxxxxxx"
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3.5 py-2 text-xs text-neutral-900 font-medium"
-              />
-              <span className="text-[10px] text-neutral-400 mt-1 block">
-                Gunakan format internasional tanpa spasi (contoh: 628123456789).
-              </span>
-            </div>
+      <section aria-labelledby="account-title" className="bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 space-y-4">
+        <h2 id="account-title" className="flex items-center gap-2 text-base font-bold text-neutral-950">
+          <User className="w-4 h-4 text-sage-600" aria-hidden="true" /> Data Akun
+        </h2>
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div>
+            <dt className="text-xs font-semibold text-neutral-600">Nama</dt>
+            <dd className="font-semibold text-neutral-950">{user?.name ?? "—"}</dd>
           </div>
-        </div>
-
-        {/* Notifications Preference Card */}
-        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 space-y-4">
-          <h2 className="text-sm font-bold text-neutral-950 flex items-center gap-2">
-            <Bell className="w-4 h-4 text-neutral-900" />
-            <span>Notifikasi Prospek Masuk</span>
-          </h2>
-
-          <div className="space-y-3 text-xs">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={emailAlerts}
-                onChange={(e) => setEmailAlerts(e.target.checked)}
-                className="w-4 h-4 rounded text-neutral-950 accent-neutral-950"
-              />
-              <span className="text-neutral-700 font-medium">
-                Terima email ringkasan harian saat calon pembeli mengajukan jadwal survei.
-              </span>
-            </label>
-
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={waAlerts}
-                onChange={(e) => setWaAlerts(e.target.checked)}
-                className="w-4 h-4 rounded text-neutral-950 accent-neutral-950"
-              />
-              <span className="text-neutral-700 font-medium">
-                Aktifkan tombol kontak langsung WhatsApp di setiap detail listing publik.
-              </span>
-            </label>
+          <div>
+            <dt className="text-xs font-semibold text-neutral-600">Email</dt>
+            <dd className="font-semibold text-neutral-950">{user?.email ?? "—"}</dd>
           </div>
-        </div>
+        </dl>
+      </section>
 
-        {/* Submit Button */}
-        <div>
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="inline-flex items-center gap-2 bg-neutral-950 text-white hover:bg-neutral-800 text-xs sm:text-sm font-semibold px-6 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>{isSaving ? "Menyimpan..." : "Simpan Pengaturan"}</span>
-          </button>
-        </div>
-      </form>
+      <section aria-labelledby="contact-title" className="bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 space-y-3">
+        <h2 id="contact-title" className="flex items-center gap-2 text-base font-bold text-neutral-950">
+          <Smartphone className="w-4 h-4 text-sage-600" aria-hidden="true" /> Nomor WhatsApp
+        </h2>
+        <p className="text-sm text-neutral-700">
+          Nomor WhatsApp diatur di setiap iklan, sehingga Anda bisa memakai nomor berbeda untuk rumah yang berbeda.
+          Pembeli menghubungi nomor tersebut secara langsung tanpa perantara.
+        </p>
+        <Link href="/dashboard/properties" className="inline-flex text-sm font-semibold text-sage-700 hover:underline">
+          Kelola iklan dan nomor WhatsApp →
+        </Link>
+      </section>
+
+      <p className="flex items-start gap-2 text-xs text-neutral-600">
+        <Info className="w-4 h-4 shrink-0" aria-hidden="true" />
+        Perubahan nama atau email akun belum tersedia di versi MVP ini.
+      </p>
     </div>
   );
 }

@@ -17,8 +17,24 @@ import (
 // StorageService defines file upload validation, persistence, and cleanup.
 type StorageService interface {
 	SaveFile(header *multipart.FileHeader, category string) (string, error)
+	WriteFile(relativePath string, data []byte) error
 	DeleteFile(relativePath string) error
+	RemoveAll(relativeDir string) error
 	GetAbsolutePath(relativePath string) (string, error)
+}
+
+// Storage categories that may be served publicly; capture frames stay private.
+const (
+	CategoryImages     = "images"
+	CategoryModels     = "models"
+	CategoryPanoramas  = "panoramas"
+	CategoryTourFrames = "tour_frames"
+)
+
+// IsPublicCategory reports whether files under the given top-level folder may be served to visitors.
+func IsPublicCategory(relativePath string) bool {
+	top := strings.SplitN(filepath.ToSlash(filepath.Clean(relativePath)), "/", 2)[0]
+	return top == CategoryImages || top == CategoryModels || top == CategoryPanoramas
 }
 
 type localStorageService struct {
@@ -28,8 +44,9 @@ type localStorageService struct {
 
 // NewStorageService instantiates a local filesystem storage service.
 func NewStorageService(baseDir string, maxFileSize int64) StorageService {
-	_ = os.MkdirAll(filepath.Join(baseDir, "images"), 0755)
-	_ = os.MkdirAll(filepath.Join(baseDir, "models"), 0755)
+	for _, dir := range []string{CategoryImages, CategoryModels, CategoryPanoramas, CategoryTourFrames} {
+		_ = os.MkdirAll(filepath.Join(baseDir, dir), 0755)
+	}
 	return &localStorageService{
 		baseDir:     baseDir,
 		maxFileSize: maxFileSize,
@@ -76,6 +93,31 @@ func (s *localStorageService) SaveFile(header *multipart.FileHeader, category st
 	}
 
 	return filepath.ToSlash(relPath), nil
+}
+
+// WriteFile stores raw bytes at a sanitized relative path, creating parent folders as needed.
+func (s *localStorageService) WriteFile(relativePath string, data []byte) error {
+	fullPath, err := s.GetAbsolutePath(relativePath)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(fullPath, data, 0644)
+}
+
+// RemoveAll deletes a folder inside storage (used for temporary capture frames).
+func (s *localStorageService) RemoveAll(relativeDir string) error {
+	fullPath, err := s.GetAbsolutePath(relativeDir)
+	if err != nil {
+		return err
+	}
+	absBase, _ := filepath.Abs(s.baseDir)
+	if fullPath == absBase {
+		return errors.New("refusing to remove storage root")
+	}
+	return os.RemoveAll(fullPath)
 }
 
 // DeleteFile removes a stored file by relative path safely.

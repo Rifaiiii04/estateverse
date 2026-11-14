@@ -1,0 +1,99 @@
+import { Quaternion, Vector3 } from "three";
+import { CaptureTarget, directionFromAngles, STEADY_HOLD_MS } from "@/lib/capture/captureTargets";
+
+/** Approximate horizontal field of view of the full-screen camera preview, used only for drawing guides. */
+const PREVIEW_HFOV_DEG = 50;
+const COLORS = { pending: "rgba(255,255,255,0.95)", done: "rgba(74,222,128,0.95)", accent: "#4ade80" };
+
+export interface OverlayState {
+  quaternion: Quaternion;
+  targets: CaptureTarget[];
+  done: ReadonlySet<number>;
+  nearestId: number | null;
+  steadySince: number | null;
+  now: number;
+}
+
+// projectToScreen maps a world direction into canvas pixels for the current phone orientation.
+export function projectToScreen(dir: Vector3, inv: Quaternion, w: number, h: number) {
+  const c = dir.clone().applyQuaternion(inv);
+  if (c.z > -0.05) return null;
+  const f = w / 2 / Math.tan(((PREVIEW_HFOV_DEG / 2) * Math.PI) / 180);
+  return { x: w / 2 + (f * c.x) / -c.z, y: h / 2 - (f * c.y) / -c.z, camera: c };
+}
+
+// drawTargets renders every capture target as a dot: white when pending, green when captured.
+export function drawTargets(ctx: CanvasRenderingContext2D, s: OverlayState, w: number, h: number) {
+  const inv = s.quaternion.clone().invert();
+  for (const t of s.targets) {
+    const p = projectToScreen(directionFromAngles(t.yaw, t.pitch), inv, w, h);
+    if (!p) continue;
+    const isDone = s.done.has(t.id);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, isDone ? 7 : t.id === s.nearestId ? 16 : 11, 0, Math.PI * 2);
+    ctx.fillStyle = isDone ? COLORS.done : "rgba(15,23,42,0.35)";
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = isDone ? COLORS.done : COLORS.pending;
+    ctx.stroke();
+  }
+}
+
+// drawReticle renders the center ring that fills up while the phone is held steady on a target.
+export function drawReticle(ctx: CanvasRenderingContext2D, s: OverlayState, w: number, h: number) {
+  const cx = w / 2;
+  const cy = h / 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 26, 0, Math.PI * 2);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = COLORS.pending;
+  ctx.stroke();
+  if (s.steadySince === null) return;
+  const progress = Math.min(1, (s.now - s.steadySince) / STEADY_HOLD_MS);
+  ctx.beginPath();
+  ctx.arc(cx, cy, 26, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = COLORS.accent;
+  ctx.stroke();
+}
+
+// drawGuideArrow points from the center towards the next target when it is off-screen or far away.
+export function drawGuideArrow(ctx: CanvasRenderingContext2D, s: OverlayState, w: number, h: number) {
+  const target = s.targets.find((t) => t.id === s.nearestId);
+  if (!target) return;
+  const c = directionFromAngles(target.yaw, target.pitch).applyQuaternion(s.quaternion.clone().invert());
+  const angle = Math.atan2(-c.y, c.x);
+  const onScreen = projectToScreen(directionFromAngles(target.yaw, target.pitch), s.quaternion.clone().invert(), w, h);
+  if (onScreen && Math.hypot(onScreen.x - w / 2, onScreen.y - h / 2) < Math.min(w, h) * 0.3) return;
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(70, 0);
+  ctx.lineTo(48, -14);
+  ctx.lineTo(48, 14);
+  ctx.closePath();
+  ctx.fillStyle = COLORS.accent;
+  ctx.fill();
+  ctx.restore();
+}
+
+// drawMiniMap renders a small equirectangular coverage map with the current viewing direction.
+export function drawMiniMap(ctx: CanvasRenderingContext2D, s: OverlayState, yaw: number, pitch: number, w: number) {
+  const mw = 132;
+  const mh = 66;
+  const x0 = w - mw - 12;
+  const y0 = 64;
+  ctx.fillStyle = "rgba(15,23,42,0.55)";
+  ctx.fillRect(x0, y0, mw, mh);
+  const toMap = (ty: number, tp: number) => ({ x: x0 + ((ty % 360) / 360) * mw, y: y0 + ((90 - tp) / 180) * mh });
+  for (const t of s.targets) {
+    const p = toMap(t.yaw, t.pitch);
+    ctx.fillStyle = s.done.has(t.id) ? COLORS.done : "rgba(255,255,255,0.6)";
+    ctx.fillRect(p.x - 2.5, p.y - 2.5, 5, 5);
+  }
+  const me = toMap(yaw, pitch);
+  ctx.strokeStyle = COLORS.accent;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(me.x - 5, me.y - 5, 10, 10);
+}

@@ -24,12 +24,15 @@ export function DashboardHeader({
   const { user, logout } = useAuth();
   const router = useRouter();
   const [internalQuery, setInternalQuery] = useState(searchQuery);
+  const [syncedQuery, setSyncedQuery] = useState(searchQuery);
   const debouncedQuery = useDebounce(internalQuery, 350);
   const isFirstMount = useRef(true);
 
-  useEffect(() => {
+  // Adopts a new search query from the parent during render (React's recommended alternative to a syncing effect).
+  if (searchQuery !== syncedQuery) {
+    setSyncedQuery(searchQuery);
     setInternalQuery(searchQuery);
-  }, [searchQuery]);
+  }
 
   useEffect(() => {
     if (isFirstMount.current) {
@@ -62,14 +65,14 @@ export function DashboardHeader({
         </button>
 
         <div className="relative w-full h-9">
-          <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={internalQuery}
             onChange={(e) => setInternalQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Cari listing, alamat, kota..."
-            className="w-full h-full bg-neutral-50/80 hover:bg-neutral-100/70 focus:bg-white border border-neutral-200 rounded-xl pl-9 pr-4 text-xs sm:text-[13px] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-sage-600/15 focus:border-sage-600 transition-all"
+            className="w-full h-full bg-neutral-50/80 hover:bg-neutral-100/70 focus:bg-white border border-neutral-200 rounded-xl pl-9 pr-4 text-xs sm:text-[13px] text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-sage-600/15 focus:border-sage-600 transition-all"
           />
         </div>
       </div>
@@ -106,8 +109,8 @@ export function DashboardHeader({
             <span className="text-xs font-bold text-neutral-950 leading-tight truncate max-w-[120px]">
               {user?.name}
             </span>
-            <span className="text-[10px] text-neutral-400 font-medium leading-none mt-0.5">
-              Seller Terverifikasi
+            <span className="text-[10px] text-neutral-500 font-medium leading-none mt-0.5">
+              Penjual
             </span>
           </div>
 
@@ -115,7 +118,7 @@ export function DashboardHeader({
             type="button"
             onClick={logout}
             title="Keluar dari akun"
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-950 hover:bg-neutral-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-950 hover:bg-neutral-100 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>

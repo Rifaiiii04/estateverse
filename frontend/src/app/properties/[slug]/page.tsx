@@ -2,20 +2,24 @@
 
 import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
-import { AlertCircle, Box, Camera, ShieldCheck } from "lucide-react";
-import { Property } from "@/types/property";
+import { AlertCircle, Compass, ShieldCheck } from "lucide-react";
+import { MediaTab, Property } from "@/types/property";
+import type { TourRoom } from "@/types/tour";
 import { getPublicProperty } from "@/lib/api/properties";
+import { getPublicTourRooms } from "@/lib/api/tours";
+import { trackPropertyEvent } from "@/lib/api/engagement";
 import { getMediaUrl } from "@/lib/api/client";
 import { formatIDR } from "@/lib/utils/formatters";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertySpecs } from "@/components/properties/PropertySpecs";
 import { PropertyDetailHeader } from "@/components/properties/PropertyDetailHeader";
-import { PropertyMediaStage } from "@/components/properties/PropertyMediaStage";
+import { PropertyMediaStage, availableMediaTabs } from "@/components/properties/PropertyMediaStage";
 import { PropertyBenefitsCard } from "@/components/properties/PropertyBenefitsCard";
 import { PropertyLeadForm } from "@/components/properties/PropertyLeadForm";
 import { PropertyMortgageCard } from "@/components/properties/PropertyMortgageCard";
 import { WhatsAppButton } from "@/components/properties/WhatsAppButton";
+import { SafetyNotice } from "@/components/properties/SafetyNotice";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { FadeIn } from "@/components/ui/MotionPrimitives";
 import { useToast } from "@/context/ToastContext";
@@ -31,14 +35,21 @@ export default function PropertyDetailPage({
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  // Default preview is always "photos"; 3D model is streamed only when requested by the user.
-  const [activeTab, setActiveTab] = useState<"photos" | "3d">("photos");
+  const [tourRooms, setTourRooms] = useState<TourRoom[]>([]);
+  // The 360° tour opens first when the seller recorded one; otherwise photos.
+  const [activeTab, setActiveTab] = useState<MediaTab>("photos");
 
   useEffect(() => {
     let isMounted = true;
     getPublicProperty(resolvedParams.slug)
-      .then((data) => {
-        if (isMounted) setProperty(data);
+      .then(async (data) => {
+        if (!isMounted) return;
+        setProperty(data);
+        trackPropertyEvent(data.id, "detail");
+        const rooms = await getPublicTourRooms(data.id).catch(() => []);
+        if (!isMounted) return;
+        setTourRooms(rooms);
+        if (rooms.length > 0) setActiveTab("tour");
       })
       .catch((err) => {
         if (isMounted) {
@@ -54,6 +65,13 @@ export default function PropertyDetailPage({
     };
   }, [resolvedParams.slug]);
 
+  // Records real tour engagement whenever a buyer opens the 360° tour or the 3D model.
+  useEffect(() => {
+    if (!property) return;
+    if (activeTab === "tour") trackPropertyEvent(property.id, "tour_360");
+    if (activeTab === "3d") trackPropertyEvent(property.id, "tour_3d");
+  }, [activeTab, property]);
+
   // Copies the current property URL to clipboard for effortless sharing.
   const handleShare = () => {
     if (typeof window !== "undefined") {
@@ -66,7 +84,7 @@ export default function PropertyDetailPage({
     return (
       <>
         <Navbar />
-        <main className="flex-1 flex items-center justify-center py-20 bg-neutral-50/50">
+        <main id="main-content" className="flex-1 flex items-center justify-center py-20 bg-neutral-50/50">
           <LoadingSpinner text="Memuat detail properti..." />
         </main>
         <Footer />
@@ -78,8 +96,8 @@ export default function PropertyDetailPage({
     return (
       <>
         <Navbar />
-        <main className="flex-1 flex flex-col items-center justify-center py-20 px-4 text-center bg-neutral-50/50">
-          <div className="w-14 h-14 rounded-full bg-neutral-100 flex items-center justify-center mb-3 text-neutral-400">
+        <main id="main-content" className="flex-1 flex flex-col items-center justify-center py-20 px-4 text-center bg-neutral-50/50">
+          <div className="w-14 h-14 rounded-full bg-neutral-100 flex items-center justify-center mb-3 text-neutral-500">
             <AlertCircle className="w-7 h-7" />
           </div>
           <h1 className="text-xl font-bold text-neutral-900 mb-1.5">Properti Tidak Ditemukan</h1>
@@ -101,6 +119,7 @@ export default function PropertyDetailPage({
   }
 
   const modelFullUrl = property.model_3d_path ? getMediaUrl(property.model_3d_path) : undefined;
+  const mediaTabs = availableMediaTabs(tourRooms, modelFullUrl);
   const pricePerM2 =
     property.building_area > 0 ? Math.round(property.price / property.building_area) : 0;
 
@@ -108,13 +127,14 @@ export default function PropertyDetailPage({
     <>
       <Navbar />
 
-      <main className="flex-1 py-5 sm:py-7 bg-neutral-50/60">
+      <main id="main-content" className="flex-1 py-5 sm:py-7 bg-neutral-50/60">
         <div className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-10 space-y-5">
           <FadeIn y={12}>
             <PropertyDetailHeader
               property={property}
               onShare={handleShare}
               activeTab={activeTab}
+              availableTabs={mediaTabs}
               onSwitchTab={setActiveTab}
             />
           </FadeIn>
@@ -128,8 +148,8 @@ export default function PropertyDetailPage({
                 images={property.images}
                 modelUrl={modelFullUrl}
                 metadata={property.model_metadata}
+                tourRooms={tourRooms}
                 activeTab={activeTab}
-                onSwitchTab={setActiveTab}
               />
 
               <FadeIn delay={0.06} y={14}>
@@ -164,7 +184,7 @@ export default function PropertyDetailPage({
               <div className="bg-white p-5 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-4">
                 <div className="flex items-start justify-between gap-2 border-b border-neutral-100 pb-3.5">
                   <div>
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 block">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 block">
                       Harga Penawaran
                     </span>
                     <div className="text-2xl sm:text-3xl font-extrabold text-sage-700 tracking-tight mt-0.5">
@@ -175,43 +195,32 @@ export default function PropertyDetailPage({
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab(activeTab === "photos" ? "3d" : "photos")}
-                    className={`h-9 px-3 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
-                      activeTab === "3d"
-                        ? "bg-neutral-100 text-neutral-800 border-neutral-200 hover:bg-neutral-200"
-                        : "bg-sage-50 text-sage-800 border-sage-200 hover:bg-sage-100"
-                    }`}
-                  >
-                    {activeTab === "3d" ? (
-                      <>
-                        <Camera className="w-3.5 h-3.5 text-sage-600" />
-                        <span>Lihat Foto</span>
-                      </>
-                    ) : (
-                      <>
-                        <Box className="w-3.5 h-3.5 text-sage-600" />
-                        <span>Buka 3D</span>
-                      </>
-                    )}
-                  </button>
+                  {tourRooms.length > 0 && activeTab !== "tour" && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("tour")}
+                      className="h-9 px-3 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 border bg-sage-50 text-sage-800 border-sage-200 hover:bg-sage-100"
+                    >
+                      <Compass className="w-3.5 h-3.5 text-sage-600" aria-hidden="true" />
+                      <span>Buka Walk Inside 360°</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Seller Verification & Direct WhatsApp */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block">
-                        Dikelola Oleh
+                      <span className="text-[11px] uppercase font-bold tracking-wider text-neutral-600 block">
+                        Dijual Langsung Oleh
                       </span>
                       <span className="text-sm font-bold text-neutral-950">
-                        {property.owner_name || "EstateVerse Verified Seller"}
+                        {property.owner_name || "Pemilik rumah"}
                       </span>
                     </div>
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sage-700 bg-sage-50 border border-sage-200 px-2 py-0.5 rounded-md">
-                      <ShieldCheck className="w-3 h-3 text-sage-600" />
-                      <span>Terverifikasi</span>
+                      <ShieldCheck className="w-3 h-3 text-sage-600" aria-hidden="true" />
+                      <span>Tanpa perantara</span>
                     </span>
                   </div>
 
@@ -225,6 +234,8 @@ export default function PropertyDetailPage({
               </div>
 
               <PropertyLeadForm propertyId={property.id} propertyTitle={property.title} />
+
+              <SafetyNotice propertyId={property.id} />
 
               <PropertyMortgageCard price={property.price} />
             </FadeIn>

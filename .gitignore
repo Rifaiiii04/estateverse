@@ -1,5 +1,10 @@
 .claude
 .env
+deploy/.env
 node_modules/
 .expo/
 *.log
+frontend/dev.log
+backend/storage/
+backend/*.exe
+seventx/

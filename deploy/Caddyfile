@@ -1,0 +1,21 @@
+# Single-origin routing: API and media under /api, everything else served by Next.js.
+# Same origin keeps session cookies, CSRF origin checks, camera, and motion sensors working over HTTPS.
+{$DOMAIN} {
+	encode zstd gzip
+
+	request_body {
+		max_size 60MB
+	}
+
+	handle /api/* {
+		reverse_proxy backend:8085
+	}
+
+	handle /health {
+		reverse_proxy backend:8085
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

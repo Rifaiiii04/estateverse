@@ -43,7 +43,7 @@ export function PropertySpecs({
               <Icon className="w-4 h-4 text-sage-600" />
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider block truncate">
+              <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider block truncate">
                 {item.label}
               </span>
               <span className="text-xs sm:text-sm font-extrabold text-neutral-950 block truncate">

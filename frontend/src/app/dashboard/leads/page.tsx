@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Users, Phone, MessageSquare, Search, SlidersHorizontal, ArrowUpRight } from "lucide-react";
+import { MessageSquare, Search, SlidersHorizontal, ArrowUpRight } from "lucide-react";
 import { getOwnerLeads, updateLeadStatus, Lead } from "@/lib/api/leads";
 import { useToast } from "@/context/ToastContext";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -25,21 +25,17 @@ export default function DashboardLeadsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
 
-  // Fetches real buyer inquiries for the seller from the database.
-  const loadLeads = async () => {
-    try {
-      const data = await getOwnerLeads();
-      setLeads(data);
-    } catch {
-      toast.error("Gagal memuat data minat pembeli.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Fetches real buyer inquiries for the seller once on mount.
   useEffect(() => {
-    loadLeads();
-  }, []);
+    let active = true;
+    getOwnerLeads()
+      .then((data) => active && setLeads(data))
+      .catch(() => toast.error("Gagal memuat data minat pembeli."))
+      .finally(() => active && setIsLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [toast]);
 
   // Updates the buyer pipeline stage in the database.
   const handleStatusChange = async (id: number, newStatus: Lead["status"]) => {
@@ -93,13 +89,13 @@ export default function DashboardLeadsPage() {
       {/* Filters and Search Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-neutral-200/80">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nama pembeli, properti..."
-            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-950"
+            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:border-neutral-950"
           />
         </div>
 
@@ -134,7 +130,7 @@ export default function DashboardLeadsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-2xl border border-neutral-200/80 p-12 text-center space-y-3">
-          <SlidersHorizontal className="w-8 h-8 text-neutral-400 mx-auto" />
+          <SlidersHorizontal className="w-8 h-8 text-neutral-500 mx-auto" />
           <p className="text-sm font-bold text-neutral-900">Belum ada data prospek pembeli</p>
           <p className="text-xs text-neutral-500">Prospek akan otomatis muncul saat pembeli mengirimkan minat.</p>
         </div>
@@ -149,7 +145,7 @@ export default function DashboardLeadsPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-neutral-950">{item.name}</span>
-                    <span className="text-[11px] text-neutral-400">&bull; {new Date(item.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                    <span className="text-[11px] text-neutral-500">&bull; {new Date(item.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                   </div>
                   <p className="text-xs text-neutral-600 font-medium">
                     Minat Properti: <span className="text-neutral-950 font-bold">{item.property_title || `Properti #${item.property_id}`}</span> {item.budget ? `(${item.budget})` : ""}
@@ -173,13 +169,19 @@ export default function DashboardLeadsPage() {
                   >
                     <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Chat WA</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-neutral-400" />
+                    <ArrowUpRight className="w-3.5 h-3.5 text-neutral-500" />
                   </a>
                 </div>
               </div>
 
+              {item.viewed_tour && (
+                <span className="inline-flex w-fit items-center gap-1 text-[11px] font-semibold text-sage-800 bg-sage-50 border border-sage-200 rounded-md px-2 py-0.5">
+                  Sudah melihat tur virtual sebelum meminta survei
+                </span>
+              )}
+
               {item.note && (
-                <p className="text-xs text-neutral-500 bg-neutral-50 p-3 rounded-xl border border-neutral-100 leading-relaxed font-normal">
+                <p className="text-xs text-neutral-700 bg-neutral-50 p-3 rounded-xl border border-neutral-100 leading-relaxed font-normal">
                   &ldquo;{item.note}&rdquo;
                 </p>
               )}

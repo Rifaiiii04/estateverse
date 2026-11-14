@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { NO_PHOTO_PLACEHOLDER, hasVirtualTour } from "@/lib/utils/media";
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -34,9 +35,9 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const primaryImage =
     property.images && property.images.length > 0
       ? getMediaUrl(property.images[0].file_path)
-      : "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80";
+      : NO_PHOTO_PLACEHOLDER;
 
-  const has3D = Boolean(property.model_3d_path);
+  const has3D = hasVirtualTour(property);
   const typeLabel = getTypeLabel(property.property_type, isEn);
 
   return (
@@ -64,7 +65,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
           {has3D ? (
             <span className="h-5 px-2 rounded-full text-[10px] font-bold bg-sage-600/95 backdrop-blur-xs text-white shadow-2xs inline-flex items-center gap-1">
               <Box className="w-2.5 h-2.5 text-sage-100" />
-              <span>{isEn ? "3D Interactive" : "Tur 3D"}</span>
+              <span>Walk Inside 360°</span>
             </span>
           ) : (
             <span className="h-5 px-2 rounded-full text-[10px] font-semibold bg-neutral-900/80 backdrop-blur-xs text-white shadow-2xs inline-flex items-center">
@@ -123,8 +124,8 @@ export function PropertyCard({ property }: PropertyCardProps) {
             <span className="truncate text-neutral-500">
               {has3D
                 ? isEn
-                  ? "3D Tour"
-                  : "Tur 3D"
+                  ? "Virtual tour"
+                  : "Tur virtual"
                 : isEn
                 ? "Photos"
                 : "Foto"}
@@ -135,7 +136,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             href={`/properties/${property.slug}`}
             className="text-sage-600 group-hover:text-sage-800 font-bold shrink-0 inline-flex items-center gap-0.5 transition-colors text-[11px]"
           >
-            <span>{has3D ? (isEn ? "Explore 3D" : "Buka 3D") : isEn ? "Details" : "Detail"}</span>
+            <span>{has3D ? (isEn ? "Open Tour" : "Buka Tur") : isEn ? "Details" : "Detail"}</span>
             <span aria-hidden="true">&rarr;</span>
           </Link>
         </div>

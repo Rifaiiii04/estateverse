@@ -1,5 +1,6 @@
 "use client";
 
+import { PRICE_RANGES } from "@/lib/utils/priceRanges";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SlidersHorizontal, RotateCcw, Search } from "lucide-react";
@@ -23,34 +24,35 @@ export function SearchFilterBar({ onFilterChange }: SearchFilterBarProps) {
   const isEn = lang === "en";
 
   const locationOptions: SelectOption[] = [
-    { value: "", label: isEn ? "All Indonesia Locations" : "Semua Lokasi Indonesia" },
-    { value: "Bogor", label: "Bogor, Jawa Barat", description: isEn ? "Sentul City & Highland" : "Sentul City & Bogor Kota" },
-    { value: "Bandung", label: "Bandung, Jawa Barat", description: isEn ? "Dago & North Bandung" : "Dago & Bandung Utara" },
-    { value: "Jakarta", label: "DKI Jakarta", description: isEn ? "South & Central Jakarta" : "Jakarta Selatan & Pusat" },
-    { value: "Bali", label: "Badung & Denpasar, Bali", description: isEn ? "Canggu, Seminyak, Uluwatu" : "Canggu, Seminyak, Uluwatu" },
-    { value: "Surabaya", label: "Surabaya, Jawa Timur", description: isEn ? "West & East Surabaya" : "Surabaya Barat & Timur" },
+    { value: "", label: isEn ? "All Locations" : "Semua Lokasi" },
+    { value: "Purwokerto", label: "Purwokerto", description: "Banyumas, Jawa Tengah" },
+    { value: "Banyumas", label: "Banyumas", description: "Jawa Tengah" },
+    { value: "Purbalingga", label: "Purbalingga", description: "Jawa Tengah" },
+    { value: "Cilacap", label: "Cilacap", description: "Jawa Tengah" },
+    { value: "Tegal", label: "Tegal", description: "Jawa Tengah" },
+    { value: "Semarang", label: "Semarang", description: "Jawa Tengah" },
+    { value: "Solo", label: "Solo (Surakarta)", description: "Jawa Tengah" },
+    { value: "Yogyakarta", label: "Yogyakarta", description: "DI Yogyakarta" },
   ];
 
   const typeOptions: SelectOption[] = [
-    { value: "", label: isEn ? "All Property Typologies" : "Semua Tipe Properti" },
-    { value: "house", label: isEn ? "Modern Minimalist House" : "Rumah Modern Minimalis", description: isEn ? "Architectural family residence" : "Hunian keluarga arsitektural" },
-    { value: "villa", label: isEn ? "Luxury Villa & Resort" : "Villa Mewah & Resort", description: isEn ? "Private pool & ocean panorama" : "Private pool & pemandangan alam" },
-    { value: "townhouse", label: isEn ? "Exclusive Townhouse" : "Townhouse Eksklusif", description: isEn ? "Urban connectivity" : "Akses strategis perkotaan" },
-    { value: "cluster", label: isEn ? "Gated 3D Cluster" : "Cluster Residensial 3D", description: isEn ? "24/7 security & community amenities" : "Keamanan 24 jam & fasilitas terpadu" },
+    { value: "", label: isEn ? "All Property Types" : "Semua Tipe Properti" },
+    { value: "house", label: isEn ? "House" : "Rumah", description: isEn ? "Landed family home" : "Rumah tapak untuk keluarga" },
+    { value: "townhouse", label: "Townhouse", description: isEn ? "Row house in town" : "Rumah deret di perkotaan" },
+    { value: "cluster", label: "Cluster", description: isEn ? "Small gated housing" : "Perumahan kecil satu gerbang" },
+    { value: "villa", label: "Villa", description: isEn ? "Holiday home" : "Rumah peristirahatan" },
   ];
 
   const priceOptions: SelectOption[] = [
     { value: "", label: isEn ? "All Price Ranges" : "Semua Rentang Harga" },
-    { value: "low", label: "< Rp 500.000.000", description: isEn ? "Affordable starter homes" : "Hunian terjangkau / subsidi" },
-    { value: "mid", label: "Rp 500 Jt - Rp 2 Miliar", description: isEn ? "Popular modern family segment" : "Segmen favorit keluarga modern" },
-    { value: "high", label: "> Rp 2.000.000.000", description: isEn ? "Luxury estate & high-end villas" : "Segmen premium & luxury estate" },
+    ...PRICE_RANGES.map((r) => ({ value: r.value, label: r.label, description: r.description })),
   ];
 
   const areaOptions: SelectOption[] = [
     { value: "", label: isEn ? "All Sizes (m²)" : "Semua Ukuran (m²)" },
     { value: "100", label: "< 100 m²", description: isEn ? "Compact & low maintenance" : "Kompak efisien & modern" },
     { value: "250", label: "100 - 250 m²", description: isEn ? "Ideal family comfort" : "Ukuran ideal keluarga" },
-    { value: "500", label: "> 250 m²", description: isEn ? "Spacious luxury grounds" : "Mewah & halaman luas" },
+    { value: "500", label: "> 250 m²", description: isEn ? "Large family home" : "Rumah besar & halaman luas" },
   ];
 
   const tabs = [

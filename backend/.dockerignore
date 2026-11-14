@@ -1,0 +1,6 @@
+.env
+storage/
+*.exe
+*.log
+bin/
+dist/

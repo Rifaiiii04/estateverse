@@ -97,6 +97,10 @@ func (h *StorageHandler) ServeFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	relPath := strings.TrimPrefix(r.URL.Path, "/api/v1/storage/")
+	if !services.IsPublicCategory(relPath) {
+		WriteError(w, http.StatusNotFound, "file not found")
+		return
+	}
 	absPath, err := h.storageSvc.GetAbsolutePath(relPath)
 	if err != nil {
 		WriteError(w, http.StatusBadRequest, "invalid file path")

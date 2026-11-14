@@ -3,13 +3,26 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/go-sql-driver/mysql"
 )
+
+// alreadyAppliedErrors are MySQL error codes meaning a schema change already exists in the database.
+var alreadyAppliedErrors = map[uint16]bool{
+	1050: true, // table already exists
+	1060: true, // duplicate column name
+	1061: true, // duplicate key name
+	1091: true, // cannot drop: field or key does not exist
+	1826: true, // duplicate foreign key constraint name
+}
 
 // EnsureMigrationsTable creates the schema migrations tracker table if missing.
 func EnsureMigrationsTable(ctx context.Context, db *sql.DB) error {
@@ -76,9 +89,13 @@ func applyMigrationFile(ctx context.Context, db *sql.DB, filePath, version strin
 		execCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		_, err := db.ExecContext(execCtx, stmt)
 		cancel()
-		if err != nil {
+		if err == nil {
+			continue
+		}
+		if !isAlreadyApplied(err, stmt) {
 			return fmt.Errorf("exec statement failed: %w (stmt: %s)", err, stmt)
 		}
+		log.Printf("[migrate] %s: skipping statement already reflected in schema: %v", version, err)
 	}
 
 	recordQuery := "INSERT INTO schema_migrations (version) VALUES (?)"
@@ -111,4 +128,18 @@ func splitSQLStatements(sqlContent string) []string {
 		}
 	}
 	return statements
+}
+
+// isAlreadyApplied reports whether a failed statement only failed because the schema already matches,
+// which happens when a fresh database created by 001 meets the legacy alignment migration 002.
+func isAlreadyApplied(err error, stmt string) bool {
+	var me *mysql.MySQLError
+	if !errors.As(err, &me) {
+		return false
+	}
+	if alreadyAppliedErrors[me.Number] {
+		return true
+	}
+	legacyRename := strings.Contains(strings.ToUpper(stmt), "CHANGE COLUMN")
+	return me.Number == 1054 && legacyRename // legacy column to rename does not exist on fresh schemas
 }

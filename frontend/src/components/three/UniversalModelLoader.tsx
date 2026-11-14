@@ -20,19 +20,15 @@ export function UniversalModelLoader({
   roofOff = false,
   metadata,
 }: UniversalModelLoaderProps) {
-  const [sceneObj, setSceneObj] = useState<THREE.Object3D | null>(null);
-  const [hasError, setHasError] = useState(false);
+  // Load results are keyed by URL so switching models never needs a synchronous state reset.
+  const [loaded, setLoaded] = useState<{ url: string; obj: THREE.Object3D | null; failed: boolean } | null>(null);
+  const sceneObj = loaded && loaded.url === modelUrl ? loaded.obj : null;
+  const hasError = Boolean(loaded && loaded.url === modelUrl && loaded.failed);
   const { invalidate } = useThree();
 
   useEffect(() => {
-    if (!modelUrl) {
-      setSceneObj(null);
-      setHasError(false);
-      return;
-    }
-
+    if (!modelUrl) return;
     let isMounted = true;
-    setHasError(false);
 
     const ext = modelUrl.split("?")[0].split(".").pop()?.toLowerCase();
 
@@ -40,14 +36,14 @@ export function UniversalModelLoader({
       if (!isMounted) return;
       normalizeModel(obj, metadata);
       applyRoofVisibility(obj, roofOff, metadata);
-      setSceneObj(obj);
+      setLoaded({ url: modelUrl, obj, failed: false });
       invalidate();
     };
 
     const handleError = (err: unknown) => {
       if (!isMounted) return;
       console.error("UniversalModelLoader error:", err);
-      setHasError(true);
+      setLoaded({ url: modelUrl, obj: null, failed: true });
     };
 
     if (ext === "glb" || ext === "gltf") {
@@ -63,6 +59,7 @@ export function UniversalModelLoader({
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- roof visibility is re-applied by the effect below
   }, [modelUrl, metadata, invalidate]);
 
   useEffect(() => {

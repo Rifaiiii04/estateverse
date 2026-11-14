@@ -11,6 +11,7 @@ type Lead struct {
 	Phone         string    `json:"phone"`
 	Budget        string    `json:"budget"`
 	Note          string    `json:"note"`
+	ViewedTour    bool      `json:"viewed_tour"`
 	Status        string    `json:"status"`
 	PropertyTitle string    `json:"property_title,omitempty"`
 	PropertySlug  string    `json:"property_slug,omitempty"`
@@ -25,4 +26,5 @@ type LeadInput struct {
 	Phone      string `json:"phone"`
 	Budget     string `json:"budget"`
 	Note       string `json:"note"`
+	ViewedTour bool   `json:"viewed_tour"`
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { hasVirtualTour } from "@/lib/utils/media";
 import React, { useEffect, useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { SlidersHorizontal, RotateCcw } from "lucide-react";
@@ -20,6 +21,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useDebounce } from "@/lib/hooks/useDebounce";
+import { matchesPriceRange, parsePriceRange } from "@/lib/utils/priceRanges";
 
 // PropertiesContent orchestrates data fetching, filtering, sorting, and full-width responsive display.
 function PropertiesContent() {
@@ -35,7 +37,7 @@ function PropertiesContent() {
   const [activeTab, setActiveTab] = useState<string>(
     initialType === "house" || initialType === "villa" ? initialType : "all"
   );
-  const [priceRange, setPriceRange] = useState<PriceRangeFilter>("all");
+  const [priceRange, setPriceRange] = useState<PriceRangeFilter>(parsePriceRange(searchParams.get("priceRange")));
   const [selectedCity, setSelectedCity] = useState<string>(searchParams.get("city") || "");
   const [keyword, setKeyword] = useState<string>(searchParams.get("q") || "");
   const debouncedKeyword = useDebounce(keyword, 300);
@@ -59,7 +61,7 @@ function PropertiesContent() {
   const stats = useMemo(() => {
     const totalCount = dbProps.length;
     const totalValue = dbProps.reduce((sum, p) => sum + (p.price || 0), 0);
-    const count3D = dbProps.filter((p) => Boolean(p.model_3d_path)).length;
+    const count3D = dbProps.filter((p) => hasVirtualTour(p)).length;
     const houseCount = dbProps.filter((p) => (p.property_type || "").toLowerCase() === "house").length;
     const villaCount = dbProps.filter((p) => (p.property_type || "").toLowerCase() === "villa").length;
     const otherCount = Math.max(0, totalCount - houseCount - villaCount);
@@ -70,16 +72,12 @@ function PropertiesContent() {
   const filteredProperties = useMemo(() => {
     const filtered = dbProps.filter((item) => {
       const pType = (item.property_type || "").toLowerCase();
-      if (activeTab === "3d" && !item.model_3d_path) return false;
+      if (activeTab === "3d" && !hasVirtualTour(item)) return false;
       if (activeTab === "house" && pType !== "house") return false;
       if (activeTab === "villa" && pType !== "villa") return false;
       if (activeTab === "other" && (pType === "house" || pType === "villa")) return false;
 
-      if (priceRange === "under_3b" && item.price >= 3_000_000_000) return false;
-      if (priceRange === "3b_to_7b" && (item.price < 3_000_000_000 || item.price > 7_000_000_000)) {
-        return false;
-      }
-      if (priceRange === "over_7b" && item.price <= 7_000_000_000) return false;
+      if (!matchesPriceRange(item.price, priceRange)) return false;
 
       if (selectedCity && item.city.toLowerCase() !== selectedCity.toLowerCase()) return false;
 
@@ -162,7 +160,7 @@ function PropertiesContent() {
       {/* Properties Grid or Table View */}
       {loading ? (
         <div className="py-24 flex items-center justify-center">
-          <LoadingSpinner text={isEn ? "Loading 3D property listings..." : "Memuat daftar properti 3D..."} />
+          <LoadingSpinner text={isEn ? "Loading homes..." : "Memuat daftar rumah..."} />
         </div>
       ) : filteredProperties.length === 0 ? (
         <div className="py-16 text-center space-y-3 bg-white rounded-2xl border border-neutral-200/80 p-8 shadow-2xs">
@@ -210,7 +208,7 @@ export default function PropertiesPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-[#f6f8f6] min-h-screen">
+      <main id="main-content" className="flex-1 bg-[#f6f8f6] min-h-screen">
         <Suspense
           fallback={
             <div className="py-24 flex justify-center">

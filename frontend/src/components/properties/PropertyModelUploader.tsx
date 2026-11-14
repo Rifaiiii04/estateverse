@@ -57,8 +57,8 @@ export function PropertyModelUploader({
     <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-2xs space-y-3.5">
       <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
         <div>
-          <h2 className="text-sm font-bold text-neutral-950">3. Tampilan Rumah 3D</h2>
-          <span className="text-[11px] text-neutral-400">File 3D (.GLB, .glTF, .FBX, .OBJ — Maks. 150 MB)</span>
+          <h2 className="text-sm font-bold text-neutral-950">Model Rumah 3D <span className="font-normal text-neutral-600">(opsional)</span></h2>
+          <span className="text-[11px] text-neutral-600">Hanya jika Anda sudah punya file 3D (.GLB, .glTF, .FBX, .OBJ — maks. 150 MB)</span>
         </div>
         <span className="text-[11px] font-semibold text-sage-700">Otomatis Rapi</span>
       </div>
@@ -93,8 +93,8 @@ export function PropertyModelUploader({
       {model3DPath && !uploadingModel ? (
         <FormModelPreview modelUrl={getMediaUrl(model3DPath)} onRemove={() => onChange("")} />
       ) : !uploadingModel ? (
-        <p className="text-[11px] text-neutral-400 leading-relaxed">
-          Jika belum mengunggah file 3D, sistem akan menampilkan contoh rumah 3D otomatis.
+        <p className="text-[11px] text-neutral-500 leading-relaxed">
+          Tidak punya file 3D? Lewati saja — Walk Inside 360° dari HP sudah cukup untuk pembeli melihat isi rumah.
         </p>
       ) : null}
     </div>

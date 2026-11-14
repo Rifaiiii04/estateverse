@@ -48,7 +48,7 @@ export default function DashboardLayout({
         <DashboardHeader
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto">
+        <main id="main-content" className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto">
           {children}
         </main>
       </div>

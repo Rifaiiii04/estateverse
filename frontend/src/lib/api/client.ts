@@ -11,12 +11,17 @@ export class ApiError extends Error {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8085/api/v1";
 
+// Resolves an API endpoint (relative to /api/v1) into a full request URL.
+export function apiUrl(endpoint: string): string {
+  return endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
+}
+
 // Executes HTTP fetch requests with credentials, security headers, and uniform JSON parsing.
 export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
+  const url = apiUrl(endpoint);
   const headers = new Headers(options.headers || {});
 
   if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
@@ -32,7 +37,7 @@ export async function apiClient<T>(
     });
   } catch {
     throw new ApiError(
-      "Tidak dapat terhubung ke server backend. Pastikan server aktif di port 8085.",
+      "Tidak dapat terhubung ke server. Periksa koneksi internet Anda lalu coba lagi.",
       0
     );
   }

@@ -8,6 +8,7 @@ import { useToast } from "@/context/ToastContext";
 import { PropertyForm } from "@/components/properties/PropertyForm";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { Alert } from "@/components/ui/Alert";
+import { TourRoomsManager } from "@/components/tour/TourRoomsManager";
 
 // EditPropertyPage loads existing property specifications into the compact seller workspace.
 export default function EditPropertyPage({
@@ -63,6 +64,7 @@ export default function EditPropertyPage({
       {property && (
         <PropertyForm
           initialData={property}
+          walkInsideSlot={<TourRoomsManager propertyId={property.id} />}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
         />

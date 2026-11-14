@@ -3,21 +3,15 @@
 import React from "react";
 import { CheckCircle2, Sparkles } from "lucide-react";
 
-const DEFAULT_BENEFITS = [
-  "Akses Strategis Dekat Jalan Utama / Tol",
-  "Dekat Pusat Perbelanjaan & Fasilitas Umum",
-  "Keamanan Lingkungan Terpadu 24 Jam",
-  "Sirkulasi Udara & Pencahayaan Alami Optimal",
-];
-
 interface PropertyBenefitsCardProps {
   benefits?: string[];
 }
 
 // PropertyBenefitsCard displays the property's location advantages and custom seller highlights.
 export function PropertyBenefitsCard({ benefits }: PropertyBenefitsCardProps) {
-  const displayBenefits =
-    benefits && benefits.length > 0 ? benefits : DEFAULT_BENEFITS;
+  // Shows only what the seller actually wrote; listings without highlights render nothing.
+  if (!benefits || benefits.length === 0) return null;
+  const displayBenefits = benefits;
 
   return (
     <div className="bg-white p-5 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-3.5">

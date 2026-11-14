@@ -77,7 +77,8 @@ export function FirstPersonControls({ metadata }: FirstPersonControlsProps) {
     };
   }, [camera, gl.domElement, spawnX, spawnY, spawnZ]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
+    const camera = state.camera;
     const k = keys.current;
     const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotation.current.yaw);
     const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotation.current.yaw);

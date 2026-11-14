@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { LogoMark } from "@/components/ui/Logo";
 
 // RegisterPage renders the seller registration interface with validation and instant session initialization.
 export default function RegisterPage() {
@@ -57,14 +58,15 @@ export default function RegisterPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <main id="main-content" className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
           <div className="text-center space-y-1">
+            <LogoMark className="w-12 h-12 mx-auto mb-2" />
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Daftar Sebagai Seller
             </h1>
             <p className="text-sm text-slate-500">
-              Mulai publikasikan properti Anda dengan visualisasi 3D interaktif.
+              Pasang iklan rumah dan rekam Walk Inside 360° langsung dari HP.
             </p>
           </div>
 

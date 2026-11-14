@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { HelpCircle, Box, Cpu, FileText, Bot, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Box, Cpu, FileText, Bot, ArrowRight, CheckCircle2 } from "lucide-react";
 
 // DashboardHelpPage provides sellers with 3D model asset guidelines and background queue documentation.
 export default function DashboardHelpPage() {
@@ -72,7 +72,7 @@ export default function DashboardHelpPage() {
           <h2 className="text-lg sm:text-xl font-bold">
             Butuh Bantuan Seputar Iklan atau Tampilan 3D?
           </h2>
-          <p className="text-xs text-neutral-400 leading-relaxed">
+          <p className="text-xs text-neutral-500 leading-relaxed">
             Asisten pintar kami siap menjawab pertanyaan seputar cara memasang iklan, perkiraan harga rumah, atau panduan jual beli.
           </p>
         </div>

@@ -19,6 +19,9 @@ type Config struct {
 	SessionTTL      time.Duration
 	UploadDir       string
 	MaxUploadSizeMB int64
+	TrustProxy      bool
+	OpenRouterKey   string
+	OpenRouterModel string
 }
 
 // Load loads configuration from environment variables and .env file.
@@ -41,6 +44,8 @@ func Load() (*Config, error) {
 		maxUploadMB = 150
 	}
 
+	trustProxy := getEnvOrDefault("TRUST_PROXY", "false") == "true"
+
 	cfg := &Config{
 		Port:            port,
 		AppEnv:          appEnv,
@@ -49,6 +54,9 @@ func Load() (*Config, error) {
 		SessionTTL:      time.Duration(ttlHours) * time.Hour,
 		UploadDir:       uploadDir,
 		MaxUploadSizeMB: maxUploadMB,
+		TrustProxy:      trustProxy,
+		OpenRouterKey:   os.Getenv("OPENROUTER_API_KEY"),
+		OpenRouterModel: os.Getenv("OPENROUTER_MODEL"),
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -93,6 +101,11 @@ func getEnvOrDefault(key, defaultValue string) string {
 
 // PrintSafeSummary prints loaded configuration without revealing credentials.
 func (c *Config) PrintSafeSummary() string {
-	return fmt.Sprintf("env=%s port=%s frontend=%s uploadDir=%s maxMB=%d",
-		c.AppEnv, c.Port, c.FrontendOrigin, c.UploadDir, c.MaxUploadSizeMB)
+	return fmt.Sprintf("env=%s port=%s frontend=%s uploadDir=%s maxMB=%d trustProxy=%t assistantLLM=%t",
+		c.AppEnv, c.Port, c.FrontendOrigin, c.UploadDir, c.MaxUploadSizeMB, c.TrustProxy, c.AssistantEnabled())
+}
+
+// AssistantEnabled reports whether the OpenRouter-backed assistant has credentials and a model configured.
+func (c *Config) AssistantEnabled() bool {
+	return c.OpenRouterKey != "" && c.OpenRouterModel != ""
 }

@@ -10,6 +10,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { Button } from "@/components/ui/Button";
 import { smoothEase } from "@/components/ui/MotionPrimitives";
+import { Logo } from "@/components/ui/Logo";
 
 // Navbar renders the responsive architectural navigation bar with Framer Motion active underline and mobile drawer.
 export function Navbar() {
@@ -31,19 +32,8 @@ export function Navbar() {
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200/80">
       <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 h-16 sm:h-20 flex items-center justify-between gap-4">
         {/* Brand Logo */}
-        <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-2.5 group shrink-0">
-          <motion.span
-            whileHover={{ scaleY: 1.15 }}
-            className="w-2.5 h-6 rounded-full bg-sage-600 group-hover:bg-sage-700 transition-colors"
-          />
-          <div className="flex flex-col">
-            <span className="font-extrabold text-lg sm:text-xl tracking-tight text-neutral-950 uppercase leading-none">
-              ESTATEVERSE
-            </span>
-            <span className="text-[9px] tracking-widest text-neutral-500 font-semibold uppercase mt-0.5">
-              3D Architecture
-            </span>
-          </div>
+        <Link href="/" onClick={closeMobileMenu} aria-label="EstateVerse — beranda" className="shrink-0 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-600">
+          <Logo />
         </Link>
 
         {/* Desktop Center Navigation Links with Shared Layout Active Indicator */}
@@ -137,7 +127,7 @@ export function Navbar() {
             type="button"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
             className="p-2 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-sage-50 hover:border-sage-300 transition-colors cursor-pointer"
-            aria-label="Toggle Menu"
+            aria-label="Buka atau tutup menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>

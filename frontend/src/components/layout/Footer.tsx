@@ -5,35 +5,12 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Star } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { FadeIn, smoothEase } from "@/components/ui/MotionPrimitives";
+import { Logo } from "@/components/ui/Logo";
 
 interface FooterProps {
   showCtaBanner?: boolean;
-}
-
-// TrustpilotBadge renders the verified customer rating widget with calming sage star boxes.
-function TrustpilotBadge({ reviewsText }: { reviewsText: string }) {
-  return (
-    <div className="flex flex-col items-start lg:items-end gap-1.5">
-      <div className="flex items-center gap-1 text-sm font-bold text-neutral-950">
-        <Star className="w-4 h-4 text-sage-600 fill-sage-600" />
-        <span>Trustpilot</span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-0.5">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="w-5 h-5 bg-sage-600 flex items-center justify-center rounded-2xs">
-              <Star className="w-3 h-3 text-white fill-white" />
-            </div>
-          ))}
-        </div>
-        <span className="text-xs text-neutral-500 font-medium">{reviewsText}</span>
-      </div>
-    </div>
-  );
 }
 
 // Footer renders brand statements, directory links, and an animated smart selection CTA banner for the landing page.
@@ -101,7 +78,7 @@ export function Footer({ showCtaBanner }: FooterProps) {
                   >
                     <img
                       src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"
-                      alt="Luxury Modern Architecture Villa"
+                      alt="Rumah tinggal dengan halaman depan"
                       className="w-full h-full object-cover"
                     />
                   </motion.div>
@@ -116,7 +93,7 @@ export function Footer({ showCtaBanner }: FooterProps) {
                   >
                     <img
                       src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80"
-                      alt="Happy Homeowners Celebrating New Key"
+                      alt="Pemilik baru menerima kunci rumah"
                       className="w-full h-full object-cover"
                     />
                   </motion.div>
@@ -124,17 +101,12 @@ export function Footer({ showCtaBanner }: FooterProps) {
               </div>
             </FadeIn>
 
-            {/* Pre-Footer Statement & Trustpilot Row */}
+            {/* Pre-Footer Statement */}
             <FadeIn delay={0.08}>
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-end border-b border-neutral-100 pb-10 sm:pb-12">
-                <div className="lg:col-span-8">
-                  <h3 className="text-xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-neutral-950 leading-tight max-w-xl">
-                    {t.footer.statement}
-                  </h3>
-                </div>
-                <div className="lg:col-span-4 flex lg:justify-end">
-                  <TrustpilotBadge reviewsText={t.footer.reviews} />
-                </div>
+              <div className="border-b border-neutral-100 pb-10 sm:pb-12">
+                <h3 className="text-xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-neutral-950 leading-tight max-w-2xl">
+                  {t.footer.statement}
+                </h3>
               </div>
             </FadeIn>
           </>
@@ -143,48 +115,20 @@ export function Footer({ showCtaBanner }: FooterProps) {
         {/* 3-Column Footer Directory */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10 text-xs sm:text-sm">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-5 rounded-full bg-sage-600" />
-              <span className="font-extrabold text-base tracking-tight text-neutral-950 uppercase block">
-                ESTATEVERSE
-              </span>
-            </div>
-            <span className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider block pl-4">
-              Architecture &amp; 3D Interactive
-            </span>
+            <Logo size="sm" tagline="Walk Inside 360° langsung dari HP" />
           </div>
 
-          <div className="space-y-1.5 font-medium text-neutral-600">
-            <a href="mailto:sales@estateverse.com" className="block hover:text-sage-700 transition-colors">
-              sales@estateverse.com
-            </a>
-            <a href="tel:+6281234567890" className="block hover:text-sage-700 transition-colors">
-              +62 812 3456 7890
-            </a>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-1 gap-1.5 font-medium text-neutral-600">
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" className="block hover:text-sage-700 transition-colors">
-              Instagram
-            </a>
-            <a href="https://facebook.com" target="_blank" rel="noreferrer" className="block hover:text-sage-700 transition-colors">
-              Facebook
-            </a>
-            <a href="https://x.com" target="_blank" rel="noreferrer" className="block hover:text-sage-700 transition-colors">
-              X.com
-            </a>
-            <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="block hover:text-sage-700 transition-colors">
-              LinkedIn
-            </a>
-          </div>
+          <nav aria-label="Tautan footer" className="grid grid-cols-2 sm:grid-cols-1 gap-1.5 font-medium text-neutral-700">
+            <Link href="/properties" className="block hover:text-sage-700 transition-colors">Daftar Rumah</Link>
+            <Link href="/register" className="block hover:text-sage-700 transition-colors">Jual Rumah Saya</Link>
+            <Link href="/ai-consultant" className="block hover:text-sage-700 transition-colors">Asisten Pintar</Link>
+            <Link href="/#impact" className="block hover:text-sage-700 transition-colors">Kenapa EstateVerse</Link>
+          </nav>
         </div>
 
         {/* Bottom Copyright & Privacy */}
-        <div className="pt-6 sm:pt-8 border-t border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-400">
+        <div className="pt-6 sm:pt-8 border-t border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-600">
           <p>&copy; {new Date().getFullYear()} EstateVerse. {t.footer.rights}</p>
-          <Link href="/#properties" className="hover:text-sage-700 transition-colors">
-            {t.footer.privacy}
-          </Link>
         </div>
       </div>
     </footer>

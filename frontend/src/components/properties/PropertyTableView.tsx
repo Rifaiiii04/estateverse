@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { NO_PHOTO_PLACEHOLDER, hasVirtualTour } from "@/lib/utils/media";
 import React from "react";
 import Link from "next/link";
 import { Box } from "lucide-react";
@@ -28,7 +29,7 @@ export function PropertyTableView({ properties }: PropertyTableViewProps) {
               <th className="py-3 px-4 sm:px-6">{isEn ? "Property" : "Properti"}</th>
               <th className="py-3 px-4 hidden md:table-cell">{isEn ? "Location" : "Lokasi"}</th>
               <th className="py-3 px-4 hidden sm:table-cell">{isEn ? "Specs" : "Spesifikasi"}</th>
-              <th className="py-3 px-4">{isEn ? "3D Status" : "Status 3D"}</th>
+              <th className="py-3 px-4">{isEn ? "Virtual Tour" : "Tur Virtual"}</th>
               <th className="py-3 px-4 text-right">{isEn ? "Price" : "Harga"}</th>
               <th className="py-3 px-4 sm:px-6 text-right">{isEn ? "Action" : "Aksi"}</th>
             </tr>
@@ -38,8 +39,8 @@ export function PropertyTableView({ properties }: PropertyTableViewProps) {
               const thumb =
                 item.images && item.images.length > 0
                   ? getMediaUrl(item.images[0].file_path)
-                  : "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=300&q=80";
-              const has3D = Boolean(item.model_3d_path);
+                  : NO_PHOTO_PLACEHOLDER;
+              const has3D = hasVirtualTour(item);
 
               return (
                 <tr key={item.id} className="hover:bg-sage-50/40 transition-colors group">
@@ -71,7 +72,7 @@ export function PropertyTableView({ properties }: PropertyTableViewProps) {
                     {has3D ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-sage-50 text-sage-700 border border-sage-200">
                         <Box className="w-3 h-3 text-sage-600" />
-                        <span>3D Ready</span>
+                        <span>{isEn ? "Available" : "Tersedia"}</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-neutral-100 text-neutral-500">
@@ -90,7 +91,7 @@ export function PropertyTableView({ properties }: PropertyTableViewProps) {
                       href={`/properties/${item.slug}`}
                       className="text-xs font-bold text-sage-600 hover:text-sage-800"
                     >
-                      {has3D ? (isEn ? "Explore 3D →" : "Buka 3D →") : isEn ? "View →" : "Detail →"}
+                      {has3D ? (isEn ? "Open Tour →" : "Buka Tur →") : isEn ? "View →" : "Detail →"}
                     </Link>
                   </td>
                 </tr>
