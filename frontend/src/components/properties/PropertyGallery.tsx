@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import React, { useState } from "react";
-import { Camera, Image as ImageIcon } from "lucide-react";
+import { Camera } from "lucide-react";
 import { PropertyImage } from "@/types/property";
 import { getMediaUrl } from "@/lib/api/client";
 
@@ -27,7 +27,7 @@ export function PropertyGallery({ images }: PropertyGalleryProps) {
           <Camera className="w-4 h-4 text-neutral-700" />
           <span>Dokumentasi Foto Lapangan</span>
         </h3>
-        <span className="text-xs text-neutral-400 font-medium">
+        <span className="text-xs text-neutral-500 font-medium">
           {images.length} Foto Resolusi Tinggi
         </span>
       </div>

@@ -6,7 +6,9 @@ import { Plus, Search, X } from "lucide-react";
 import { formatCompactIDR } from "@/lib/utils/formatters";
 import { CustomSelect, SelectOption } from "@/components/ui/CustomSelect";
 
-export type PriceRangeFilter = "all" | "under_3b" | "3b_to_7b" | "over_7b";
+import { PRICE_RANGES, PriceRangeFilter } from "@/lib/utils/priceRanges";
+
+export type { PriceRangeFilter };
 export type SortByOption = "newest" | "price_asc" | "price_desc" | "area_desc";
 
 interface PropertiesCatalogHeaderProps {
@@ -59,7 +61,7 @@ export function PropertiesCatalogHeader({
 }: PropertiesCatalogHeaderProps) {
   const tabs = [
     { id: "all", label: isEn ? "All" : "Semua", count: totalCount },
-    { id: "3d", label: isEn ? "3D Interactive" : "3D Interaktif", count: count3D },
+    { id: "3d", label: isEn ? "Has Walk Inside 360°" : "Ada Walk Inside 360°", count: count3D },
     { id: "house", label: isEn ? "Houses" : "Rumah", count: houseCount },
     { id: "villa", label: "Villa", count: villaCount },
     ...(otherCount > 0
@@ -69,9 +71,7 @@ export function PropertiesCatalogHeader({
 
   const priceOptions: SelectOption[] = [
     { value: "all", label: isEn ? "Price: Any" : "Harga: Semua" },
-    { value: "under_3b", label: "< Rp 3 Miliar", description: isEn ? "Under 3B IDR" : "Di bawah 3 Miliar" },
-    { value: "3b_to_7b", label: "Rp 3M – Rp 7 Miliar", description: isEn ? "Mid-luxury segment" : "Segmen menengah premium" },
-    { value: "over_7b", label: "> Rp 7 Miliar", description: isEn ? "Signature luxury estate" : "Hunian & villa eksklusif" },
+    ...PRICE_RANGES.map((r) => ({ value: r.value, label: r.label, description: r.description })),
   ];
 
   const cityOptions: SelectOption[] = [
@@ -104,14 +104,14 @@ export function PropertiesCatalogHeader({
             </span>
             <span>
               <strong className="font-bold text-neutral-950">{count3D}</strong>{" "}
-              {isEn ? "with 3D Home Tour" : "ada Tur Rumah 3D"}
+              {isEn ? "with a virtual tour" : "punya tur virtual"}
             </span>
             <span>
               <strong className="font-bold text-neutral-950">{cities.length}</strong>{" "}
               {isEn ? "cities" : "kota"}
             </span>
             <span className="text-sage-700 font-semibold">
-              {isEn ? "View Inside & Out in 3D" : "Bisa Dilihat Luar & Dalam 3D"}
+              {isEn ? "Look inside before visiting" : "Lihat isi rumah sebelum survei"}
             </span>
           </div>
         </div>
@@ -150,7 +150,7 @@ export function PropertiesCatalogHeader({
                   : "text-neutral-600 hover:text-neutral-950"
               }`}
             >
-              3D Tour
+              Walk Inside 360°
             </button>
           </div>
 
@@ -181,7 +181,7 @@ export function PropertiesCatalogHeader({
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className={isActive ? "text-neutral-300" : "text-neutral-400"}>{tab.count}</span>
+                <span className={isActive ? "text-neutral-300" : "text-neutral-500"}>{tab.count}</span>
               </button>
             );
           })}
@@ -217,7 +217,7 @@ export function PropertiesCatalogHeader({
 
           {/* Wide Search Input Pill */}
           <div className="relative flex-1 min-w-[260px] sm:min-w-[340px] lg:min-w-[420px] max-w-xl h-9">
-            <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={keyword}
@@ -227,7 +227,7 @@ export function PropertiesCatalogHeader({
                   ? "Search properties by title, city, or address..."
                   : "Cari properti berdasarkan nama, kota, atau alamat..."
               }
-              className="w-full h-full bg-white border border-neutral-200 hover:border-sage-400 rounded-full pl-9 pr-4 text-xs sm:text-[13px] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-sage-600 focus:ring-2 focus:ring-sage-600/15 transition-all"
+              className="w-full h-full bg-white border border-neutral-200 hover:border-sage-400 rounded-full pl-9 pr-4 text-xs sm:text-[13px] text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:border-sage-600 focus:ring-2 focus:ring-sage-600/15 transition-all"
             />
           </div>
         </div>

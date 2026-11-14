@@ -1,7 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import { NO_PHOTO_PLACEHOLDER } from "@/lib/utils/media";
+import React, { Suspense, useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Plus, Search, Edit3, Trash2, ExternalLink, Box, SlidersHorizontal, Layers } from "lucide-react";
 import { Property } from "@/types/property";
@@ -13,35 +15,27 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/MotionPrimitives";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 
-// DashboardPropertiesPage allows sellers to filter, inspect, edit, and delete their listed properties in a responsive grid.
-export default function DashboardPropertiesPage() {
+// DashboardPropertiesContent lists, filters, and manages the seller's listings.
+function DashboardPropertiesContent() {
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [keyword, setKeyword] = useState("");
+  const [keyword, setKeyword] = useState(searchParams.get("q") ?? "");
   const debouncedKeyword = useDebounce(keyword, 300);
   const [filterStatus, setFilterStatus] = useState<"all" | "published" | "draft" | "3d">("all");
 
-  // Fetches current seller listings from the backend database.
-  const loadProperties = async () => {
-    try {
-      const data = await getDashboardProperties();
-      setProperties(data);
-    } catch {
-      toast.error("Gagal memuat daftar properti Anda.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Fetches the seller's current listings once on mount.
   useEffect(() => {
-    loadProperties();
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const q = params.get("q");
-      if (q) setKeyword(q);
-    }
-  }, []);
+    let active = true;
+    getDashboardProperties()
+      .then((data) => active && setProperties(data))
+      .catch(() => toast.error("Gagal memuat daftar properti Anda."))
+      .finally(() => active && setIsLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [toast]);
 
   // Removes a property listing permanently after user confirmation.
   const handleDelete = async (id: number, title: string) => {
@@ -128,20 +122,20 @@ export default function DashboardPropertiesPage() {
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className={active ? "text-neutral-300" : "text-neutral-400"}>{tab.count}</span>
+                <span className={active ? "text-neutral-300" : "text-neutral-500"}>{tab.count}</span>
               </button>
             );
           })}
         </div>
 
         <div className="relative w-full md:w-80 h-9">
-          <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="Cari judul properti, kota..."
-            className="w-full h-full bg-white border border-neutral-200 hover:border-sage-400 rounded-full pl-9 pr-4 text-xs sm:text-[13px] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-sage-600 focus:ring-2 focus:ring-sage-600/15 transition-all"
+            className="w-full h-full bg-white border border-neutral-200 hover:border-sage-400 rounded-full pl-9 pr-4 text-xs sm:text-[13px] text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:border-sage-600 focus:ring-2 focus:ring-sage-600/15 transition-all"
           />
         </div>
       </div>
@@ -163,7 +157,7 @@ export default function DashboardPropertiesPage() {
             const img =
               item.images && item.images.length > 0
                 ? getMediaUrl(item.images[0].file_path)
-                : "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80";
+                : NO_PHOTO_PLACEHOLDER;
             return (
               <StaggerItem
                 key={item.id}
@@ -243,5 +237,14 @@ export default function DashboardPropertiesPage() {
         </StaggerContainer>
       )}
     </FadeIn>
+  );
+}
+
+// DashboardPropertiesPage wraps the listing manager in Suspense because it reads URL search params.
+export default function DashboardPropertiesPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner text="Memuat daftar properti..." />}>
+      <DashboardPropertiesContent />
+    </Suspense>
   );
 }

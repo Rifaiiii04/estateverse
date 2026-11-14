@@ -69,7 +69,7 @@ export function ViewerControls({
         <button
           type="button"
           onClick={handleEstateClick}
-          className="hidden md:flex px-2.5 py-1.5 rounded-xl text-xs font-medium text-neutral-400 hover:text-neutral-600 transition-colors items-center gap-1.5 cursor-not-allowed"
+          className="hidden md:flex px-2.5 py-1.5 rounded-xl text-xs font-medium text-neutral-500 hover:text-neutral-600 transition-colors items-center gap-1.5 cursor-not-allowed"
           title="Lihat Lingkungan Sekitar (Segera Hadir)"
         >
           <Map className="w-3.5 h-3.5" />

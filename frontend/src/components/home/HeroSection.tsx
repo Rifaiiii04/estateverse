@@ -53,7 +53,7 @@ export function HeroSection() {
           </motion.div>
         </div>
 
-        {/* Hero Architectural Villa Banner */}
+        {/* Hero house banner */}
         <motion.div
           initial={{ opacity: 0, y: 28, scale: 0.985 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -62,7 +62,7 @@ export function HeroSection() {
         >
           <img
             src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1800&q=85"
-            alt="EstateVerse Luxury Architecture with 3D Virtual Tour"
+            alt="Rumah yang dipasarkan lewat tur virtual 360° EstateVerse"
             className="w-full h-full object-cover object-center transform hover:scale-102 transition-transform duration-700 ease-out"
           />
         </motion.div>

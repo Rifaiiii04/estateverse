@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Plus, Edit3, Trash2, Eye, Box, Bed, Bath, Maximize2, Share2 } from "lucide-react";
+import { Plus, Edit3, Trash2, Eye, Box, Bed, Bath, Maximize2 } from "lucide-react";
 import { Property } from "@/types/property";
 import { formatIDR } from "@/lib/utils/formatters";
 import { getMediaUrl } from "@/lib/api/client";
@@ -41,7 +41,7 @@ export function ActiveAdvertisements({ properties, onDelete }: ActiveAdvertiseme
           <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-950">
             Iklan &amp; Listing Aktif
           </h2>
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-neutral-500">
             Pantau status penayangan, model 3D, dan statistik penelusuran calon pembeli.
           </p>
         </div>
@@ -93,7 +93,7 @@ export function ActiveAdvertisements({ properties, onDelete }: ActiveAdvertiseme
       {/* Listings List */}
       <div className="space-y-4">
         {filteredProperties.length === 0 ? (
-          <div className="py-12 text-center text-xs text-neutral-400">
+          <div className="py-12 text-center text-xs text-neutral-500">
             Belum ada properti dalam kategori ini.
           </div>
         ) : (
@@ -130,7 +130,7 @@ export function ActiveAdvertisements({ properties, onDelete }: ActiveAdvertiseme
                       <span className="text-base sm:text-lg font-extrabold text-neutral-950 tracking-tight truncate">
                         {formatIDR(property.price)}
                       </span>
-                      <span className="text-[11px] text-neutral-400 font-medium">
+                      <span className="text-[11px] text-neutral-500 font-medium">
                         &bull; Aktif {daysActive} hari
                       </span>
                     </div>
@@ -141,18 +141,18 @@ export function ActiveAdvertisements({ properties, onDelete }: ActiveAdvertiseme
 
                     <div className="flex flex-wrap items-center gap-3 text-[11px] text-neutral-500 font-medium">
                       <span className="inline-flex items-center gap-1">
-                        <Bed className="w-3 h-3 text-neutral-400" />
+                        <Bed className="w-3 h-3 text-neutral-500" />
                         <span>{property.bedrooms} KT</span>
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <Bath className="w-3 h-3 text-neutral-400" />
+                        <Bath className="w-3 h-3 text-neutral-500" />
                         <span>{property.bathrooms} KM</span>
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <Maximize2 className="w-3 h-3 text-neutral-400" />
+                        <Maximize2 className="w-3 h-3 text-neutral-500" />
                         <span>{property.building_area} m²</span>
                       </span>
-                      <span className="text-neutral-400">&bull; {property.city}</span>
+                      <span className="text-neutral-500">&bull; {property.city}</span>
                     </div>
                   </div>
                 </div>

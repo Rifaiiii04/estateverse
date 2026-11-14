@@ -12,16 +12,21 @@ import (
 
 // RouterDeps holds handler and service dependencies needed to configure routes.
 type RouterDeps struct {
-	Config      *config.Config
-	AuthSvc     services.AuthService
-	PropSvc     services.PropertyService
-	StorageSvc  services.StorageService
-	HealthHdl   *handlers.HealthHandler
-	AuthHdl     *handlers.AuthHandler
-	PropHdl     *handlers.PropertyHandler
-	StorageHdl  *handlers.StorageHandler
-	LeadHdl     *handlers.LeadHandler
-	RateLimiter *middleware.RateLimiter
+	Config        *config.Config
+	AuthSvc       services.AuthService
+	PropSvc       services.PropertyService
+	StorageSvc    services.StorageService
+	HealthHdl     *handlers.HealthHandler
+	AuthHdl       *handlers.AuthHandler
+	PropHdl       *handlers.PropertyHandler
+	StorageHdl    *handlers.StorageHandler
+	LeadHdl       *handlers.LeadHandler
+	TourHdl       *handlers.TourHandler
+	EngagementHdl *handlers.EngagementHandler
+	AssistantHdl  *handlers.AssistantHandler
+	RateLimiter   *middleware.RateLimiter
+	EventLimiter  *middleware.RateLimiter
+	AiLimiter     *middleware.RateLimiter
 }
 
 // SetupRoutes registers all application API routes and middleware chain.
@@ -76,7 +81,7 @@ func SetupRoutes(deps RouterDeps) http.Handler {
 	if deps.LeadHdl != nil {
 		mux.HandleFunc("/api/v1/leads", func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodPost {
-				deps.LeadHdl.CreateLead(w, r)
+				deps.RateLimiter.Limit(http.HandlerFunc(deps.LeadHdl.CreateLead)).ServeHTTP(w, r)
 			} else {
 				handlers.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
 			}
@@ -88,6 +93,9 @@ func SetupRoutes(deps RouterDeps) http.Handler {
 			requireAuth(http.HandlerFunc(deps.LeadHdl.UpdateLeadStatus)).ServeHTTP(w, r)
 		})
 	}
+
+	registerTourRoutes(mux, deps, requireAuth)
+	registerEngagementRoutes(mux, deps)
 
 	// Upload routes
 	mux.Handle("/api/v1/upload/image", requireAuth(http.HandlerFunc(deps.StorageHdl.UploadImage)))

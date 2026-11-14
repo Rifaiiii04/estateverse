@@ -99,7 +99,7 @@ export function CustomSelect({
           triggerVariants[variant]
         } ${disabled ? "opacity-50 cursor-not-allowed bg-neutral-100" : ""}`}
       >
-        <span className={`truncate ${selectedOption ? "" : "text-neutral-400"}`}>
+        <span className={`truncate ${selectedOption ? "" : "text-neutral-500"}`}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
@@ -122,7 +122,7 @@ export function CustomSelect({
             } bg-white border border-neutral-200/90 rounded-2xl shadow-xl shadow-neutral-900/10 p-1.5 max-h-64 overflow-y-auto backdrop-blur-md`}
           >
             {options.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-neutral-400 text-center">Tidak ada pilihan</div>
+              <div className="px-3 py-2 text-xs text-neutral-500 text-center">Tidak ada pilihan</div>
             ) : (
               options.map((option) => {
                 const isSelected = option.value === value;
@@ -140,7 +140,7 @@ export function CustomSelect({
                     <div className="flex flex-col truncate">
                       <span className="truncate">{option.label}</span>
                       {option.description && (
-                        <span className={`text-[10px] ${isSelected ? "text-sage-100" : "text-neutral-400"}`}>
+                        <span className={`text-[10px] ${isSelected ? "text-sage-100" : "text-neutral-500"}`}>
                           {option.description}
                         </span>
                       )}

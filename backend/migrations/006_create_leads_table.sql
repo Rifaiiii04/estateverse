@@ -2,9 +2,9 @@
 -- Creates the leads table for storing buyer inquiries and 3D tour requests directly in MySQL.
 
 CREATE TABLE IF NOT EXISTS leads (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    property_id BIGINT UNSIGNED NOT NULL,
-    owner_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    property_id BIGINT NOT NULL,
+    owner_id BIGINT NOT NULL,
     name VARCHAR(100) NOT NULL,
     phone VARCHAR(30) NOT NULL,
     budget VARCHAR(50) NOT NULL DEFAULT '',

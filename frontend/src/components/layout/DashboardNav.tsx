@@ -25,7 +25,7 @@ export function DashboardNav() {
               <Building2 className="w-4 h-4" />
             </div>
             <span className="font-extrabold text-base text-neutral-950 tracking-tight uppercase">
-              ESTATEVERSE <span className="text-xs text-neutral-400 font-normal lowercase">portal</span>
+              ESTATEVERSE <span className="text-xs text-neutral-500 font-normal lowercase">portal</span>
             </span>
           </Link>
 
@@ -53,7 +53,7 @@ export function DashboardNav() {
           <Link href="/" target="_blank">
             <Button size="sm" variant="ghost" className="gap-1.5">
               <span>Lihat Website</span>
-              <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-neutral-500" />
             </Button>
           </Link>
           <div className="hidden md:flex flex-col text-right">

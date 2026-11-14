@@ -8,6 +8,7 @@ export interface Lead {
   phone: string;
   budget: string;
   note: string;
+  viewed_tour: boolean;
   status: "new" | "contacted" | "scheduled" | "closed";
   property_title?: string;
   property_slug?: string;
@@ -17,13 +18,13 @@ export interface Lead {
 
 // getOwnerLeads fetches all buyer inquiries from the database for the authenticated seller.
 export async function getOwnerLeads(): Promise<Lead[]> {
-  const data = await apiClient<{ leads: Lead[]; total: number }>("/api/v1/owner/leads");
+  const data = await apiClient<{ leads: Lead[]; total: number }>("/owner/leads");
   return data.leads || [];
 }
 
 // updateLeadStatus modifies a lead's pipeline status in the database.
 export async function updateLeadStatus(id: number, status: string): Promise<void> {
-  await apiClient(`/api/v1/owner/leads/${id}/status`, {
+  await apiClient(`/owner/leads/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
@@ -36,8 +37,9 @@ export async function submitBuyerInquiry(payload: {
   phone: string;
   budget?: string;
   note: string;
+  viewed_tour?: boolean;
 }): Promise<Lead> {
-  return apiClient<Lead>("/api/v1/leads", {
+  return apiClient<Lead>("/leads", {
     method: "POST",
     body: JSON.stringify(payload),
   });

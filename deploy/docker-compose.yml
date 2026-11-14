@@ -1,0 +1,70 @@
+# EstateVerse production stack: MySQL, Go API, Next.js frontend, and Caddy (automatic HTTPS).
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: estateverse
+      MYSQL_USER: estateverse
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD wajib diisi}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD wajib diisi}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "8085"
+      APP_ENV: production
+      DB_DSN: "estateverse:${DB_PASSWORD}@tcp(db:3306)/estateverse?parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&loc=UTC"
+      FRONTEND_ORIGIN: "https://${DOMAIN:?DOMAIN wajib diisi}"
+      TRUST_PROXY: "true"
+      UPLOAD_DIR: /app/storage/uploads
+      MAX_UPLOAD_SIZE_MB: "50"
+      SESSION_TTL_HOURS: "72"
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      SEED_PASSWORD: ${SEED_PASSWORD:-}
+      SEED_WHATSAPP: ${SEED_WHATSAPP:-}
+    volumes:
+      - uploads:/app/storage/uploads
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        NEXT_PUBLIC_API_URL: /api/v1
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  db_data:
+  uploads:
+  caddy_data:
+  caddy_config:

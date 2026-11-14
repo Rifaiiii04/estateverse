@@ -58,6 +58,7 @@ export interface Property {
   floors: number;
   whatsapp_number: string;
   model_3d_path: string;
+  has_tour?: boolean;
   model_metadata?: Model3DMetadata;
   benefits?: string[];
   status: PropertyStatus;
@@ -97,7 +98,39 @@ export interface DashboardSummary {
   total_land_area: number;
   total_building_area: number;
   smart_score: number;
-  total_3d_tours: number;
+  listings_with_tour: number;
+  total_views: number;
+  total_tour_views: number;
   total_leads: number;
+  leads_viewed_tour: number;
+  reports_count: number;
+  tour_comparison?: TourComparison;
   type_breakdown?: Record<string, number>;
 }
+
+/** Listings, detail views, and leads for one group of a seller's listings. */
+export interface GroupStats {
+  listings: number;
+  views: number;
+  leads: number;
+}
+
+/** A seller's listings with versus without a ready Walk Inside 360° tour. */
+export interface TourComparison {
+  with_tour: GroupStats;
+  without_tour: GroupStats;
+}
+
+/** Platform-wide aggregate counts shown publicly as impact evidence. */
+export interface ImpactStats {
+  active_sellers: number;
+  published_listings: number;
+  listings_with_tour: number;
+  tour_rooms: number;
+  tour_views: number;
+  buyer_inquiries: number;
+  inquiries_after_tour: number;
+}
+
+/** Media views available on a property detail page. */
+export type MediaTab = "photos" | "tour" | "3d";

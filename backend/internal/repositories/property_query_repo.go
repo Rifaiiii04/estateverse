@@ -14,7 +14,8 @@ import (
 const propertyColumns = `p.id, p.owner_id, p.title, p.slug, p.description, p.property_type,
 	p.price, p.address, p.city, p.province, p.land_area, p.building_area,
 	p.bedrooms, p.bathrooms, p.floors, p.whatsapp_number, COALESCE(p.model_3d_path, ''),
-	COALESCE(p.model_metadata, ''), COALESCE(p.benefits, '[]'), p.status, p.created_at, p.updated_at, COALESCE(u.name, '')`
+	COALESCE(p.model_metadata, ''), COALESCE(p.benefits, '[]'), p.status, p.created_at, p.updated_at, COALESCE(u.name, ''),
+	EXISTS(SELECT 1 FROM property_tour_rooms t WHERE t.property_id = p.id AND t.status = 'ready')`
 
 // GetByID finds a property by ID including seller owner name.
 func (r *mysqlPropertyRepo) GetByID(ctx context.Context, id int64) (*models.Property, error) {
@@ -115,12 +116,8 @@ func (r *mysqlPropertyRepo) GetOwnerSummary(ctx context.Context, ownerID int64) 
 		}
 	}
 
-	if s.TotalProperties > 0 {
-		modelRatio := float64(s.With3DModelCount) / float64(s.TotalProperties)
-		pubRatio := float64(s.PublishedCount) / float64(s.TotalProperties)
-		s.SmartScore = int(40 + (modelRatio * 40) + (pubRatio * 20))
-		s.Total3DTours = s.PublishedCount*120 + s.With3DModelCount*340
-		s.TotalLeads = int(float64(s.Total3DTours) * 0.08)
+	if err := r.fillEngagement(ctx, ownerID, &s); err != nil {
+		return nil, err
 	}
 
 	return &s, nil
@@ -139,7 +136,7 @@ func scanPropertyInto(s rowScanner, p *models.Property) error {
 		&p.ID, &p.OwnerID, &p.Title, &p.Slug, &p.Description, &p.PropertyType,
 		&p.Price, &p.Address, &p.City, &p.Province, &p.LandArea, &p.BuildingArea,
 		&p.Bedrooms, &p.Bathrooms, &p.Floors, &p.WhatsAppNumber, &p.Model3DPath,
-		&metaRaw, &benefitsRaw, &p.Status, &p.CreatedAt, &p.UpdatedAt, &p.OwnerName,
+		&metaRaw, &benefitsRaw, &p.Status, &p.CreatedAt, &p.UpdatedAt, &p.OwnerName, &p.HasTour,
 	)
 	if err != nil {
 		return err

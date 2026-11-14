@@ -1,70 +1,117 @@
 "use client";
 
 import React, { useState } from "react";
-import { Calculator, ShieldCheck, ChevronRight } from "lucide-react";
-import { formatIDR } from "@/lib/utils/formatters";
+import { Calculator } from "lucide-react";
+import { formatIDR, formatRupiahInput, parseRupiahInput } from "@/lib/utils/formatters";
+import { assessAffordability, AffordabilityLevel, minimumIncomeFor, monthlyInstallment, residualIncome } from "@/lib/utils/mortgage";
 
 interface PropertyMortgageCardProps {
   price: number;
 }
 
-// PropertyMortgageCard provides buyers with an estimated monthly mortgage calculation and buying reassurance.
-export function PropertyMortgageCard({ price }: PropertyMortgageCardProps) {
-  const [tenorYears, setTenorYears] = useState(20);
-  const dpPct = 0.2;
-  const principal = price * (1 - dpPct);
-  const annualRate = 0.065;
-  const monthlyRate = annualRate / 12;
-  const totalMonths = tenorYears * 12;
+const DP_OPTIONS = [10, 20, 30];
+const TENOR_OPTIONS = [10, 15, 20, 25];
+const LEVEL_STYLE: Record<AffordabilityLevel, { label: string; className: string }> = {
+  nyaman: { label: "nyaman (≤30% gaji, patokan perencanaan keuangan)", className: "bg-sage-50 text-sage-800 border-sage-200" },
+  "batas-bank": { label: "mendekati batas bank (umumnya 35–40%)", className: "bg-amber-50 text-amber-800 border-amber-200" },
+  berisiko: { label: "di atas batas umum bank — berisiko ditolak", className: "bg-rose-50 text-rose-800 border-rose-200" },
+};
 
-  // Calculates estimated monthly mortgage installment using annuity formula.
-  const monthlyPayment = Math.round(
-    (principal * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths))) /
-      (Math.pow(1 + monthlyRate, totalMonths) - 1)
-  );
+// PropertyMortgageCard estimates the monthly KPR installment and checks it against the buyer's income.
+export function PropertyMortgageCard({ price }: PropertyMortgageCardProps) {
+  const [dp, setDp] = useState(10);
+  const [years, setYears] = useState(15);
+  const [rate, setRate] = useState("7");
+  const [incomeRaw, setIncomeRaw] = useState("");
+  const [expensesRaw, setExpensesRaw] = useState("");
+
+  const annualRate = Math.min(20, Math.max(0, Number(rate.replace(",", ".")) || 0));
+  const installment = monthlyInstallment({ price, downPaymentPct: dp, annualRatePct: annualRate, years });
+  const income = parseRupiahInput(incomeRaw);
+  const check = income > 0 ? assessAffordability(installment, income) : null;
+  const leftover = residualIncome(income, installment, parseRupiahInput(expensesRaw));
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-neutral-200/90 shadow-sm space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Calculator className="w-4 h-4 text-sage-600" />
-          <h4 className="text-sm font-bold text-neutral-950">Simulasi Cicilan KPR</h4>
-        </div>
-        <span className="text-[11px] font-semibold text-sage-700 bg-sage-50 border border-sage-200 px-2 py-0.5 rounded-md">DP 20%</span>
-      </div>
-
-      <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200/70 space-y-1">
-        <span className="text-[11px] text-neutral-500 block">Estimasi Cicilan Bulanan:</span>
-        <div className="text-lg sm:text-xl font-extrabold text-sage-700">
-          {formatIDR(monthlyPayment)}
-          <span className="text-xs font-normal text-neutral-500"> / bulan</span>
-        </div>
-        <span className="text-[10px] text-neutral-400 block">
-          *Perkiraan bunga 6,5% per tahun selama {tenorYears} tahun.
-        </span>
-      </div>
-
+    <section aria-labelledby="mortgage-title" className="bg-white p-6 rounded-2xl border border-neutral-200/90 shadow-sm space-y-4">
       <div className="flex items-center gap-2">
-        {[10, 15, 20, 25].map((t) => (
+        <Calculator className="w-4 h-4 text-sage-600" aria-hidden="true" />
+        <h4 id="mortgage-title" className="text-sm font-bold text-neutral-950">Cek Kemampuan Bayar KPR</h4>
+      </div>
+
+      <ChoiceGroup label="Uang muka (DP)" options={DP_OPTIONS} value={dp} suffix="%" onChange={setDp} />
+      <ChoiceGroup label="Tenor" options={TENOR_OPTIONS} value={years} suffix=" thn" onChange={setYears} />
+
+      <div className="grid grid-cols-2 gap-3">
+        <label className="text-xs font-semibold text-neutral-700 space-y-1">
+          <span className="block">Bunga per tahun (%)</span>
+          <input inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-sm" />
+        </label>
+        <label className="text-xs font-semibold text-neutral-700 space-y-1">
+          <span className="block">Gaji bulanan (opsional)</span>
+          <input inputMode="numeric" value={incomeRaw} placeholder="Rp 6.000.000" onChange={(e) => setIncomeRaw(formatRupiahInput(e.target.value))} className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-sm" />
+        </label>
+      </div>
+      {income > 0 && (
+        <label className="block text-xs font-semibold text-neutral-700 space-y-1">
+          <span className="block">Pengeluaran rutin lain per bulan (makan, transport, cicilan lain)</span>
+          <input inputMode="numeric" value={expensesRaw} placeholder="Rp 3.000.000" onChange={(e) => setExpensesRaw(formatRupiahInput(e.target.value))} className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-sm" />
+        </label>
+      )}
+
+      <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200/70 space-y-1" aria-live="polite">
+        <span className="text-xs text-neutral-700 block">Estimasi cicilan bulanan</span>
+        <div className="text-xl font-extrabold text-sage-700">
+          {formatIDR(installment)}
+          <span className="text-xs font-normal text-neutral-600"> / bulan</span>
+        </div>
+        <span className="text-[11px] text-neutral-600 block">
+          Agar nyaman, gaji sekitar {formatIDR(minimumIncomeFor(installment))} (cicilan ≤30% gaji).
+        </span>
+        {check && (
+          <span className={`inline-block mt-2 text-xs font-semibold border rounded-lg px-2 py-1 ${LEVEL_STYLE[check.level].className}`}>
+            Rasio cicilan (DSR) {Math.round(check.ratio * 100)}% — {LEVEL_STYLE[check.level].label}
+          </span>
+        )}
+        {check && (
+          <p className={`text-xs font-semibold pt-1 ${leftover < 0 ? "text-rose-700" : "text-neutral-800"}`}>
+            Sisa uang per bulan setelah cicilan{expensesRaw ? " & pengeluaran rutin" : ""}: {leftover < 0 ? "−" : ""}{formatIDR(Math.abs(leftover))}
+          </p>
+        )}
+      </div>
+      <p className="text-[11px] text-neutral-600">
+        Perkiraan saja. Batas DSR, bunga, dan syarat sebenarnya ditentukan masing-masing bank. Pastikan sisa uang cukup untuk kebutuhan pokok — rasio saja tidak cukup. Siapkan juga biaya pajak dan notaris sekitar 5–10% dari harga.
+      </p>
+    </section>
+  );
+}
+
+// ChoiceGroup renders a labelled row of toggle buttons for one numeric option.
+function ChoiceGroup({ label, options, value, suffix, onChange }: {
+  label: string;
+  options: number[];
+  value: number;
+  suffix: string;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <fieldset className="space-y-1.5">
+      <legend className="text-xs font-semibold text-neutral-700">{label}</legend>
+      <div className="flex gap-2">
+        {options.map((opt) => (
           <button
-            key={t}
+            key={opt}
             type="button"
-            onClick={() => setTenorYears(t)}
-            className={`flex-1 py-1.5 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${
-              tenorYears === t
-                ? "bg-sage-600 text-white border-sage-600 shadow-2xs"
-                : "border-neutral-200 text-neutral-600 hover:border-sage-400 hover:text-sage-700"
+            aria-pressed={value === opt}
+            onClick={() => onChange(opt)}
+            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border cursor-pointer ${
+              value === opt ? "bg-sage-600 text-white border-sage-600" : "border-neutral-300 text-neutral-700 hover:border-sage-500"
             }`}
           >
-            {t} Thn
+            {opt}
+            {suffix}
           </button>
         ))}
       </div>
-
-      <div className="pt-3 border-t border-neutral-100 flex items-center gap-2 text-xs text-neutral-500">
-        <ShieldCheck className="w-4 h-4 text-sage-600 shrink-0" />
-        <span>Surat kepemilikan lengkap (SHM) dan siap proses jual beli.</span>
-      </div>
-    </div>
+    </fieldset>
   );
 }

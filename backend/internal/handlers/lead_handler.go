@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
+	"projectfai/backend/internal/httpx"
 	"projectfai/backend/internal/middleware"
 	"projectfai/backend/internal/models"
 	"projectfai/backend/internal/repositories"
@@ -61,7 +63,7 @@ func (h *LeadHandler) UpdateLeadStatus(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Status string `json:"status"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || payload.Status == "" {
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || !validLeadStatuses[payload.Status] {
 		WriteError(w, http.StatusBadRequest, "status is required")
 		return
 	}
@@ -77,13 +79,17 @@ func (h *LeadHandler) UpdateLeadStatus(w http.ResponseWriter, r *http.Request) {
 // CreateLead handles public inquiry submissions from prospective buyers.
 func (h *LeadHandler) CreateLead(w http.ResponseWriter, r *http.Request) {
 	var in models.LeadInput
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.PropertyID <= 0 || in.Name == "" || in.Phone == "" {
-		WriteError(w, http.StatusBadRequest, "property_id, name, and phone are required")
+	if err := httpx.DecodeJSON(w, r, &in); err != nil {
+		httpx.WriteDecodeError(w, err)
+		return
+	}
+	if msg := validateLeadInput(&in); msg != "" {
+		WriteError(w, http.StatusBadRequest, msg)
 		return
 	}
 
 	prop, err := h.propRepo.GetByID(r.Context(), in.PropertyID)
-	if err != nil || prop == nil {
+	if err != nil || prop == nil || prop.Status != models.StatusPublished {
 		WriteError(w, http.StatusNotFound, "target property not found")
 		return
 	}
@@ -91,10 +97,11 @@ func (h *LeadHandler) CreateLead(w http.ResponseWriter, r *http.Request) {
 	lead := &models.Lead{
 		PropertyID: in.PropertyID,
 		OwnerID:    prop.OwnerID,
-		Name:       strings.TrimSpace(in.Name),
-		Phone:      strings.TrimSpace(in.Phone),
-		Budget:     strings.TrimSpace(in.Budget),
-		Note:       strings.TrimSpace(in.Note),
+		Name:       in.Name,
+		Phone:      in.Phone,
+		Budget:     in.Budget,
+		Note:       in.Note,
+		ViewedTour: in.ViewedTour,
 		Status:     "new",
 	}
 
@@ -104,4 +111,22 @@ func (h *LeadHandler) CreateLead(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusCreated, lead)
+}
+
+// validLeadStatuses lists the pipeline states accepted by the leads table.
+var validLeadStatuses = map[string]bool{"new": true, "contacted": true, "scheduled": true, "closed": true}
+
+// validateLeadInput trims fields and enforces the column limits, returning a client-safe message on failure.
+func validateLeadInput(in *models.LeadInput) string {
+	in.Name, in.Phone = strings.TrimSpace(in.Name), strings.TrimSpace(in.Phone)
+	in.Budget, in.Note = strings.TrimSpace(in.Budget), strings.TrimSpace(in.Note)
+	switch {
+	case in.PropertyID <= 0 || in.Name == "" || in.Phone == "":
+		return "property_id, name, and phone are required"
+	case utf8.RuneCountInString(in.Name) > 100 || len(in.Phone) > 30 || utf8.RuneCountInString(in.Budget) > 50:
+		return "name, phone, or budget is too long"
+	case utf8.RuneCountInString(in.Note) > 2000:
+		return "note is too long"
+	}
+	return ""
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Property } from "@/types/property";
 import { PropertyCard } from "@/components/properties/PropertyCard";
@@ -14,12 +14,10 @@ const INITIAL_GRID_LIMIT = 8;
 
 // PropertyGridView displays a responsive grid of property cards with initial limiting and an internal scrollable container on expand.
 export function PropertyGridView({ properties, isEn }: PropertyGridViewProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // Resets the expansion state whenever filter criteria or search queries update the properties list.
-  useEffect(() => {
-    setIsExpanded(false);
-  }, [properties]);
+  // Expansion belongs to one specific result list, so new filter results start collapsed automatically.
+  const [expandedList, setExpandedList] = useState<Property[] | null>(null);
+  const isExpanded = expandedList === properties;
+  const setIsExpanded = (expanded: boolean) => setExpandedList(expanded ? properties : null);
 
   const shouldLimit = properties.length > INITIAL_GRID_LIMIT;
   const displayedItems = !isExpanded && shouldLimit ? properties.slice(0, INITIAL_GRID_LIMIT) : properties;

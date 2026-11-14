@@ -4,14 +4,14 @@ import React, { useState } from "react";
 import { Check, Plus, X, Sparkles } from "lucide-react";
 
 const TEMPLATE_BENEFITS = [
-  "5 Menit dari Akses Gerbang Tol",
-  "Dekat Mall & Pusat Perbelanjaan",
-  "Dekat Stasiun / Akses LRT & MRT",
-  "Dekat Sekolah & Kampus Ternama",
-  "Dekat Rumah Sakit Internasional",
-  "One Gate System & Keamanan 24 Jam",
-  "Lingkungan Bebas Banjir & Asri",
-  "Clubhouse & Kolam Renang",
+  "Dekat sekolah & kampus",
+  "Dekat pasar & minimarket",
+  "Dekat puskesmas / rumah sakit",
+  "Dekat stasiun / terminal",
+  "Akses jalan muat mobil",
+  "Lingkungan aman & tenang",
+  "Bebas banjir",
+  "Sertifikat SHM siap AJB",
 ];
 
 interface PropertyBenefitsInputProps {
@@ -65,7 +65,7 @@ export function PropertyBenefitsInput({
             <Sparkles className="w-3.5 h-3.5 text-sage-600" />
             <span>Keunggulan Lokasi &amp; Benefit Rumah (Bisa Pilih Beberapa)</span>
           </span>
-          <span className="text-[11px] text-neutral-400">
+          <span className="text-[11px] text-neutral-500">
             Pilih dari template di bawah atau klik &ldquo;+ Lainnya (Ketik Sendiri)&rdquo;
           </span>
         </div>
@@ -89,7 +89,7 @@ export function PropertyBenefitsInput({
                   : "bg-neutral-50 hover:bg-white text-neutral-700 border-neutral-200 hover:border-sage-400"
               }`}
             >
-              {isSelected ? <Check className="w-3.5 h-3.5 text-white" /> : <Plus className="w-3 h-3 text-neutral-400" />}
+              {isSelected ? <Check className="w-3.5 h-3.5 text-white" /> : <Plus className="w-3 h-3 text-neutral-500" />}
               <span>{tpl}</span>
             </button>
           );
@@ -123,8 +123,8 @@ export function PropertyBenefitsInput({
                 handleAddCustom();
               }
             }}
-            placeholder="Contoh: 5 menit dari Tol Sentul, Dekat AEON Mall, View Gunung..."
-            className="flex-1 h-9 bg-white border border-neutral-200 rounded-lg px-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-sage-600"
+            placeholder="Contoh: 5 menit ke Alun-alun, dekat SD negeri, air PDAM lancar..."
+            className="flex-1 h-9 bg-white border border-neutral-200 rounded-lg px-3 text-xs text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:border-sage-600"
           />
           <button
             type="button"
@@ -140,7 +140,7 @@ export function PropertyBenefitsInput({
       {/* Custom Added Benefits Chips */}
       {customAddedBenefits.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <span className="text-[11px] font-semibold text-neutral-400 mr-1">Benefit Kustom:</span>
+          <span className="text-[11px] font-semibold text-neutral-500 mr-1">Benefit Kustom:</span>
           {customAddedBenefits.map((customItem) => (
             <span
               key={customItem}

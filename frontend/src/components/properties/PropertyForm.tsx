@@ -27,6 +27,8 @@ const propertyTypeOptions: SelectOption[] = [
 
 interface PropertyFormProps {
   initialData?: Property;
+  /** Walk Inside 360° recorder section shown first in the media column. */
+  walkInsideSlot?: React.ReactNode;
   onSubmit: (data: PropertyInput) => Promise<void>;
   isSubmitting?: boolean;
 }
@@ -34,6 +36,7 @@ interface PropertyFormProps {
 // PropertyForm renders a compact 2-column seller workspace for creating and editing property listings.
 export function PropertyForm({
   initialData,
+  walkInsideSlot,
   onSubmit,
   isSubmitting = false,
 }: PropertyFormProps) {
@@ -121,7 +124,7 @@ export function PropertyForm({
                 {initialData ? `Edit: ${initialData.title}` : "Tambah Listing Properti Baru"}
               </h1>
               <p className="text-xs text-neutral-500 truncate">
-                Lengkapi spesifikasi properti, lokasi, benefit, galeri foto, dan aset 3D interaktif.
+                Isi data rumah, rekam Walk Inside 360° dari HP, lalu tambahkan foto.
               </p>
             </div>
           </div>
@@ -162,7 +165,7 @@ export function PropertyForm({
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
                 <div className="sm:col-span-6">
-                  <Input label="Judul Properti *" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Contoh: Azura Coastal Villa" required />
+                  <Input label="Judul Properti *" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Contoh: Rumah 2 Kamar Dekat Kampus Purwokerto" required />
                 </div>
                 <div className="sm:col-span-3">
                   <CustomSelect label="Tipe Properti" options={propertyTypeOptions} value={propertyType} onChange={setPropertyType} />
@@ -175,7 +178,7 @@ export function PropertyForm({
                     value={priceRaw ? formatRupiahInput(priceRaw) : ""}
                     onKeyDown={preventNonNumericKey}
                     onChange={(e) => setPriceRaw(e.target.value.replace(/[^0-9]/g, ""))}
-                    placeholder="Rp 1.250.000.000"
+                    placeholder="Rp 385.000.000"
                     required
                   />
                 </div>
@@ -185,7 +188,7 @@ export function PropertyForm({
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Deskripsikan keunggulan desain, material, lokasi, dan fasilitas..."
+                placeholder="Ceritakan kondisi rumah dengan jujur: tahun dibangun, renovasi, air & listrik, akses jalan, dan lingkungan sekitar..."
                 required
               />
               <PropertyBenefitsInput benefits={benefits} onChange={setBenefits} />
@@ -228,8 +231,9 @@ export function PropertyForm({
             </div>
           </div>
 
-          {/* Right Column: 3D Model & Multi-Photo Gallery */}
+          {/* Right Column: Walk Inside 360°, photos, and optional 3D model */}
           <div className="lg:col-span-5 xl:col-span-4 space-y-5">
+            {walkInsideSlot}
             <PropertyModelUploader model3DPath={model3DPath} onChange={setModel3DPath} onError={setErrorMessage} />
             <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-2xs">
               <ImageGalleryUploader images={images} onChange={setImages} onError={setErrorMessage} />

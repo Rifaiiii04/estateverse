@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { LogoMark } from "@/components/ui/Logo";
 
 // LoginPage renders the seller authentication interface with error handling and redirects.
 export default function LoginPage() {
@@ -40,14 +41,15 @@ export default function LoginPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <main id="main-content" className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
           <div className="text-center space-y-1">
+            <LogoMark className="w-12 h-12 mx-auto mb-2" />
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Masuk ke Seller Portal
             </h1>
             <p className="text-sm text-slate-500">
-              Kelola listing properti dan visualisasi 3D Anda di EstateVerse.
+              Kelola iklan rumah dan Walk Inside 360° Anda di EstateVerse.
             </p>
           </div>
 

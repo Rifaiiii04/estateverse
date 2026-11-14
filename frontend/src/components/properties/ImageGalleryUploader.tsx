@@ -80,7 +80,7 @@ export function ImageGalleryUploader({
           <span className="block text-xs font-bold text-neutral-900">
             Galeri Foto Properti (Bisa Pilih Banyak)
           </span>
-          <span className="text-[11px] text-neutral-400">
+          <span className="text-[11px] text-neutral-500">
             Foto pertama menjadi preview utama. Format JPG, PNG, WebP (Maks. 10 MB/foto)
           </span>
         </div>

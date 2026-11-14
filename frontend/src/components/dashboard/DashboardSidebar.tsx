@@ -3,19 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Megaphone,
-  Users,
-  Box,
-  TrendingUp,
-  MessageSquare,
-  Bell,
-  Settings,
-  HelpCircle,
-  Building2,
-  X,
-} from "lucide-react";
+import { LayoutDashboard, Megaphone, Users, TrendingUp, MessageSquare, Settings, HelpCircle, X } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 interface DashboardSidebarProps {
   isOpen?: boolean;
@@ -66,25 +55,15 @@ export function DashboardSidebar({
         <div className="space-y-6">
           {/* Brand Header */}
           <div className="flex items-center justify-between px-2">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-sage-600 flex items-center justify-center text-white shadow-2xs">
-                <Building2 className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-base tracking-tight text-neutral-950 uppercase leading-none">
-                  ESTATE<span className="text-sage-600">VERSE</span>
-                </span>
-                <span className="text-[9px] text-neutral-400 font-semibold tracking-wider uppercase mt-0.5">
-                  Seller Portal
-                </span>
-              </div>
+            <Link href="/" aria-label="EstateVerse — ke website" className="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-600">
+              <Logo size="sm" tagline="Portal Penjual" />
             </Link>
 
             {onClose && (
               <button
                 type="button"
                 onClick={onClose}
-                className="lg:hidden p-1.5 rounded-lg text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100"
+                className="lg:hidden p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -93,7 +72,7 @@ export function DashboardSidebar({
 
           {/* Main Navigation Group */}
           <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-3 block mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 px-3 block mb-2">
               Menu Utama
             </span>
             {mainNav.map((item) => {
@@ -111,7 +90,7 @@ export function DashboardSidebar({
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-neutral-400"}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-neutral-500"}`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge !== undefined && item.badge > 0 && (
@@ -132,7 +111,7 @@ export function DashboardSidebar({
 
           {/* Activity Navigation Group */}
           <div className="space-y-1 pt-2 border-t border-neutral-100">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-3 block mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 px-3 block mb-2">
               Komunikasi
             </span>
             {secondaryNav.map((item) => {
@@ -150,7 +129,7 @@ export function DashboardSidebar({
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-neutral-400"}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-neutral-500"}`} />
                     <span>{item.label}</span>
                   </div>
                 </Link>
@@ -175,7 +154,7 @@ export function DashboardSidebar({
                     : "text-neutral-500 hover:text-neutral-950 hover:bg-sage-50/70"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-neutral-400"}`} />
+                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-neutral-500"}`} />
                 <span>{item.label}</span>
               </Link>
             );

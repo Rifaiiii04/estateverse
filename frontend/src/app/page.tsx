@@ -9,13 +9,14 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { SearchFilterBar } from "@/components/home/SearchFilterBar";
 import { FeatureShowcase } from "@/components/home/FeatureShowcase";
 import { AiConsultantSection } from "@/components/home/AiConsultantSection";
-import { InvestmentSection } from "@/components/home/InvestmentSection";
+import { ImpactSection } from "@/components/home/ImpactSection";
+import { AudienceSection } from "@/components/home/AudienceSection";
 import { FaqSection } from "@/components/home/FaqSection";
 import { PropertyCard } from "@/components/properties/PropertyCard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useLanguage } from "@/context/LanguageContext";
 
-// HomePage renders the Horizon Estate-inspired architectural landing experience.
+// HomePage presents EstateVerse: Walk Inside 360° recorded by phone, for small sellers and first-time buyers.
 export default function HomePage() {
   const { t } = useLanguage();
   const [dbProperties, setDbProperties] = useState<Property[]>([]);
@@ -45,7 +46,7 @@ export default function HomePage() {
     <>
       <Navbar />
 
-      <main className="flex-1 bg-white">
+      <main id="main-content" className="flex-1 bg-white">
         <HeroSection />
 
         <SearchFilterBar />
@@ -57,8 +58,8 @@ export default function HomePage() {
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-950">
                 {t.catalog.title}
               </h2>
-              <span className="text-xs sm:text-sm text-neutral-500 font-medium">
-                {displayProperties.length} {t.catalog.subtitle}
+              <span className="text-xs sm:text-sm text-neutral-700 font-medium">
+                {t.catalog.subtitle}
               </span>
             </div>
 
@@ -76,11 +77,13 @@ export default function HomePage() {
           </div>
         </section>
 
+        <ImpactSection />
+
+        <AudienceSection />
+
         <FeatureShowcase />
 
         <AiConsultantSection />
-
-        <InvestmentSection properties={dbProperties} />
 
         <FaqSection />
       </main>

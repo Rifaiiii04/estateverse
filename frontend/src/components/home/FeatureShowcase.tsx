@@ -99,7 +99,7 @@ export function FeatureShowcase() {
               <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-200 shadow-md border border-neutral-200">
                 <img
                   src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80"
-                  alt="Modern Architecture 3D Inspection"
+                  alt="Contoh ruangan yang direkam sebagai tur 360°"
                   className="w-full h-full object-cover"
                 />
               </div>

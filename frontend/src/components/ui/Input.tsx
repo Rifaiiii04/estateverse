@@ -21,14 +21,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
-          className={`w-full h-10 px-3.5 rounded-xl border text-xs sm:text-sm transition-all focus:outline-none focus:ring-2 focus:ring-sage-600/15 focus:border-sage-600 disabled:bg-neutral-50 disabled:text-neutral-500 ${
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${inputId}-error` : undefined}
+          className={`w-full h-10 px-3.5 rounded-xl border text-xs sm:text-sm transition-all focus:outline-none focus:ring-2 focus:ring-sage-600/30 focus:border-sage-600 disabled:bg-neutral-50 disabled:text-neutral-500 ${
             error
               ? "border-rose-400 bg-rose-50/20 text-rose-900"
-              : "border-neutral-200 hover:border-neutral-300 bg-white text-neutral-900 placeholder:text-neutral-400"
+              : "border-neutral-200 hover:border-neutral-300 bg-white text-neutral-900 placeholder:text-neutral-500"
           } ${className}`}
           {...props}
         />
-        {error && <p className="text-xs text-rose-600 font-medium">{error}</p>}
+        {error && <p id={`${inputId}-error`} role="alert" className="text-xs text-rose-700 font-medium">{error}</p>}
         {helperText && !error && <p className="text-xs text-neutral-500">{helperText}</p>}
       </div>
     );

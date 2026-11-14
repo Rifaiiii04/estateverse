@@ -67,7 +67,7 @@ export function FormModelPreview({ modelUrl, onRemove }: FormModelPreviewProps) 
         </div>
       ) : (
         <div className="px-3.5 py-2 text-[11px] text-neutral-500 flex items-center justify-between gap-2">
-          <span className="truncate font-mono text-[10px] text-neutral-400">{modelUrl}</span>
+          <span className="truncate font-mono text-[10px] text-neutral-500">{modelUrl}</span>
           <span className="shrink-0 text-sage-700 font-medium">Siap digunakan</span>
         </div>
       )}

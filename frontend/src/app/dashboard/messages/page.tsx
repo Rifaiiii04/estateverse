@@ -14,27 +14,27 @@ interface Template {
 const templates: Template[] = [
   {
     id: "tpl-1",
-    title: "Konfirmasi Jadwal Survei Fisik",
-    category: "Jadwal Kunjungan",
-    body: "Halo Bapak/Ibu [Nama Pembeli], terima kasih atas ketertarikan Anda pada [Nama Properti] di EstateVerse. Apakah Anda memiliki waktu luang hari Sabtu atau Minggu ini untuk survei fisik langsung ke lokasi?",
+    title: "Kirim Tautan Walk Inside 360°",
+    category: "Tur Virtual",
+    body: "Halo Bapak/Ibu [Nama Pembeli], terima kasih sudah tertarik dengan [Nama Properti]. Sebelum survei, silakan lihat dulu isi rumahnya lewat Walk Inside 360° di tautan ini: [Link Properti]. Kalau ada ruangan yang ingin ditanyakan, kabari saya ya.",
   },
   {
     id: "tpl-2",
-    title: "Kirim Denah & Spesifikasi 3D",
-    category: "Informasi Detail",
-    body: "Halo Bapak/Ibu [Nama Pembeli], berikut kami kirimkan rincian spesifikasi unit [Nama Properti]: Luas Tanah: [LT] m², Luas Bangunan: [LB] m², Sertifikat SHM. Anda juga dapat melihat simulasi interior 3D di tautan berikut: [Link Properti].",
+    title: "Atur Jadwal Survei",
+    category: "Jadwal Kunjungan",
+    body: "Halo Bapak/Ibu [Nama Pembeli], kapan waktu yang cocok untuk survei ke [Nama Properti]? Saya bisa menemani pada [Hari/Jam]. Alamat lengkap: [Alamat].",
   },
   {
     id: "tpl-3",
-    title: "Informasi Skema Pembayaran & DP",
-    category: "Finansial & KPR",
-    body: "Halo Bapak/Ibu [Nama Pembeli], untuk properti [Nama Properti], kami menyediakan skema Cash Keras, Cash Bertahap 12x, dan KPR dengan DP mulai 10%. Bank rekanan kami siap membantu proses pengajuan KPR hingga tuntas.",
+    title: "Rincian Rumah & Harga",
+    category: "Informasi Detail",
+    body: "Halo Bapak/Ibu [Nama Pembeli], rincian [Nama Properti]: luas tanah [LT] m², luas bangunan [LB] m², [Jumlah] kamar tidur, sertifikat [SHM/HGB]. Harga [Harga], masih bisa dibicarakan. Pembayaran bisa tunai atau KPR lewat bank pilihan Anda.",
   },
   {
     id: "tpl-4",
-    title: "Verifikasi Legalitas & Sertifikat",
-    category: "Legalitas SHM",
-    body: "Halo Bapak/Ibu [Nama Pembeli], seluruh dokumen [Nama Properti] termasuk Sertifikat Hak Milik (SHM), IMB/PBG, dan PBB telah terverifikasi bersih (clean and clear) di notaris rekanan.",
+    title: "Kesiapan Dokumen",
+    category: "Legalitas",
+    body: "Halo Bapak/Ibu [Nama Pembeli], dokumen [Nama Properti] yang sudah siap: [SHM/HGB], PBB tahun terakhir, dan [IMB/PBG]. Proses AJB bisa dilakukan di notaris/PPAT yang kita sepakati bersama.",
   },
 ];
 
@@ -71,7 +71,7 @@ export default function DashboardMessagesPage() {
         >
           <MessageSquare className="w-4 h-4 text-emerald-400" />
           <span>Buka WhatsApp Web</span>
-          <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+          <ExternalLink className="w-3.5 h-3.5 text-neutral-500" />
         </a>
       </div>
 
@@ -84,7 +84,7 @@ export default function DashboardMessagesPage() {
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
                   {tpl.category}
                 </span>
                 <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-semibold">

@@ -12,30 +12,31 @@ const (
 
 // Property represents an individual real estate listing.
 type Property struct {
-	ID             int64          `json:"id"`
-	OwnerID        int64          `json:"-"`
-	Title          string         `json:"title"`
-	Slug           string         `json:"slug"`
-	Description    string         `json:"description"`
-	PropertyType   string         `json:"property_type"`
-	Price          int64          `json:"price"`
-	Address        string         `json:"address"`
-	City           string         `json:"city"`
-	Province       string         `json:"province"`
-	LandArea       int            `json:"land_area"`
-	BuildingArea   int            `json:"building_area"`
-	Bedrooms       int            `json:"bedrooms"`
-	Bathrooms      int            `json:"bathrooms"`
-	Floors         int            `json:"floors"`
-	WhatsAppNumber string         `json:"whatsapp_number"`
+	ID             int64            `json:"id"`
+	OwnerID        int64            `json:"-"`
+	Title          string           `json:"title"`
+	Slug           string           `json:"slug"`
+	Description    string           `json:"description"`
+	PropertyType   string           `json:"property_type"`
+	Price          int64            `json:"price"`
+	Address        string           `json:"address"`
+	City           string           `json:"city"`
+	Province       string           `json:"province"`
+	LandArea       int              `json:"land_area"`
+	BuildingArea   int              `json:"building_area"`
+	Bedrooms       int              `json:"bedrooms"`
+	Bathrooms      int              `json:"bathrooms"`
+	Floors         int              `json:"floors"`
+	WhatsAppNumber string           `json:"whatsapp_number"`
 	Model3DPath    string           `json:"model_3d_path"`
 	ModelMetadata  *Model3DMetadata `json:"model_metadata,omitempty"`
 	Benefits       []string         `json:"benefits"`
 	Status         PropertyStatus   `json:"status"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	Images         []PropertyImage `json:"images,omitempty"`
-	OwnerName      string         `json:"owner_name,omitempty"`
+	CreatedAt      time.Time        `json:"created_at"`
+	UpdatedAt      time.Time        `json:"updated_at"`
+	Images         []PropertyImage  `json:"images,omitempty"`
+	OwnerName      string           `json:"owner_name,omitempty"`
+	HasTour        bool             `json:"has_tour"`
 }
 
 // WalkCoordinate specifies a 3D vector for first-person spawn locations.
@@ -113,7 +114,23 @@ type DashboardSummary struct {
 	TotalLandArea       int            `json:"total_land_area"`
 	TotalBuildingArea   int            `json:"total_building_area"`
 	SmartScore          int            `json:"smart_score"`
-	Total3DTours        int            `json:"total_3d_tours"`
+	ListingsWithTour    int            `json:"listings_with_tour"`
+	TotalViews          int            `json:"total_views"`
+	TotalTourViews      int            `json:"total_tour_views"`
 	TotalLeads          int            `json:"total_leads"`
+	LeadsViewedTour     int            `json:"leads_viewed_tour"`
+	ReportsCount        int            `json:"reports_count"`
+	TourComparison      TourComparison `json:"tour_comparison"`
 	TypeBreakdown       map[string]int `json:"type_breakdown"`
+}
+
+// ImpactStats are platform-wide aggregate counts shown publicly as evidence of impact (no personal data).
+type ImpactStats struct {
+	ActiveSellers      int `json:"active_sellers"`
+	PublishedListings  int `json:"published_listings"`
+	ListingsWithTour   int `json:"listings_with_tour"`
+	TourRooms          int `json:"tour_rooms"`
+	TourViews          int `json:"tour_views"`
+	BuyerInquiries     int `json:"buyer_inquiries"`
+	InquiriesAfterTour int `json:"inquiries_after_tour"`
 }

@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Sparkles, AlertCircle, CheckCircle2, ChevronRight, Box, Image, MessageCircle } from "lucide-react";
+import { Sparkles, ChevronRight, Box, Image as PhotoIcon, MessageCircle } from "lucide-react";
 import { Property, DashboardSummary } from "@/types/property";
 
 interface ListingEfficiencyProps {
@@ -13,7 +13,7 @@ interface ListingEfficiencyProps {
 // ListingEfficiency renders the seller performance readiness bars and actionable business decision tips.
 export function ListingEfficiency({ summary, properties }: ListingEfficiencyProps) {
   const total = summary?.total_properties || 0;
-  const with3D = summary?.with_3d_model_count || 0;
+  const with3D = summary?.listings_with_tour || 0;
   const draftCount = summary?.draft_count || 0;
 
   // Compute real completeness percentages
@@ -31,7 +31,7 @@ export function ListingEfficiency({ summary, properties }: ListingEfficiencyProp
           <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-950">
             Kelengkapan Iklan
           </h2>
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-neutral-600">
             Semakin lengkap informasi iklan, semakin cepat menarik minat pembeli.
           </p>
         </div>
@@ -47,7 +47,7 @@ export function ListingEfficiency({ summary, properties }: ListingEfficiencyProp
           <div className="flex items-center justify-between text-xs font-semibold">
             <span className="flex items-center gap-1.5 text-neutral-700">
               <Box className="w-3.5 h-3.5 text-neutral-900" />
-              <span>Tampilan Rumah 3D</span>
+              <span>Tur Virtual 360°</span>
             </span>
             <span className="text-neutral-950 font-bold">{ratio3D}%</span>
           </div>
@@ -60,7 +60,7 @@ export function ListingEfficiency({ summary, properties }: ListingEfficiencyProp
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs font-semibold">
             <span className="flex items-center gap-1.5 text-neutral-700">
-              <Image className="w-3.5 h-3.5 text-neutral-900" />
+              <PhotoIcon className="w-3.5 h-3.5 text-neutral-900" aria-hidden="true" />
               <span>Foto-Foto Rumah</span>
             </span>
             <span className="text-neutral-950 font-bold">{ratioImages}%</span>
@@ -97,7 +97,16 @@ export function ListingEfficiency({ summary, properties }: ListingEfficiencyProp
             <li className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-neutral-900 mt-1.5 shrink-0" />
               <span>
-                <strong>Tambahkan 3D:</strong> {total - with3D} iklan belum memiliki tampilan 3D. Menambahkan tampilan 3D membuat pembeli hingga 3,5x lebih yakin.
+                <strong>Rekam tur 360°:</strong> {total - with3D} iklan belum punya tur virtual. Buka halaman edit iklan dari HP, lalu rekam tiap ruangan — pembeli bisa melihat isi rumah sebelum survei.
+              </span>
+            </li>
+          )}
+
+          {(summary?.reports_count ?? 0) > 0 && (
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-1.5 shrink-0" />
+              <span>
+                <strong>Ada {summary?.reports_count} laporan pengunjung:</strong> periksa kembali harga, foto, dan status iklan Anda agar sesuai kondisi sebenarnya.
               </span>
             </li>
           )}

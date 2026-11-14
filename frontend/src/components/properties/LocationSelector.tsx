@@ -19,8 +19,10 @@ export function LocationSelector({
   onCityChange,
 }: LocationSelectorProps) {
   const [provinces, setProvinces] = useState<Province[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
-  const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [loadedCities, setLoadedCities] = useState<{ province: string; list: string[] } | null>(null);
+  // Cities are derived from the last loaded province so no state needs resetting inside effects.
+  const cities = province && loadedCities?.province === province ? loadedCities.list : [];
+  const isLoadingCities = Boolean(province) && loadedCities?.province !== province;
 
   useEffect(() => {
     let mounted = true;
@@ -33,31 +35,25 @@ export function LocationSelector({
   }, []);
 
   useEffect(() => {
-    if (!province) {
-      setCities([]);
-      return;
-    }
+    if (!province) return;
     let mounted = true;
-    setIsLoadingCities(true);
     const matched = provinces.find((p) => p.name.toLowerCase() === province.toLowerCase());
     getCities(matched?.id || "", province)
       .then((data) => {
-        if (mounted) {
-          setCities(data);
-          const matchedCity = data.find((c) => c.toLowerCase() === city.toLowerCase());
-          if (matchedCity && matchedCity !== city) {
-            onCityChange(matchedCity);
-          } else if (!city && data.length > 0) {
-            onCityChange(data[0]);
-          }
+        if (!mounted) return;
+        setLoadedCities({ province, list: data });
+        const matchedCity = data.find((c) => c.toLowerCase() === city.toLowerCase());
+        if (matchedCity && matchedCity !== city) {
+          onCityChange(matchedCity);
+        } else if (!city && data.length > 0) {
+          onCityChange(data[0]);
         }
       })
-      .finally(() => {
-        if (mounted) setIsLoadingCities(false);
-      });
+      .catch(() => mounted && setLoadedCities({ province, list: [] }));
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run only when the province or province list changes
   }, [province, provinces]);
 
   const provinceOptions: SelectOption[] = provinces.map((p) => ({

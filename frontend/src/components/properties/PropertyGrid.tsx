@@ -40,7 +40,7 @@ export function PropertyGrid({
   if (properties.length === 0) {
     return (
       <div className="text-center py-16 px-4 bg-white rounded-2xl border border-neutral-200 max-w-lg mx-auto space-y-3">
-        <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-400">
+        <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-500">
           <Search className="w-6 h-6" />
         </div>
         <h3 className="text-lg font-bold text-neutral-900">Tidak Ditemukan Properti</h3>

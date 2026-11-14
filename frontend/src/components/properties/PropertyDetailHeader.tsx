@@ -2,14 +2,16 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, Share2, MapPin, Box, Camera } from "lucide-react";
-import { Property } from "@/types/property";
+import { ArrowLeft, Share2, MapPin } from "lucide-react";
+import { MediaTab, Property } from "@/types/property";
+import { MediaTabSwitcher } from "./MediaTabSwitcher";
 
 interface PropertyDetailHeaderProps {
   property: Property;
   onShare: () => void;
-  activeTab: "photos" | "3d";
-  onSwitchTab: (tab: "photos" | "3d") => void;
+  activeTab: MediaTab;
+  availableTabs: MediaTab[];
+  onSwitchTab: (tab: MediaTab) => void;
 }
 
 // PropertyDetailHeader renders a compact top bar with breadcrumbs, property title, address, and quick actions.
@@ -17,6 +19,7 @@ export function PropertyDetailHeader({
   property,
   onShare,
   activeTab,
+  availableTabs,
   onSwitchTab,
 }: PropertyDetailHeaderProps) {
   const photoCount = property.images?.length || 1;
@@ -56,40 +59,14 @@ export function PropertyDetailHeader({
 
       {/* Quick Media Switcher & Share Button */}
       <div className="flex flex-wrap items-center gap-2 self-start lg:self-center shrink-0">
-        <div className="h-9 bg-neutral-100 p-1 rounded-xl border border-neutral-200/80 inline-flex items-center text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => onSwitchTab("photos")}
-            className={`h-full px-3 rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 ${
-              activeTab === "photos"
-                ? "bg-white text-neutral-950 font-bold shadow-2xs"
-                : "text-neutral-600 hover:text-neutral-950"
-            }`}
-          >
-            <Camera className="w-3.5 h-3.5 text-sage-600" />
-            <span>Foto ({photoCount})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSwitchTab("3d")}
-            className={`h-full px-3 rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 ${
-              activeTab === "3d"
-                ? "bg-sage-600 text-white font-bold shadow-2xs"
-                : "text-neutral-600 hover:text-sage-700"
-            }`}
-          >
-            <Box className="w-3.5 h-3.5" />
-            <span>Lihat Tampilan 3D</span>
-          </button>
-        </div>
+        <MediaTabSwitcher tabs={availableTabs} active={activeTab} photoCount={photoCount} onSwitch={onSwitchTab} />
 
         <button
           type="button"
           onClick={onShare}
           className="h-9 inline-flex items-center gap-1.5 px-3.5 rounded-xl border border-neutral-200 hover:border-sage-500 hover:text-sage-700 text-neutral-700 text-xs font-semibold transition-colors cursor-pointer bg-white shadow-2xs"
         >
-          <Share2 className="w-3.5 h-3.5 text-sage-600" />
+          <Share2 className="w-3.5 h-3.5 text-sage-600" aria-hidden="true" />
           <span>Bagikan</span>
         </button>
       </div>
