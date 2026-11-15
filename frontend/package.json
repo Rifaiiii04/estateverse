@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:capture": "node --test tests/capture*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

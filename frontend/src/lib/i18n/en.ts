@@ -51,7 +51,7 @@ export const en = {
     cta: "Ask the Assistant",
     blueprintTitle: "360° Tour From a Phone Recording",
     blueprintBadge: "Automatic",
-    blueprintDesc: "The system stitches about 30 captured photos into a complete 360° panorama, with arrows between rooms.",
+    blueprintDesc: "Start with three calibration photos; the backend then calculates the fewest reliable views for a 360° panorama, with arrows between rooms.",
     steps: [
       { title: "Seller posts a listing", desc: "Add price, size, and photos. Buyers connect directly with the owner." },
       { title: "Record each room by phone", desc: "Stand in the middle of the room and rotate the phone around its lens, following the on-screen dots; photos are taken automatically and stitched into a Walk Inside 360° tour." },

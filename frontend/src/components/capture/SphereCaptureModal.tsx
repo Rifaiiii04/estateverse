@@ -24,7 +24,7 @@ export function SphereCaptureModal({ defaultRoomName, onClose, propertyId, onUpl
   const capture = useSphereCapture(videoRef);
   const { phase, doneIds, targets } = capture;
   const mode = onCaptured ? "local" : "upload";
-  const showCamera = phase === "starting" || phase === "capturing";
+  const showCamera = phase === "starting" || phase === "capturing" || phase === "calibrating";
 
   useEffect(() => {
     const previous = document.body.style.overflow;
@@ -77,14 +77,21 @@ export function SphereCaptureModal({ defaultRoomName, onClose, propertyId, onUpl
             steadyRef={capture.steadyRef}
           />
           <div className="absolute top-4 left-4 bg-black/60 text-white text-sm font-bold rounded-xl px-3 py-2">
-            {doneIds.size}/{targets.length} titik
+            {targets.length === 3 ? "Kalibrasi kamera · " : ""}{doneIds.size}/{targets.length} titik
           </div>
+          {capture.error && (
+            <p role="status" className="absolute top-20 inset-x-4 rounded-xl bg-amber-950/90 p-3 text-sm text-white">
+              {capture.error}
+            </p>
+          )}
         </>
       )}
 
       {(phase === "intro" || phase === "starting" || phase === "error") && (
         <CaptureIntroPanel onStart={capture.start} isStarting={phase === "starting"} error={capture.error} />
       )}
+
+      {phase === "calibrating" && <div role="status" className="absolute inset-0 flex items-center justify-center bg-black/70 p-8 text-center text-white">Mengukur lensa dan menghitung sudut yang masih perlu difoto…</div>}
 
       {(phase === "review" || phase === "uploading" || phase === "done") && (
         <CaptureReviewPanel

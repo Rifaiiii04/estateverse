@@ -203,3 +203,45 @@ func TestPropertyService_CreateAndDraftIsolation(t *testing.T) {
 		t.Errorf("expected property ID %d, got %d", prop.ID, pub.ID)
 	}
 }
+
+// TestPropertyServiceDefersPublishUntilToursReady keeps asynchronous room processing private until every room is ready.
+func TestPropertyServiceDefersPublishUntilToursReady(t *testing.T) {
+	pRepo := &mockPropRepo{props: make(map[int64]*models.Property)}
+	iRepo := &mockImgRepo{images: make(map[int64][]models.PropertyImage)}
+	tours := newMockTourRepo()
+	svc := NewPropertyServiceWithTours(pRepo, iRepo, nil, tours)
+	input := models.PropertyInput{
+		Title: "Async Tour House", Description: "Rumah dengan panorama yang sedang diproses.", PropertyType: "house",
+		Price: 900000000, Address: "Jl. Merdeka 1", City: "Bandung", Province: "Jawa Barat",
+		LandArea: 100, BuildingArea: 80, Bedrooms: 2, Bathrooms: 1, Floors: 1,
+		WhatsAppNumber: "081234567890", Status: models.StatusDraft,
+	}
+	property, err := svc.CreateProperty(context.Background(), 1, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	room := &models.TourRoom{PropertyID: property.ID, Name: "Ruang Tamu", Status: models.TourStatusProcessing}
+	if err := tours.CreateRoom(context.Background(), room); err != nil {
+		t.Fatal(err)
+	}
+
+	input.Status = models.StatusPublished
+	updated, err := svc.UpdateProperty(context.Background(), property.ID, 1, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.Status != models.StatusDraft {
+		t.Fatalf("processing tour must stay draft, got %s", updated.Status)
+	}
+
+	if err := tours.MarkReady(context.Background(), room.ID, "/panorama.jpg", "/preview.jpg", 95); err != nil {
+		t.Fatal(err)
+	}
+	updated, err = svc.UpdateProperty(context.Background(), property.ID, 1, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.Status != models.StatusPublished {
+		t.Fatalf("ready tour should allow publish, got %s", updated.Status)
+	}
+}

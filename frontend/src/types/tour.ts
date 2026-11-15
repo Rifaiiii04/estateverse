@@ -1,4 +1,5 @@
 // Type definitions for 360° virtual tour rooms recorded by sellers.
+import type { OrientationQuat } from "../../../shared/capturePolicy.ts";
 
 export type TourRoomStatus = "processing" | "ready" | "failed";
 
@@ -26,7 +27,7 @@ export interface TourRoom {
 }
 
 /** Quaternion (w, x, y, z) describing the camera-to-world rotation of the phone when a frame was taken. */
-export type OrientationQuat = [number, number, number, number];
+export type { OrientationQuat };
 
 export interface CapturedFrame {
   targetId: number;

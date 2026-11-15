@@ -2,14 +2,12 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
-import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 
 import { colors } from '@/constants/theme';
 import { AuthProvider } from '@/context/AuthContext';
-import { migrateDbIfNeeded } from '@/db/schema';
 
-// Displays a simple centered spinner while SQLite initializes.
+// Displays a centered spinner while application providers initialize.
 function LoadingScreen() {
   return (
     <View style={styles.loadingContainer}>
@@ -18,13 +16,12 @@ function LoadingScreen() {
   );
 }
 
-// Configures the root application providers, SQLite database, and navigation stack.
+// Configures shared backend authentication and the native navigation stack.
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <React.Suspense fallback={<LoadingScreen />}>
-        <SQLiteProvider databaseName="estateverse.db" onInit={migrateDbIfNeeded}>
           <AuthProvider>
             <Stack
               screenOptions={{
@@ -49,7 +46,6 @@ export default function RootLayout() {
               />
             </Stack>
           </AuthProvider>
-        </SQLiteProvider>
       </React.Suspense>
     </SafeAreaProvider>
   );

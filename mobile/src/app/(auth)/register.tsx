@@ -18,7 +18,7 @@ import { Header } from '@/components/Header';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 
-// Renders the seller registration screen to create a new local account.
+// Renders seller registration for the shared web and mobile backend account.
 export default function RegisterScreen() {
   const router = useRouter();
   const { register } = useAuth();
@@ -33,8 +33,8 @@ export default function RegisterScreen() {
       Alert.alert('Perhatian', 'Nama lengkap, email, dan kata sandi wajib diisi.');
       return;
     }
-    if (password.length < 6) {
-      Alert.alert('Kata Sandi Lemah', 'Kata sandi minimal 6 karakter demi keamanan akun Anda.');
+    if (password.length < 8) {
+      Alert.alert('Kata Sandi Lemah', 'Kata sandi minimal 8 karakter.');
       return;
     }
     setSubmitting(true);

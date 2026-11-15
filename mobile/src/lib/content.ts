@@ -4,9 +4,8 @@ import type { PropertyType } from '@/types/property';
 export const PROPERTY_TYPE_OPTIONS: { value: PropertyType; label: string }[] = [
   { value: 'house', label: 'Rumah' },
   { value: 'villa', label: 'Villa' },
-  { value: 'apartment', label: 'Apartemen' },
-  { value: 'commercial', label: 'Komersial' },
-  { value: 'land', label: 'Kavling' },
+  { value: 'townhouse', label: 'Townhouse' },
+  { value: 'cluster', label: 'Cluster' },
 ];
 
 // Returns the Indonesian label of a property type.

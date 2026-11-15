@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { showApiError } from '@/lib/api/errors';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   RefreshControl,
@@ -9,8 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { Header } from '@/components/Header';
 import { FaqSection, HowItWorksSection } from '@/components/home/HomeInfoSections';
@@ -18,13 +18,12 @@ import { HeroBanner } from '@/components/home/HeroBanner';
 import { StatsStrip } from '@/components/home/StatsStrip';
 import { PropertyCard } from '@/components/PropertyCard';
 import { colors, spacing, typography } from '@/constants/theme';
-import { getCatalogStats, listPublishedProperties } from '@/db/propertyQueries';
+import { getCatalogStats, listPublishedProperties } from '@/lib/api/properties';
 import type { Property } from '@/types/property';
 
 // Displays the homepage with featured homes, quick search, workflow steps, and FAQs.
 export default function HomeScreen() {
   const router = useRouter();
-  const db = useSQLiteContext();
   const [featured, setFeatured] = useState<Property[]>([]);
   const [stats, setStats] = useState({ totalActive: 0, cityCount: 0 });
   const [loading, setLoading] = useState(true);
@@ -34,27 +33,25 @@ export default function HomeScreen() {
   const loadData = useCallback(async () => {
     try {
       const [listResult, statsResult] = await Promise.all([
-        listPublishedProperties(
-          db,
-          { keyword: '', type: 'all', priceRange: 'all', sort: 'newest' },
+        listPublishedProperties({ keyword: '', type: 'all', priceRange: 'all', sort: 'newest' },
           3,
         ),
-        getCatalogStats(db),
+        getCatalogStats(),
       ]);
       setFeatured(listResult.items);
       setStats({
         totalActive: statsResult.total,
         cityCount: statsResult.cities,
       });
-    } finally {
+    } catch (error) { showApiError(error); } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [db]);
+  }, []);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     loadData();
-  }, [loadData]);
+  }, [loadData]));
 
   // Refreshes data when user pulls down the scroll view.
   const onRefresh = () => {
@@ -79,7 +76,7 @@ export default function HomeScreen() {
               <Text style={styles.sectionSubtitle}>Rekomendasi rumah terbaik untuk Anda</Text>
             </View>
             <TouchableOpacity onPress={() => router.push('/(tabs)/properties')}>
-              <Text style={styles.seeAllText}>Lihat Semua →</Text>
+              <Text style={styles.seeAllText}>Lihat Semua Ã¢â€ â€™</Text>
             </TouchableOpacity>
           </View>
 

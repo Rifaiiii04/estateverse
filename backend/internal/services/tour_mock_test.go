@@ -69,8 +69,18 @@ func (m *mockTourRepo) hotspotsFrom(roomID int64) []models.TourHotspot {
 	return out
 }
 
-// ListProcessing returns no rooms (queue recovery is not exercised in tests).
-func (m *mockTourRepo) ListProcessing(context.Context) ([]models.TourRoom, error) { return nil, nil }
+// ListProcessing returns unfinished rooms so queue recovery can be tested after a restart.
+func (m *mockTourRepo) ListProcessing(context.Context) ([]models.TourRoom, error) {
+	rooms := make([]models.TourRoom, 0)
+	for _, room := range m.rooms {
+		if room.Status == models.TourStatusProcessing {
+			copy := *room
+			rooms = append(rooms, copy)
+		}
+	}
+	sort.Slice(rooms, func(i, j int) bool { return rooms[i].ID < rooms[j].ID })
+	return rooms, nil
+}
 
 // MarkReady records stitched output on the stored room.
 func (m *mockTourRepo) MarkReady(_ context.Context, id int64, pano, preview string, quality int) error {

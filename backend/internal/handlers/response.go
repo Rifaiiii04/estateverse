@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"projectfai/backend/internal/httpx"
+	"projectfai/backend/internal/middleware"
 	"projectfai/backend/internal/services"
 )
 
@@ -23,6 +24,7 @@ func WriteError(w http.ResponseWriter, status int, message string) {
 
 // writeServiceError maps service errors to safe HTTP responses and logs unexpected failures.
 func writeServiceError(w http.ResponseWriter, r *http.Request, err error) {
+	logServiceError(r, err)
 	if ve, ok := services.IsValidationError(err); ok {
 		WriteError(w, http.StatusUnprocessableEntity, ve.Message)
 		return
@@ -38,7 +40,22 @@ func writeServiceError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, services.ErrUnauthenticated):
 		WriteError(w, http.StatusUnauthorized, "not authenticated")
 	default:
-		slog.Error("unhandled service error", "method", r.Method, "path", r.URL.Path, "error", err)
 		WriteError(w, http.StatusInternalServerError, internalErrorMessage)
 	}
+}
+
+// logServiceError writes every service failure with request and actor context for diagnosis.
+func logServiceError(r *http.Request, err error) {
+	userID := int64(0)
+	if user := middleware.UserFromContext(r.Context()); user != nil {
+		userID = user.ID
+	}
+	level := slog.LevelError
+	if _, ok := services.IsValidationError(err); ok || errors.Is(err, services.ErrNotFound) ||
+		errors.Is(err, services.ErrConflict) || errors.Is(err, services.ErrInvalidCredentials) ||
+		errors.Is(err, services.ErrUnauthenticated) {
+		level = slog.LevelWarn
+	}
+	slog.Log(r.Context(), level, "service request failed", "method", r.Method, "path", r.URL.Path,
+		"request_id", middleware.RequestID(r.Context()), "user_id", userID, "error", err)
 }

@@ -56,12 +56,15 @@ export default function NewPropertyPage() {
     setIsSubmitting(true);
     setError("");
     try {
-      const created = await createProperty(data);
       const hasRooms = draftRooms.length > 0;
+      const hasAsyncCaptures = draftRooms.some((room) => room.kind === "capture");
+      const created = await createProperty({ ...data, status: hasAsyncCaptures ? "draft" : data.status });
       const failed = hasRooms ? await uploadDrafts(created.id) : 0;
       toast.success(
         hasRooms && failed < draftRooms.length
-          ? "Properti tersimpan. Walk Inside 360° sedang diproses — biasanya selesai dalam 1 menit per ruangan."
+          ? hasAsyncCaptures
+            ? "Draft tersimpan. Walk Inside 360° sedang diproses; Anda akan mendapat pemberitahuan saat siap dipublish."
+            : "Properti tersimpan dan foto 360° siap digunakan."
           : "Listing properti baru Anda berhasil dibuat!",
         "Properti Berhasil Dibuat",
         6000

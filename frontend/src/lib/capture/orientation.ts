@@ -1,10 +1,8 @@
-import { Euler, Quaternion, Vector3 } from "three";
+import { Quaternion, Vector3 } from "three";
+import { cameraQuaternion } from "../../../../shared/captureMath.ts";
 import type { OrientationQuat } from "@/types/tour";
 
 const DEG = Math.PI / 180;
-const Z_AXIS = new Vector3(0, 0, 1);
-// Rotates the device frame so the camera looks out of the back of the phone rather than its top edge.
-const BACK_CAMERA = new Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
 
 export interface OrientationSample {
   quaternion: Quaternion;
@@ -38,16 +36,15 @@ export async function requestMotionPermission(): Promise<boolean> {
 // screenAngle returns the current screen rotation in degrees (0 when the phone is upright).
 export function screenAngle(): number {
   if (typeof screen !== "undefined" && screen.orientation) return screen.orientation.angle;
+  if (typeof window !== "undefined" && "orientation" in window) return Number(window.orientation) || 0;
   return 0;
 }
 
 // orientationToQuaternion converts W3C alpha/beta/gamma into a camera-to-world quaternion
 // in the backend's frame: X right, Y up, -Z forward (the heading when recording started is arbitrary).
 export function orientationToQuaternion(alpha: number, beta: number, gamma: number, screenDeg: number): Quaternion {
-  const q = new Quaternion().setFromEuler(new Euler(beta * DEG, alpha * DEG, -gamma * DEG, "YXZ"));
-  q.multiply(BACK_CAMERA);
-  q.multiply(new Quaternion().setFromAxisAngle(Z_AXIS, -screenDeg * DEG));
-  return q;
+  const [w, x, y, z] = cameraQuaternion(alpha * DEG, beta * DEG, gamma * DEG, screenDeg);
+  return new Quaternion(x, y, z, w);
 }
 
 // forwardAngles extracts the yaw and pitch (degrees) of the camera's viewing direction.
@@ -64,12 +61,23 @@ export function toWireQuat(q: Quaternion): OrientationQuat {
 }
 
 // subscribeOrientation streams converted orientation samples and returns an unsubscribe function.
-export function subscribeOrientation(onSample: (sample: OrientationSample) => void): () => void {
+export function subscribeOrientation(onSample: (sample: OrientationSample) => void, relativeHeading = false): () => void {
+  let heading: Quaternion | null = null;
   const handler = (e: DeviceOrientationEvent) => {
     if (e.alpha === null || e.beta === null || e.gamma === null) return;
     const quaternion = orientationToQuaternion(e.alpha, e.beta, e.gamma, screenAngle());
+    if (relativeHeading) {
+      heading ??= new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), forwardAngles(quaternion).yaw * DEG);
+      quaternion.premultiply(heading);
+    }
     onSample({ quaternion, ...forwardAngles(quaternion), timestamp: performance.now() });
   };
   window.addEventListener("deviceorientation", handler);
   return () => window.removeEventListener("deviceorientation", handler);
+}
+
+// angularSpeed measures complete camera rotation, including roll that can blur photos without changing aim.
+export function angularSpeed(a: OrientationSample, b: OrientationSample): number {
+  const dt = Math.max(1, b.timestamp - a.timestamp) / 1000;
+  return a.quaternion.angleTo(b.quaternion) / DEG / dt;
 }

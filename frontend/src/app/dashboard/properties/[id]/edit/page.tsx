@@ -42,8 +42,12 @@ export default function EditPropertyPage({
     setIsSubmitting(true);
     setError("");
     try {
-      await updateProperty(Number(resolvedParams.id), data);
-      toast.success("Perubahan data properti berhasil disimpan!", "Listing Diperbarui");
+      const saved = await updateProperty(Number(resolvedParams.id), data);
+      if (data.status === "published" && saved.status === "draft") {
+        toast.info("Perubahan tersimpan sebagai draft sampai semua panorama selesai diproses.", "Menunggu Panorama");
+      } else {
+        toast.success("Perubahan data properti berhasil disimpan!", "Listing Diperbarui");
+      }
       router.push("/dashboard/properties");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Gagal memperbarui properti.";

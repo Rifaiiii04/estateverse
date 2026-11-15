@@ -112,8 +112,12 @@ func (r *mysqlPropertyRepo) UpdateModelMetadata(ctx context.Context, id int64, m
 		return err
 	}
 	if autoPublish {
-		query := `UPDATE properties SET model_metadata = ?, status = 'published' WHERE id = ?`
-		_, err = r.db.ExecContext(ctx, query, string(raw), id)
+		query := `UPDATE properties SET model_metadata = ?,
+			status = CASE WHEN ? AND NOT EXISTS (
+				SELECT 1 FROM property_tour_rooms
+				WHERE property_id = properties.id AND status <> 'ready'
+			) THEN 'published' ELSE status END WHERE id = ?`
+		_, err = r.db.ExecContext(ctx, query, string(raw), autoPublish, id)
 	} else {
 		query := `UPDATE properties SET model_metadata = ? WHERE id = ?`
 		_, err = r.db.ExecContext(ctx, query, string(raw), id)

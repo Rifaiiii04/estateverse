@@ -40,11 +40,18 @@ func NewTourService(tours repositories.TourRepository, props repositories.Proper
 // StartCapture validates a recorded room, stores its frames privately, and queues stitching.
 func (s *tourService) StartCapture(ctx context.Context, ownerID, propertyID int64, name string,
 	frames []CaptureFrame) (*models.TourRoom, error) {
-	cleanName, err := s.prepareRoom(ctx, ownerID, propertyID, name)
+	property, err := s.ownedProperty(ctx, ownerID, propertyID)
+	if err != nil {
+		return nil, err
+	}
+	cleanName, err := validateRoomName(name)
 	if err != nil {
 		return nil, err
 	}
 	if err := validateCaptureFrames(frames); err != nil {
+		return nil, err
+	}
+	if err := s.movePropertyToDraft(ctx, property); err != nil {
 		return nil, err
 	}
 	room := &models.TourRoom{PropertyID: propertyID, Name: cleanName, Status: models.TourStatusProcessing,
@@ -58,6 +65,15 @@ func (s *tourService) StartCapture(ctx context.Context, ownerID, propertyID int6
 	}
 	s.queue.Enqueue(room.ID)
 	return s.reloadRoom(ctx, room), nil
+}
+
+// movePropertyToDraft keeps a published listing private while a new panorama is being processed.
+func (s *tourService) movePropertyToDraft(ctx context.Context, property *models.Property) error {
+	if property.Status != models.StatusPublished {
+		return nil
+	}
+	property.Status = models.StatusDraft
+	return s.props.UpdateWithImages(ctx, property, nil, false)
 }
 
 // reloadRoom re-reads a freshly created room so responses include database defaults such as created_at.

@@ -1,4 +1,5 @@
 import { apiClient, apiUrl, ApiError } from "./client";
+import { buildCaptureManifest, type CaptureCalibration } from "../../../../shared/capturePolicy.ts";
 import { CapturedFrame, TourHotspot, TourRoom } from "@/types/tour";
 
 // getPublicTourRooms fetches the ready 360° rooms of a published property.
@@ -52,10 +53,18 @@ export function uploadTourCapture(
   form.append("property_id", String(propertyId));
   form.append(
     "meta",
-    JSON.stringify({ name, frames: frames.map((f, index) => ({ index, orientation: f.orientation })) })
+    JSON.stringify(buildCaptureManifest(name, frames))
   );
   frames.forEach((f, index) => form.append(`frame_${index}`, f.blob, `frame_${index}.jpg`));
   return sendMultipart<TourRoom>("/tours/captures", form, onProgress);
+}
+
+// calibrateTourCapture asks the shared Go engine to measure the lens and compute additional photo directions.
+export function calibrateTourCapture(frames: CapturedFrame[]): Promise<CaptureCalibration> {
+  const form = new FormData();
+  form.append("meta",JSON.stringify(buildCaptureManifest("calibration",frames)));
+  frames.forEach((frame,i) => form.append(`frame_${i}`,frame.blob,`frame_${i}.jpg`));
+  return sendMultipart<CaptureCalibration>("/tours/calibration",form);
 }
 
 // importTourPanorama uploads a ready-made equirectangular 360° photo as a room.

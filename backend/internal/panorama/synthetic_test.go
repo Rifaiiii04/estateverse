@@ -9,7 +9,7 @@ import (
 // captureTarget is one aim point of the guided capture grid (degrees).
 type captureTarget struct{ yaw, pitch float64 }
 
-// testTargets mirrors the browser capture grid: 12 at the horizon, 8 at ±45°, plus zenith and nadir.
+// testTargets preserves the legacy 30-photo grid so saved captures remain covered by regression tests.
 func testTargets() []captureTarget {
 	var out []captureTarget
 	for i := 0; i < 12; i++ {

@@ -1,29 +1,43 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Guided360CameraModal } from '@/components/camera/Guided360CameraModal';
 import { colors, radius, spacing, typography } from '@/constants/theme';
-import type { TourRoomInput } from '@/db/tourRepository';
+import type { DraftTourRoom } from '@/types/capture';
+import { deleteTourRoom } from '@/lib/api/tours';
+import { removeCaptureFiles } from '@/lib/capture/camera';
+import { useTourStatus } from '@/lib/hooks/useTourStatus';
 
 interface TourRoomManagerProps {
-  rooms: TourRoomInput[];
-  onChange: (rooms: TourRoomInput[]) => void;
+  rooms: DraftTourRoom[];
+  onChange: (rooms: DraftTourRoom[]) => void;
+  propertyId: number | null;
+  disabled: boolean;
 }
 
 // Manages real-time camera sweep capture and list of 360 rooms for a property.
-export function TourRoomManager({ rooms, onChange }: TourRoomManagerProps) {
+export function TourRoomManager({ rooms, onChange, propertyId, disabled }: TourRoomManagerProps) {
   const [cameraModalVisible, setCameraModalVisible] = useState(false);
+  const handleReady = useCallback((room: DraftTourRoom) => {
+    Alert.alert('Panorama selesai', `Panorama ${room.name} sudah selesai diproses oleh server. Setelah semua ruangan siap, properti dapat dipublish.`);
+  }, []);
+  const statusError = useTourStatus(propertyId, rooms, onChange, disabled, handleReady);
 
   // Appends batch of captured 360 rooms from the guided camera session.
-  const handleCompleteRooms = (newRooms: TourRoomInput[]) => {
+  const handleCompleteRooms = (newRooms: DraftTourRoom[]) => {
     onChange([...rooms, ...newRooms]);
   };
 
   // Removes a 360 room node by index.
-  const handleRemoveRoom = (indexToRemove: number) => {
-    onChange(rooms.filter((_, idx) => idx !== indexToRemove));
+  const handleRemoveRoom = async (indexToRemove: number) => {
+    try {
+      const room = rooms[indexToRemove];
+      if (room.id) await deleteTourRoom(room.id);
+      removeCaptureFiles(room.frames || []);
+      onChange(rooms.filter((_, idx) => idx !== indexToRemove));
+    } catch { Alert.alert('Gagal menghapus', 'Ruangan belum terhapus. Coba lagi.'); }
   };
 
   return (
@@ -35,7 +49,7 @@ export function TourRoomManager({ rooms, onChange }: TourRoomManagerProps) {
             {rooms.length === 0 ? 'Belum ada rekaman 360°' : `${rooms.length} Ruangan tersimpan`}
           </Text>
         </View>
-        <TouchableOpacity onPress={() => setCameraModalVisible(true)} style={styles.recordBtn}>
+        <TouchableOpacity disabled={disabled || rooms.length >= 8} onPress={() => setCameraModalVisible(true)} style={styles.recordBtn}>
           <Ionicons name="camera-reverse-outline" size={16} color={colors.sage[700]} />
           <Text style={styles.recordBtnText}>Rekam 360°</Text>
         </TouchableOpacity>
@@ -45,34 +59,37 @@ export function TourRoomManager({ rooms, onChange }: TourRoomManagerProps) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardList}>
           {rooms.map((room, index) => (
             <View key={`${room.name}_${index}`} style={styles.roomCard}>
-              <Image source={{ uri: room.panoramaUrl }} style={styles.thumbnail} contentFit="cover" />
+              {room.panoramaUrl ? <Image source={{ uri: room.panoramaUrl }} style={styles.thumbnail} contentFit="cover" />
+                : <View style={[styles.thumbnail, { justifyContent: 'center', padding: 12 }]}><Text>{room.frames ? `${room.frames.length} foto · belum dikirim` : room.status === 'failed' ? 'Gagal diproses' : 'Diproses di server…'}</Text></View>}
               <View style={styles.cardInfo}>
                 <Text numberOfLines={1} style={styles.cardTitle}>{room.name}</Text>
                 <Text numberOfLines={1} style={styles.cardSpecs}>{room.roomSpecs}</Text>
+                {!!room.errorMessage && <Text style={{ color: colors.error, fontSize: 11 }}>{room.errorMessage}</Text>}
               </View>
-              <TouchableOpacity onPress={() => handleRemoveRoom(index)} style={styles.removeBtn}>
+              <TouchableOpacity disabled={disabled} onPress={() => void handleRemoveRoom(index)} style={styles.removeBtn}>
                 <Ionicons name="trash-outline" size={14} color={colors.error} />
               </TouchableOpacity>
             </View>
           ))}
         </ScrollView>
       ) : (
-        <TouchableOpacity onPress={() => setCameraModalVisible(true)} style={styles.placeholderBox}>
+        <TouchableOpacity disabled={disabled} onPress={() => setCameraModalVisible(true)} style={styles.placeholderBox}>
           <View style={styles.camIconCircle}>
             <Ionicons name="camera" size={26} color={colors.sage[600]} />
           </View>
           <Text style={styles.placeholderTitle}>Buka Kamera & Rekam Ruangan 360°</Text>
           <Text style={styles.placeholderText}>
-            Arahkan kamera lalu putar perlahan sampai 100%. Sistem otomatis menangkap sekeliling ruangan tanpa perlu memilih dari galeri.
+            Ikuti titik foto yang dihitung otomatis. HP hanya merekam; server menggabungkan foto menjadi panorama setelah properti disimpan.
           </Text>
         </TouchableOpacity>
       )}
 
-      <Guided360CameraModal
+      {!!statusError && <Text style={{ color: colors.error }}>{statusError}</Text>}
+      {cameraModalVisible && <Guided360CameraModal
         visible={cameraModalVisible}
         onClose={() => setCameraModalVisible(false)}
         onComplete={handleCompleteRooms}
-      />
+      />}
     </View>
   );
 }

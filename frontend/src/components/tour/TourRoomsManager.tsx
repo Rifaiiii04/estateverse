@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Camera, ImageUp, Smartphone } from "lucide-react";
 import type { TourRoom } from "@/types/tour";
 import { deleteTourRoom, getOwnerTourRooms, importTourPanorama, updateTourRoom } from "@/lib/api/tours";
@@ -23,26 +23,45 @@ export function TourRoomsManager({ propertyId }: { propertyId: number }) {
   // Rendered only after the property loads on the client, so browser checks are safe in initializers.
   const [captureIssue] = useState<string | null>(() => captureSupportIssue());
   const [isDesktop] = useState(() => isLikelyDesktop());
+  const previousStatuses = useRef<Map<number, TourRoom["status"]> | null>(null);
   const editingRoom = useMemo(() => rooms.find((r) => r.id === editingId) ?? null, [rooms, editingId]);
+
+  // applyRooms updates the list and announces when background stitching reaches a terminal state.
+  const applyRooms = useCallback((next: TourRoom[]) => {
+    const previous = previousStatuses.current;
+    if (previous) {
+      next.forEach((room) => {
+        const before = previous.get(room.id);
+        if (before === "processing" && room.status === "ready") {
+          toast.success("Panorama 360° sudah selesai. Setelah semua ruangan siap, properti dapat dipublish.", "Walk Inside Siap");
+        }
+        if (before === "processing" && room.status === "failed") {
+          toast.error(room.error_message || "Panorama gagal diproses. Rekam ulang ruangan ini.", "Walk Inside Gagal");
+        }
+      });
+    }
+    previousStatuses.current = new Map(next.map((room) => [room.id, room.status]));
+    setRooms(next);
+  }, [toast]);
 
   // Reloads the seller's rooms from the server.
   const load = useCallback(async () => {
     try {
-      setRooms(await getOwnerTourRooms(propertyId));
+      applyRooms(await getOwnerTourRooms(propertyId));
     } catch {
       toast.error("Gagal memuat daftar ruangan 360°.");
     }
-  }, [propertyId, toast]);
+  }, [applyRooms, propertyId, toast]);
 
   useEffect(() => {
     let active = true;
     getOwnerTourRooms(propertyId)
-      .then((list) => active && setRooms(list))
+      .then((list) => active && applyRooms(list))
       .catch(() => toast.error("Gagal memuat daftar ruangan 360°."));
     return () => {
       active = false;
     };
-  }, [propertyId, toast]);
+  }, [applyRooms, propertyId, toast]);
 
   useEffect(() => {
     if (!rooms.some((r) => r.status === "processing")) return;

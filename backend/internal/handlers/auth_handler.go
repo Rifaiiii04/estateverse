@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"projectfai/backend/internal/httpx"
@@ -14,13 +15,19 @@ import (
 type AuthHandler struct {
 	authSvc      services.AuthService
 	isProduction bool
+	activity     services.ActivityService
 }
 
 // NewAuthHandler instantiates the authentication HTTP handler.
-func NewAuthHandler(authSvc services.AuthService, isProd bool) *AuthHandler {
+func NewAuthHandler(authSvc services.AuthService, isProd bool, activity ...services.ActivityService) *AuthHandler {
+	var activitySvc services.ActivityService
+	if len(activity) > 0 {
+		activitySvc = activity[0]
+	}
 	return &AuthHandler{
 		authSvc:      authSvc,
 		isProduction: isProd,
+		activity:     activitySvc,
 	}
 }
 
@@ -43,6 +50,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.recordActivity(r, "auth.register", user.ID, "Registrasi akun berhasil", "")
 	WriteJSON(w, http.StatusCreated, user)
 }
 
@@ -66,6 +74,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.setSessionCookie(w, token, expiresAt)
+	h.recordActivity(r, "auth.login", user.ID, "Login berhasil", "")
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"user":    user,
 		"expires": expiresAt,
@@ -83,11 +92,19 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if c, err := r.Cookie("session_token"); err == nil {
 		token = c.Value
 	}
+	if token == "" && strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
+		token = strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	}
 
+	userID := int64(0)
 	if token != "" {
+		if user, err := h.authSvc.ValidateSession(r.Context(), token); err == nil && user != nil {
+			userID = user.ID
+		}
 		_ = h.authSvc.Logout(r.Context(), token)
 	}
 
+	h.recordActivity(r, "auth.logout", userID, "Logout berhasil", "")
 	h.clearSessionCookie(w)
 	WriteJSON(w, http.StatusOK, map[string]string{"message": "logged out successfully"})
 }
@@ -136,4 +153,22 @@ func (h *AuthHandler) clearSessionCookie(w http.ResponseWriter) {
 		Secure:   h.isProduction,
 	}
 	http.SetCookie(w, cookie)
+}
+
+// recordActivity persists a successful authentication action when history is configured.
+func (h *AuthHandler) recordActivity(r *http.Request, action string, userID int64, message, details string) {
+	if h.activity == nil {
+		return
+	}
+	h.activity.Record(r.Context(), models.ActivityLogInput{
+		UserID:    userID,
+		Action:    action,
+		Status:    "success",
+		Method:    r.Method,
+		Path:      r.URL.Path,
+		RequestID: middleware.RequestID(r.Context()),
+		Message:   message,
+		Details:   details,
+		Metadata:  map[string]interface{}{"authentication": true},
+	})
 }

@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { TourHotspot, TourRoom } from '@/types/property';
+import type { TourRoom } from '@/types/property';
 
 export interface TourRoomInput {
   name: string;

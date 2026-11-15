@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 
 import { BenefitsSelector } from '@/components/BenefitsSelector';
@@ -21,9 +20,11 @@ import { TourRoomManager } from '@/components/dashboard/TourRoomManager';
 import { Header } from '@/components/Header';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { getOwnedProperty } from '@/db/propertyQueries';
-import { createProperty, updateProperty } from '@/db/propertyWrites';
-import { getTourRoomsForProperty, syncPropertyTourRooms, type TourRoomInput } from '@/db/tourRepository';
+import { getOwnedProperty } from '@/lib/api/properties';
+import { createProperty, updateProperty } from '@/lib/api/propertyWrites';
+import { getOwnerTourRooms } from '@/lib/api/tours';
+import { saveTourDrafts } from '@/lib/capture/saveTourDrafts';
+import type { DraftTourRoom } from '@/types/capture';
 import { PROPERTY_TYPE_OPTIONS } from '@/lib/content';
 import { normalizeWhatsAppNumber } from '@/lib/formatters';
 import type { PropertyInput, PropertyStatus, PropertyType } from '@/types/property';
@@ -32,7 +33,6 @@ import type { PropertyInput, PropertyStatus, PropertyType } from '@/types/proper
 export default function PropertyFormScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const db = useSQLiteContext();
   const { user } = useAuth();
 
   const [title, setTitle] = useState('');
@@ -51,7 +51,9 @@ export default function PropertyFormScreen() {
   const [status, setStatus] = useState<PropertyStatus>('published');
   const [benefits, setBenefits] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
-  const [tourRooms, setTourRooms] = useState<TourRoomInput[]>([]);
+  const [tourRooms, setTourRooms] = useState<DraftTourRoom[]>([]);
+  const [savedId, setSavedId] = useState(id ? Number(id) : null);
+  const [model3dPath, setModel3dPath] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -60,8 +62,8 @@ export default function PropertyFormScreen() {
       if (!id || !user) return;
       const propId = Number.parseInt(id, 10);
       const [existing, existingRooms] = await Promise.all([
-        getOwnedProperty(db, user.id, propId),
-        getTourRoomsForProperty(db, propId),
+        getOwnedProperty(propId),
+        getOwnerTourRooms(propId),
       ]);
       if (!existing) return;
       setTitle(existing.title);
@@ -80,18 +82,22 @@ export default function PropertyFormScreen() {
       setStatus(existing.status);
       setBenefits(existing.benefits);
       setImages(existing.images.map((img) => img.filePath));
+      setModel3dPath(existing.model3dPath || '');
       setTourRooms(
         existingRooms.map((r) => ({
+          id: r.id,
+          status: r.status,
+          errorMessage: r.errorMessage,
           name: r.name,
           panoramaUrl: r.panoramaUrl,
           roomSpecs: r.roomSpecs,
         })),
       );
     }
-    loadExisting();
-  }, [id, user, db]);
+    void loadExisting().catch((error) => Alert.alert('Gagal memuat properti', error instanceof Error ? error.message : 'Periksa koneksi server.'));
+  }, [id, user]);
 
-  // Validates user input and persists property and 360 tour changes to SQLite.
+  // Saves the backend listing before uploading raw captures to the shared stitching queue.
   const handleSave = async () => {
     if (!user) return;
     const parsedPrice = Number.parseInt(price.replace(/\D/g, ''), 10);
@@ -118,26 +124,34 @@ export default function PropertyFormScreen() {
       floors: Number.parseInt(floors, 10) || 1,
       whatsappNumber: cleanWa,
       description: description.trim() || 'Hunian modern dengan lingkungan nyaman.',
-      status,
+      status: tourRooms.some((room) => Boolean(room.frames?.length)) ? 'draft' : status,
       benefits,
       imagePaths: images,
+      model3dPath,
     };
 
     try {
       setSubmitting(true);
-      let targetPropId = Number.parseInt(id ?? '0', 10);
-      if (id) {
-        await updateProperty(db, user.id, targetPropId, payload);
+      let targetPropId = savedId || 0;
+      if (targetPropId) {
+        const saved = await updateProperty(targetPropId, payload);
+        if (payload.status === 'published' && saved.status === 'draft') {
+          Alert.alert('Masih Diproses', 'Perubahan tersimpan sebagai draft sampai semua panorama selesai diproses.');
+        }
       } else {
-        targetPropId = await createProperty(db, user.id, payload);
+        targetPropId = await createProperty(payload);
+        setSavedId(targetPropId);
       }
-      await syncPropertyTourRooms(db, targetPropId, tourRooms);
+      await saveTourDrafts(targetPropId, tourRooms, (index, room) => setTourRooms((current) => current.map((r, i) => i === index ? room : r)));
 
-      Alert.alert('Berhasil Disimpan', 'Iklan dan tur 360° properti Anda telah berhasil diperbarui.', [
+      const hasAsyncCaptures = tourRooms.some((room) => Boolean(room.frames?.length));
+      Alert.alert('Berhasil Disimpan', hasAsyncCaptures
+        ? 'Properti disimpan sebagai draft. Server sedang menyusun panorama; Anda akan mendapat pemberitahuan saat siap dipublish.'
+        : 'Properti tersimpan. Foto ruangan diproses di server; buka Edit untuk melihat status panoramanya.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
-    } catch {
-      Alert.alert('Gagal Menyimpan', 'Terjadi kesalahan saat menyimpan data properti.');
+    } catch (error) {
+      Alert.alert('Belum Selesai', error instanceof Error ? error.message : 'Gagal menyimpan. Coba lagi; rekaman yang belum terkirim tetap tersedia.');
     } finally {
       setSubmitting(false);
     }
@@ -149,7 +163,7 @@ export default function PropertyFormScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <ImagePickerSection images={images} onChange={setImages} />
-          <TourRoomManager rooms={tourRooms} onChange={setTourRooms} />
+          <TourRoomManager rooms={tourRooms} onChange={setTourRooms} propertyId={savedId} disabled={submitting} />
 
           <FormInput label="Judul Iklan" placeholder="Contoh: Modern Tropical Villa" value={title} onChangeText={setTitle} />
           
@@ -174,8 +188,8 @@ export default function PropertyFormScreen() {
           <FormInput label="Alamat / Kawasan" placeholder="Contoh: Dago Atas No. 12" value={address} onChangeText={setAddress} />
 
           <View style={styles.row}>
-            <View style={{ flex: 1 }}><FormInput label="LT (m²)" keyboardType="numeric" value={landArea} onChangeText={setLandArea} /></View>
-            <View style={{ flex: 1 }}><FormInput label="LB (m²)" keyboardType="numeric" value={buildingArea} onChangeText={setBuildingArea} /></View>
+            <View style={{ flex: 1 }}><FormInput label="LT (mÂ²)" keyboardType="numeric" value={landArea} onChangeText={setLandArea} /></View>
+            <View style={{ flex: 1 }}><FormInput label="LB (mÂ²)" keyboardType="numeric" value={buildingArea} onChangeText={setBuildingArea} /></View>
           </View>
 
           <View style={styles.row}>

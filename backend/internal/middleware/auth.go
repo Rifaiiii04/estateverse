@@ -11,7 +11,15 @@ import (
 
 type contextKey string
 
-const userContextKey = contextKey("estateverse_auth_user")
+const (
+	userContextKey      = contextKey("estateverse_auth_user")
+	requestIDContextKey = contextKey("estateverse_request_id")
+)
+
+type requestTrace struct {
+	id     string
+	userID int64
+}
 
 // RequireAuth enforces a valid session token on incoming protected HTTP requests.
 func RequireAuth(authSvc services.AuthService) func(http.Handler) http.Handler {
@@ -29,6 +37,7 @@ func RequireAuth(authSvc services.AuthService) func(http.Handler) http.Handler {
 				return
 			}
 
+			SetRequestUserID(r.Context(), user.ID)
 			ctx := context.WithValue(r.Context(), userContextKey, user)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -42,6 +51,37 @@ func UserFromContext(ctx context.Context) *models.User {
 		return nil
 	}
 	return u
+}
+
+// WithRequestID attaches the trace id used by request and background activity records.
+func WithRequestID(ctx context.Context, requestID string) context.Context {
+	return context.WithValue(ctx, requestIDContextKey, &requestTrace{id: requestID})
+}
+
+// RequestID retrieves the trace id assigned by the HTTP activity middleware.
+func RequestID(ctx context.Context) string {
+	trace, _ := ctx.Value(requestIDContextKey).(*requestTrace)
+	if trace == nil {
+		return ""
+	}
+	return trace.id
+}
+
+// SetRequestUserID associates the authenticated actor with the current request trace.
+func SetRequestUserID(ctx context.Context, userID int64) {
+	trace, _ := ctx.Value(requestIDContextKey).(*requestTrace)
+	if trace != nil {
+		trace.userID = userID
+	}
+}
+
+// RequestUserID retrieves the authenticated actor from the current request trace.
+func RequestUserID(ctx context.Context) int64 {
+	trace, _ := ctx.Value(requestIDContextKey).(*requestTrace)
+	if trace == nil {
+		return 0
+	}
+	return trace.userID
 }
 
 // extractToken reads the raw session token from HttpOnly cookie or Authorization header.

@@ -1,18 +1,23 @@
 /** Long edge (px) of uploaded frames: sharp enough for a 4096 px panorama, small enough for mobile data. */
-export const FRAME_LONG_SIDE = 1280;
-const FRAME_JPEG_QUALITY = 0.85;
+import { FRAME_LONG_SIDE, FRAME_JPEG_QUALITY } from "../../../../shared/capturePolicy.ts";
+export { FRAME_LONG_SIDE } from "../../../../shared/capturePolicy.ts";
 
 // startRearCamera opens the back camera at high resolution and plays it inline in the video element.
 export async function startRearCamera(video: HTMLVideoElement): Promise<MediaStream> {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: false,
-    video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+    video: { facingMode: { exact: "environment" }, width: { ideal: 1080 }, height: { ideal: 1920 } },
   });
   video.srcObject = stream;
   video.muted = true;
   video.playsInline = true;
-  await video.play();
-  return stream;
+  try {
+    await video.play();
+    return stream;
+  } catch (error) {
+    stopStream(stream);
+    throw error;
+  }
 }
 
 // stopStream releases the camera so the phone's camera indicator turns off.
@@ -20,8 +25,32 @@ export function stopStream(stream: MediaStream | null) {
   stream?.getTracks().forEach((track) => track.stop());
 }
 
-// grabFrame snapshots the current video frame, scaled so its long edge is FRAME_LONG_SIDE, as a JPEG blob.
-export function grabFrame(video: HTMLVideoElement): Promise<Blob> {
+// grabFrame snapshots a newly presented video frame and records its pose immediately before copying pixels.
+export function grabFrame(video: HTMLVideoElement, onSnapshot: () => void = () => {}): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    let callback: number | undefined;
+    const timer = setTimeout(() => {
+      if (callback !== undefined) video.cancelVideoFrameCallback(callback);
+      reject(new Error("Kamera tidak mengirim foto baru. Coba mulai ulang rekaman."));
+    }, 1500);
+    // Copies pixels and pose in the same browser turn before asynchronous JPEG encoding.
+    const snapshot = () => {
+      clearTimeout(timer);
+      try {
+        if (!video.videoWidth || !video.videoHeight || video.readyState < 2) throw new Error("Kamera belum siap.");
+        onSnapshot();
+        encodeFrame(video).then(resolve, reject);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    if (typeof video.requestVideoFrameCallback === "function") callback = video.requestVideoFrameCallback(snapshot);
+    else snapshot();
+  });
+}
+
+// encodeFrame scales the current camera pixels to a bounded JPEG without cropping or mirroring them.
+function encodeFrame(video: HTMLVideoElement): Promise<Blob> {
   const scale = Math.min(1, FRAME_LONG_SIDE / Math.max(video.videoWidth, video.videoHeight));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(video.videoWidth * scale);

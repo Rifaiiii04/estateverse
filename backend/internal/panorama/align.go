@@ -51,7 +51,8 @@ func globalScore(frames []*Frame, nbrs [][]int) float64 {
 
 // estimateFOV runs a coarse-to-fine search for the horizontal field of view that best aligns overlapping frames.
 func estimateFOV(frames []*Frame, nbrs [][]int, fallback float64) float64 {
-	coarse, score := searchFOV(frames, nbrs, fovSearchMin, fovSearchMax, 2)
+	lo, hi := lensSearchBounds(frames[0].full)
+	coarse, score := searchFOV(frames, nbrs, lo, hi, 2)
 	if score <= 0 {
 		setAllFOV(frames, fallback)
 		return fallback
@@ -61,9 +62,24 @@ func estimateFOV(frames []*Frame, nbrs [][]int, fallback float64) float64 {
 
 // refineFOV searches ±span degrees around a known field of view in quarter-degree steps.
 func refineFOV(frames []*Frame, nbrs [][]int, center, span float64) float64 {
-	best, _ := searchFOV(frames, nbrs, center-span, center+span, 0.25)
+	setAllFOV(frames, center)
+	baseline := globalScore(frames, nbrs)
+	lo, hi := lensSearchBounds(frames[0].full)
+	best, score := searchFOV(frames, nbrs, math.Max(lo, center-span), math.Min(hi, center+span), 0.25)
+	if score <= baseline+1e-4 {
+		best = center
+	}
 	setAllFOV(frames, best)
 	return best
+}
+
+// lensSearchBounds converts plausible short-edge lens angles to the actual video frame's horizontal field of view.
+func lensSearchBounds(c camera) (float64, float64) {
+	ratio := c.w / math.Min(c.w, c.h)
+	toHorizontal := func(angle float64) float64 {
+		return 2 * math.Atan(ratio*math.Tan(deg(angle)/2)) * 180 / math.Pi
+	}
+	return toHorizontal(fovSearchMin), toHorizontal(fovSearchMax)
 }
 
 // searchFOV evaluates evenly spaced fields of view and returns the best one with its score.

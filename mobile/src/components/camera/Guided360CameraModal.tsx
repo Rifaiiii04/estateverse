@@ -1,209 +1,69 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Alert,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Modal, View, Text, TouchableOpacity } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { DeviceMotion } from 'expo-sensors';
-import { Ionicons } from '@expo/vector-icons';
+import { RoomNamingSheet } from './RoomNamingSheet';
+import { NativeCaptureGuide } from './NativeCaptureGuide';
+import { useNativeCapture } from '@/lib/capture/useNativeCapture';
+import { removeCaptureFiles, selectPictureSize } from '@/lib/capture/camera';
+import type { DraftTourRoom } from '@/types/capture';
 
-import { RoomNamingSheet } from '@/components/camera/RoomNamingSheet';
-import { SweepGuideOverlay } from '@/components/camera/SweepGuideOverlay';
-import { colors, radius, spacing, typography } from '@/constants/theme';
-import type { TourRoomInput } from '@/db/tourRepository';
-import { persistImageUri } from '@/lib/imageStorage';
+interface Props { visible: boolean; onClose: () => void; onComplete: (rooms: DraftTourRoom[]) => void }
 
-interface Guided360CameraModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onComplete: (rooms: TourRoomInput[]) => void;
-}
-
-const TOTAL_SECTORS = 12; // 360 / 12 = 30 degrees per sector
-
-// Manages real-time 360 camera recording with guided circular sweeping and multi-room capture.
-export function Guided360CameraModal({ visible, onClose, onComplete }: Guided360CameraModalProps) {
+// Guided360CameraModal captures real pose-tagged JPEGs using the same protocol and photo grid as the website.
+export function Guided360CameraModal({ onClose, onComplete }: Props) {
+  const camera = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView>(null);
-
-  const [coveredSectors, setCoveredSectors] = useState<Set<number>>(new Set());
-  const [currentAngle, setCurrentAngle] = useState(0);
-  const [isTooFast, setIsTooFast] = useState(false);
-  const [capturedPhotoUri, setCapturedPhotoUri] = useState<string | null>(null);
-  const [accumulatedRooms, setAccumulatedRooms] = useState<TourRoomInput[]>([]);
-  const [isCapturing, setIsCapturing] = useState(false);
-
-  const lastAngleRef = useRef(0);
-  const lastTimeRef = useRef(Date.now());
-
-  // Tracks device rotational movement and marks covered sectors in real time.
-  useEffect(() => {
-    if (!visible || capturedPhotoUri) return;
-
-    let sub: any;
+  const [pictureSize, setPictureSize] = useState<string>();
+  const [ready, setReady] = useState(false);
+  const [roomCount, setRoomCount] = useState(0);
+  const rooms = useRef<DraftTourRoom[]>([]);
+  const capture = useNativeCapture(camera);
+  useEffect(() => () => rooms.current.forEach((r) => removeCaptureFiles(r.frames || [])), []);
+  // prepareCamera selects one consistent, bounded picture size before the first capture.
+  const prepareCamera = async () => {
     try {
-      DeviceMotion.setUpdateInterval(60);
-      sub = DeviceMotion.addListener((event) => {
-        if (!event.rotation) return;
-        const deg = (event.rotation.alpha * (180 / Math.PI) + 360) % 360;
-        const now = Date.now();
-        const dt = Math.max(1, (now - lastTimeRef.current) / 1000);
-        const delta = Math.abs(deg - lastAngleRef.current);
-        const speed = (delta > 180 ? 360 - delta : delta) / dt;
-
-        setIsTooFast(speed > 160);
-        setCurrentAngle(deg);
-        lastAngleRef.current = deg;
-        lastTimeRef.current = now;
-
-        const sector = Math.floor(deg / (360 / TOTAL_SECTORS));
-        setCoveredSectors((prev) => {
-          if (prev.has(sector)) return prev;
-          const next = new Set(prev);
-          next.add(sector);
-          return next;
-        });
-      });
-    } catch {
-      // Sensor unavailable in simulator
-    }
-
-    return () => {
-      if (sub && typeof sub.remove === 'function') sub.remove();
-    };
-  }, [visible, capturedPhotoUri]);
-
-  const progressPercent = (coveredSectors.size / TOTAL_SECTORS) * 100;
-
-  // Triggers snapshot once all sectors (100%) have been swept.
-  useEffect(() => {
-    if (progressPercent >= 100 && !capturedPhotoUri && !isCapturing) {
-      handleFinalizeRoomCapture();
-    }
-  }, [progressPercent, capturedPhotoUri, isCapturing]);
-
-  // Captures the panoramic frame from the camera and prepares the naming sheet.
-  const handleFinalizeRoomCapture = async () => {
-    setIsCapturing(true);
-    try {
-      if (cameraRef.current) {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
-        if (photo?.uri) {
-          const persisted = await persistImageUri(photo.uri);
-          setCapturedPhotoUri(persisted);
-          return;
-        }
-      }
-      setCapturedPhotoUri('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80');
-    } catch {
-      setCapturedPhotoUri('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80');
-    } finally {
-      setIsCapturing(false);
-    }
+      const sizes = await camera.current?.getAvailablePictureSizesAsync();
+      if (sizes) { setPictureSize(selectPictureSize(sizes)); setReady(true); }
+    } catch (error) { capture.setError(error instanceof Error ? error.message : 'Kamera tidak siap.'); }
   };
-
-  // Simulates stepping through sectors for testing environments without gyro.
-  const handleManualAdvance = () => {
-    setCoveredSectors((prev) => {
-      const next = new Set(prev);
-      next.add(next.size % TOTAL_SECTORS);
-      return next;
-    });
-    setCurrentAngle((prev) => (prev + 30) % 360);
-  };
-
-  // Saves current room and resets the sweep for another room.
-  const handleRecordAnother = (room: TourRoomInput) => {
-    setAccumulatedRooms((prev) => [...prev, room]);
-    setCapturedPhotoUri(null);
-    setCoveredSectors(new Set());
-    setCurrentAngle(0);
-  };
-
-  // Saves all captured rooms and closes the camera modal.
-  const handleFinishAll = (finalRoom: TourRoomInput) => {
-    const all = [...accumulatedRooms, finalRoom];
-    onComplete(all);
-    setAccumulatedRooms([]);
-    setCapturedPhotoUri(null);
-    setCoveredSectors(new Set());
+  // saveRoom transfers file ownership only when saving a full room draft.
+  const saveRoom = (room: DraftTourRoom, finish: boolean) => {
+    rooms.current.push({ ...room, frames: capture.collect() });
+    setRoomCount(rooms.current.length);
+    if (!finish) { setReady(false); return; }
+    const saved = rooms.current;
+    rooms.current = [];
+    onComplete(saved);
     onClose();
   };
-
-  if (!permission?.granted) {
-    return (
-      <Modal visible={visible} animationType="slide">
-        <View style={styles.permissionContainer}>
-          <Ionicons name="camera-outline" size={56} color={colors.sage[600]} />
-          <Text style={styles.permTitle}>Izin Akses Kamera Diperlukan</Text>
-          <Text style={styles.permDesc}>
-            Aplikasi membutuhkan akses kamera untuk merekam ruangan 360° secara langsung.
-          </Text>
-          <TouchableOpacity onPress={requestPermission} style={styles.permBtn}>
-            <Text style={styles.permBtnText}>Beri Izin Kamera</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-            <Text style={styles.closeBtnText}>Batal</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-    );
-  }
-
   return (
-    <Modal visible={visible} animationType="slide">
-      <View style={styles.cameraContainer}>
-        <CameraView ref={cameraRef} facing="back" style={StyleSheet.absoluteFill} />
-
-        <SweepGuideOverlay
-          progressPercent={progressPercent}
-          currentAngle={currentAngle}
-          isTooFast={isTooFast}
-          onCancel={onClose}
-          onManualAdvance={handleManualAdvance}
-        />
-
-        {Boolean(capturedPhotoUri) && (
-          <View style={styles.sheetOverlay}>
-            <RoomNamingSheet
-              capturedPhotoUri={capturedPhotoUri!}
-              totalCapturedRooms={accumulatedRooms.length}
-              onRecordAnother={handleRecordAnother}
-              onFinishAll={handleFinishAll}
-            />
-          </View>
-        )}
+    <Modal visible animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        {permission?.granted && capture.phase !== 'review' && <CameraView ref={camera} facing="back" mirror={false} pictureSize={pictureSize} ratio="16:9" onCameraReady={prepareCamera} onMountError={(event) => capture.setError(event.message)} style={{ position: 'absolute', width: '100%', height: '100%' }} />}
+        {capture.phase === 'capturing' && <NativeCaptureGuide capture={capture} />}
+        {(capture.phase === 'intro' || capture.phase === 'starting') && <CaptureStart permission={!!permission?.granted} requestPermission={requestPermission} ready={ready} capture={capture} />}
+        {capture.phase === 'calibrating' && <View style={{flex:1,justifyContent:'center',padding:24,backgroundColor:'#000b'}}><Text style={{color:'#fff'}}>Mengukur lensa dan menghitung sudut yang masih perlu difoto…</Text></View>}
+        {capture.phase === 'review' && <RoomNamingSheet frames={capture.frames} totalCapturedRooms={roomCount} onRecordAnother={(r) => saveRoom(r, false)} onFinishAll={(r) => saveRoom(r, true)} />}
+        <TouchableOpacity accessibilityLabel="Tutup perekam" onPress={onClose} style={{ position: 'absolute', top: 24, right: 24, backgroundColor: '#000b', padding: 12 }}><Text style={{ color: '#fff' }}>Tutup</Text></TouchableOpacity>
       </View>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
-  cameraContainer: { flex: 1, backgroundColor: '#000000' },
-  permissionContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xl,
-    gap: spacing.md,
-  },
-  permTitle: { fontSize: typography.sizes.lg, fontWeight: typography.weights.bold, color: colors.ink },
-  permDesc: { fontSize: typography.sizes.xs, color: colors.muted, textAlign: 'center', lineHeight: 20 },
-  permBtn: {
-    backgroundColor: colors.sage[600],
-    paddingHorizontal: spacing.xl,
-    paddingVertical: 14,
-    borderRadius: radius.md,
-    width: '100%',
-    alignItems: 'center',
-  },
-  permBtnText: { color: '#ffffff', fontSize: typography.sizes.sm, fontWeight: typography.weights.bold },
-  closeBtn: { paddingVertical: 10 },
-  closeBtnText: { color: colors.muted, fontSize: typography.sizes.xs },
-  sheetOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
-});
+// CaptureStart explains automatic server planning without asking the seller to choose a photo count.
+function CaptureStart({ permission, requestPermission, ready, capture }: {
+  permission: boolean; requestPermission: () => Promise<unknown>; ready: boolean;
+  capture: ReturnType<typeof useNativeCapture>;
+}) {
+  const starting = capture.phase === 'starting';
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#000b', padding: 24, gap: 20 }}>
+      <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700' }}>Rekam Walk Inside 360°</Text>
+      <Text style={{ color: '#fff' }}>Pegang HP portrait. Ikuti titik berurutan: sekeliling, atas, bawah. Pertahankan posisi lensa dan tahan saat foto diambil.</Text>
+      <Text style={{ color: '#fff' }}>HP hanya merekam foto. Panorama dibuat oleh server setelah properti disimpan.</Text>
+      <Text style={{color:'#fff'}}>Ambil tiga foto awal sesuai panduan. Server mengukur lensa lalu menentukan jumlah dan arah foto berikutnya secara otomatis.</Text>
+      {!!capture.error && <Text style={{ color: '#ffd38a' }}>{capture.error}</Text>}
+      <TouchableOpacity disabled={starting || (permission && !ready)} onPress={() => permission ? void capture.start() : void requestPermission()} style={{ backgroundColor: '#345e45', padding: 16 }}><Text style={{ color: '#fff' }}>{!permission ? 'Izinkan kamera' : starting ? 'Menyiapkan sensor…' : ready ? 'Mulai merekam' : 'Menyiapkan kamera…'}</Text></TouchableOpacity>
+    </View>
+  );
+}

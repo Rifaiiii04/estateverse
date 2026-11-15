@@ -29,6 +29,7 @@ type asyncModelQueue struct {
 	storageSvc StorageService
 	propRepo   repositories.PropertyRepository
 	analyzer   ModelAnalyzer
+	activity   ActivityService
 	startOnce  sync.Once
 }
 
@@ -37,12 +38,18 @@ func NewModelQueue(
 	storageSvc StorageService,
 	propRepo repositories.PropertyRepository,
 	analyzer ModelAnalyzer,
+	activity ...ActivityService,
 ) ModelQueue {
+	var activitySvc ActivityService
+	if len(activity) > 0 {
+		activitySvc = activity[0]
+	}
 	return &asyncModelQueue{
 		jobs:       make(chan ModelProcessingJob, 128),
 		storageSvc: storageSvc,
 		propRepo:   propRepo,
 		analyzer:   analyzer,
+		activity:   activitySvc,
 	}
 }
 
@@ -51,8 +58,10 @@ func (q *asyncModelQueue) Enqueue(job ModelProcessingJob) {
 	select {
 	case q.jobs <- job:
 		slog.Info("3D model processing job enqueued", "property_id", job.PropertyID, "path", job.RelativePath)
+		q.recordActivity(context.Background(), "model.processing.enqueued", "success", job, "3D model processing job queued", "")
 	default:
 		slog.Warn("3D model job queue full, processing synchronously", "property_id", job.PropertyID)
+		q.recordActivity(context.Background(), "model.processing.queue_full", "warning", job, "3D model queue full; processing synchronously", "")
 		go q.processJob(context.Background(), job)
 	}
 }
@@ -98,23 +107,27 @@ func (q *asyncModelQueue) processJob(ctx context.Context, job ModelProcessingJob
 	absPath, err := q.storageSvc.GetAbsolutePath(cleanRel)
 	if err != nil {
 		slog.Error("Failed resolving model path for queue job", "property_id", job.PropertyID, "error", err)
+		q.recordActivity(ctx, "model.processing.failed", "error", job, "3D model path could not be resolved", err.Error())
 		return
 	}
 
 	if strings.ToLower(filepath.Ext(absPath)) == ".glb" {
 		if err := TagGLBArchitecture(absPath); err != nil {
 			slog.Warn("Failed tagging GLB architecture extras", "error", err)
+			q.recordActivity(ctx, "model.processing.tag_failed", "warning", job, "3D model metadata tag skipped", err.Error())
 		}
 	}
 
 	meta, err := q.analyzer.Analyze(absPath)
 	if err != nil {
 		slog.Warn("Model analyzer fallback triggered", "property_id", job.PropertyID, "error", err)
+		q.recordActivity(ctx, "model.processing.fallback", "warning", job, "3D model analyzer fallback used", err.Error())
 		meta = &models.Model3DMetadata{Status: "ready", RoofNodes: []string{"roof", "roof_roof_0"}}
 	}
 
 	if err := q.propRepo.UpdateModelMetadata(ctx, job.PropertyID, meta, job.AutoPublish); err != nil {
 		slog.Error("Failed saving computed 3D model metadata", "property_id", job.PropertyID, "error", err)
+		q.recordActivity(ctx, "model.processing.failed", "error", job, "3D model metadata could not be saved", err.Error())
 		return
 	}
 
@@ -123,4 +136,20 @@ func (q *asyncModelQueue) processJob(ctx context.Context, job ModelProcessingJob
 		"roof_nodes", len(meta.RoofNodes),
 		"auto_publish", job.AutoPublish,
 	)
+	q.recordActivity(ctx, "model.processing.completed", "success", job, "3D model processing completed", "")
+}
+
+// recordActivity stores a background model event when activity history is configured.
+func (q *asyncModelQueue) recordActivity(ctx context.Context, action, status string, job ModelProcessingJob, message, details string) {
+	if q.activity == nil {
+		return
+	}
+	q.activity.Record(ctx, models.ActivityLogInput{
+		Action:       action,
+		Status:       status,
+		ResourceType: "property",
+		ResourceID:   job.PropertyID,
+		Message:      message,
+		Details:      details,
+	})
 }

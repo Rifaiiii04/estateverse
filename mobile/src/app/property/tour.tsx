@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { showApiError } from '@/lib/api/errors';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Linking,
   Modal,
   StyleSheet,
@@ -10,16 +10,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
+import { useLocalSearchParams, useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Header } from '@/components/Header';
 import { PanoramaViewer } from '@/components/tour/PanoramaViewer';
 import { RoomSelectorDock } from '@/components/tour/RoomSelectorDock';
 import { colors, radius, spacing, typography } from '@/constants/theme';
-import { getPublishedPropertyBySlug } from '@/db/propertyQueries';
-import { getTourRoomsForProperty } from '@/db/tourRepository';
+import { getPublishedPropertyBySlug } from '@/lib/api/properties';
+import { getTourRoomsForProperty } from '@/lib/api/tours';
 import { buildWhatsAppLink } from '@/lib/formatters';
 import type { Property, TourRoom } from '@/types/property';
 
@@ -27,7 +26,6 @@ import type { Property, TourRoom } from '@/types/property';
 export default function PropertyTourScreen() {
   const router = useRouter();
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const db = useSQLiteContext();
 
   const [property, setProperty] = useState<Property | null>(null);
   const [rooms, setRooms] = useState<TourRoom[]>([]);
@@ -36,27 +34,27 @@ export default function PropertyTourScreen() {
   const [showInfo, setShowInfo] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Loads the target property and its associated 360 panoramic rooms from SQLite.
+  // Loads the target property and its associated 360 panoramic rooms from the shared Go API.
   const loadTourData = useCallback(async () => {
     if (!slug) return;
     try {
-      const prop = await getPublishedPropertyBySlug(db, slug);
+      const prop = await getPublishedPropertyBySlug(slug);
       if (prop) {
         setProperty(prop);
-        const tourRooms = await getTourRoomsForProperty(db, prop.id);
+        const tourRooms = await getTourRoomsForProperty(prop.id);
         setRooms(tourRooms);
         if (tourRooms.length > 0) {
           setActiveRoomId(tourRooms[0].id);
         }
       }
-    } finally {
+    } catch (error) { showApiError(error); } finally {
       setLoading(false);
     }
-  }, [db, slug]);
+  }, [slug]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     loadTourData();
-  }, [loadTourData]);
+  }, [loadTourData]));
 
   // Transitions the 360 view into a linked target room.
   const handleSelectRoom = (targetRoomId: number) => {
@@ -66,7 +64,7 @@ export default function PropertyTourScreen() {
   // Opens WhatsApp with inquiry regarding the active room.
   const handleWhatsAppInquiry = () => {
     if (!property || !activeRoom) return;
-    const msg = `Halo, saya sedang melihat Tur 360° pada bagian "${activeRoom.name}" untuk properti "${property.title}". Apakah bisa dijelaskan lebih lanjut?`;
+    const msg = `Halo, saya sedang melihat Tur 360Ã‚Â° pada bagian "${activeRoom.name}" untuk properti "${property.title}". Apakah bisa dijelaskan lebih lanjut?`;
     Linking.openURL(buildWhatsAppLink(property.whatsappNumber, msg));
   };
 
@@ -82,8 +80,8 @@ export default function PropertyTourScreen() {
     return (
       <SafeAreaView edges={['top']} style={styles.centerContainer}>
         <Ionicons name="images-outline" size={48} color={colors.muted} />
-        <Text style={styles.emptyTitle}>Tur 360° Belum Tersedia</Text>
-        <Text style={styles.emptyDesc}>Pemilik belum menambahkan foto panorama 360° untuk properti ini.</Text>
+        <Text style={styles.emptyTitle}>Tur 360Ã‚Â° Belum Tersedia</Text>
+        <Text style={styles.emptyDesc}>Pemilik belum menambahkan foto panorama 360Ã‚Â° untuk properti ini.</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.backBtnText}>Kembali ke Halaman Properti</Text>
         </TouchableOpacity>
@@ -108,7 +106,7 @@ export default function PropertyTourScreen() {
       <View style={styles.roomHeaderBar}>
         <View style={styles.badgeRow}>
           <View style={styles.live360Badge}>
-            <Text style={styles.live360Text}>TUR 360° AKTIF</Text>
+            <Text style={styles.live360Text}>TUR 360Ã‚Â° AKTIF</Text>
           </View>
           <Text style={styles.roomTitle}>{activeRoom.name}</Text>
         </View>

@@ -30,18 +30,19 @@ func Build(ctx context.Context, cfg *config.Config, db *sql.DB) http.Handler {
 	leadRepo := repositories.NewLeadRepository(db)
 	tourRepo := repositories.NewTourRepository(db)
 	statsRepo := repositories.NewStatsRepository(db)
+	activitySvc := services.NewActivityService(repositories.NewActivityLogRepository(db))
 
 	storageSvc := services.NewStorageService(cfg.UploadDir, cfg.MaxUploadBytes())
-	modelQueue := services.NewModelQueue(storageSvc, propRepo, services.NewModelAnalyzer())
+	modelQueue := services.NewModelQueue(storageSvc, propRepo, services.NewModelAnalyzer(), activitySvc)
 	modelQueue.Start(ctx, modelQueueWorkers)
 
-	tourQueue := services.NewTourQueue(tourRepo, storageSvc)
+	tourQueue := services.NewTourQueue(tourRepo, storageSvc, activitySvc)
 	if db != nil {
 		tourQueue.Start(ctx)
 	}
 
 	authSvc := services.NewAuthService(userRepo, sessionRepo, cfg.SessionTTL)
-	propSvc := services.NewPropertyService(propRepo, imgRepo, modelQueue)
+	propSvc := services.NewPropertyServiceWithTours(propRepo, imgRepo, modelQueue, tourRepo)
 	tourSvc := services.NewTourService(tourRepo, propRepo, storageSvc, tourQueue)
 	assistantSvc := services.NewAssistantService(cfg.OpenRouterKey, cfg.OpenRouterModel, propRepo)
 
@@ -51,13 +52,15 @@ func Build(ctx context.Context, cfg *config.Config, db *sql.DB) http.Handler {
 		PropSvc:       propSvc,
 		StorageSvc:    storageSvc,
 		HealthHdl:     handlers.NewHealthHandler(db),
-		AuthHdl:       handlers.NewAuthHandler(authSvc, cfg.IsProduction()),
+		AuthHdl:       handlers.NewAuthHandler(authSvc, cfg.IsProduction(), activitySvc),
 		PropHdl:       handlers.NewPropertyHandler(propSvc),
 		StorageHdl:    handlers.NewStorageHandler(storageSvc),
 		LeadHdl:       handlers.NewLeadHandler(leadRepo, propRepo),
 		TourHdl:       handlers.NewTourHandler(tourSvc),
 		EngagementHdl: handlers.NewEngagementHandler(statsRepo, propRepo),
 		AssistantHdl:  handlers.NewAssistantHandler(assistantSvc),
+		ActivityHdl:   handlers.NewActivityHandler(activitySvc),
+		ActivitySvc:   activitySvc,
 		RateLimiter:   newLimiter(cfg, generalRateLimit),
 		EventLimiter:  newLimiter(cfg, eventRateLimit),
 		AiLimiter:     newLimiter(cfg, assistantRateLimit),

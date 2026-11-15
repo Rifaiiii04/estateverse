@@ -1,4 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { showApiError } from '@/lib/api/errors';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,20 +11,18 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 
 import { FilterBar } from '@/components/FilterBar';
 import { Header } from '@/components/Header';
 import { PropertyCard } from '@/components/PropertyCard';
 import { colors, radius, spacing, typography } from '@/constants/theme';
-import { listPublishedProperties } from '@/db/propertyQueries';
+import { listPublishedProperties } from '@/lib/api/properties';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import type { PriceRange, Property, SortOption, TypeFilter } from '@/types/property';
 
 // Renders the searchable and filterable property catalog screen.
 export default function PropertiesScreen() {
-  const db = useSQLiteContext();
   const [search, setSearch] = useState('');
   const [type, setType] = useState<TypeFilter>('all');
   const [price, setPrice] = useState<PriceRange>('all');
@@ -35,27 +35,26 @@ export default function PropertiesScreen() {
 
   const debouncedSearch = useDebounce(search, 300);
 
-  // Queries matching properties from SQLite based on current filters.
+  // Queries matching properties from the shared Go API based on current filters.
   const fetchProperties = useCallback(async () => {
     try {
-      const result = await listPublishedProperties(
-        db,
-        { keyword: debouncedSearch, type, priceRange: price, sort },
+      const result = await listPublishedProperties({ keyword: debouncedSearch, type, priceRange: price, sort },
         50,
       );
       setProperties(result.items);
       setTotal(result.items.length);
-    } finally {
+    } catch (error) { showApiError(error); } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [db, debouncedSearch, type, price, sort]);
+  }, [debouncedSearch, type, price, sort]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     setLoading(true);
     fetchProperties();
-  }, [fetchProperties]);
+  }, [fetchProperties]));
 
+  // Refreshes the shared catalog after a pull gesture.
   const onRefresh = () => {
     setRefreshing(true);
     fetchProperties();

@@ -2,7 +2,7 @@
 
 export type PropertyStatus = 'draft' | 'published';
 
-export type PropertyType = 'house' | 'villa' | 'apartment' | 'commercial' | 'land';
+export type PropertyType = 'house' | 'villa' | 'townhouse' | 'cluster' | 'apartment' | 'commercial' | 'land';
 
 export type LeadStatus = 'new' | 'contacted' | 'scheduled' | 'closed';
 
@@ -18,6 +18,7 @@ export interface TourHotspot {
   targetRoomId: number;
   label: string;
   yawAngle: number;
+  pitchAngle?: number;
 }
 
 export interface TourRoom {
@@ -28,6 +29,9 @@ export interface TourRoom {
   roomSpecs: string;
   sortOrder: number;
   hotspots?: TourHotspot[];
+  status?: 'processing' | 'ready' | 'failed';
+  qualityScore?: number;
+  errorMessage?: string;
 }
 
 export interface Property {
@@ -54,6 +58,7 @@ export interface Property {
   images: PropertyImage[];
   benefits: string[];
   tourRooms?: TourRoom[];
+  model3dPath?: string;
 }
 
 export interface PropertyInput {
@@ -73,6 +78,7 @@ export interface PropertyInput {
   status: PropertyStatus;
   imagePaths: string[];
   benefits: string[];
+  model3dPath?: string;
 }
 
 export interface Lead {

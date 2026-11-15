@@ -2,7 +2,7 @@
 
 import React, { RefObject, useEffect, useRef } from "react";
 import { Vector3 } from "three";
-import { CaptureTarget, nearestPending, ringLabel, STEADY_SPEED_DEG_S } from "@/lib/capture/captureTargets";
+import { CaptureTarget, nextPending, ringLabel, STEADY_SPEED_DEG_S } from "@/lib/capture/captureTargets";
 import type { OrientationSample } from "@/lib/capture/orientation";
 import type { SteadyState } from "@/lib/capture/useSphereCapture";
 import { drawGuideArrow, drawMiniMap, drawReticle, drawTargets } from "./overlayDrawing";
@@ -33,7 +33,7 @@ export function CaptureOverlay({ targets, doneIds, sampleRef, speedRef, steadyRe
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
       const forward = new Vector3(0, 0, -1).applyQuaternion(sample.quaternion);
-      const nearest = nearestPending(targets, doneIds, forward);
+      const nearest = nextPending(targets, doneIds, forward);
       const state = {
         quaternion: sample.quaternion,
         targets,

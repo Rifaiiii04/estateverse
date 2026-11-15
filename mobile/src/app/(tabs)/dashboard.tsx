@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { showApiError } from '@/lib/api/errors';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -9,8 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { DashboardHeaderBlock } from '@/components/dashboard/DashboardHeaderBlock';
 import { LeadItem } from '@/components/dashboard/LeadItem';
@@ -19,9 +19,9 @@ import { SellerGuestView } from '@/components/dashboard/SellerGuestView';
 import { Header } from '@/components/Header';
 import { colors, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { listOwnedLeads, updateLeadStatus } from '@/db/leadRepository';
-import { getDashboardSummary, listOwnedProperties } from '@/db/propertyQueries';
-import { deleteProperty, setPropertyStatus } from '@/db/propertyWrites';
+import { listOwnedLeads, updateLeadStatus } from '@/lib/api/leads';
+import { getDashboardSummary, listOwnedProperties } from '@/lib/api/properties';
+import { deleteProperty, setPropertyStatus } from '@/lib/api/propertyWrites';
 import type { DashboardSummary, Lead, Property, PropertyStatus } from '@/types/property';
 
 type DashboardItem =
@@ -31,7 +31,6 @@ type DashboardItem =
 // Renders the seller dashboard with performance metrics, listing manager, and leads inbox.
 export default function DashboardScreen() {
   const router = useRouter();
-  const db = useSQLiteContext();
   const { user, logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'listings' | 'leads'>('listings');
@@ -46,26 +45,27 @@ export default function DashboardScreen() {
     if (!user) return;
     try {
       const [sum, props, leadList] = await Promise.all([
-        getDashboardSummary(db, user.id),
-        listOwnedProperties(db, user.id, 'all', ''),
-        listOwnedLeads(db, user.id, 'all', ''),
+        getDashboardSummary(),
+        listOwnedProperties('all', ''),
+        listOwnedLeads('all', ''),
       ]);
       setSummary(sum);
       setProperties(props);
       setLeads(leadList);
-    } finally {
+    } catch (error) { showApiError(error); } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [db, user]);
+  }, [user]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (user) {
       setLoading(true);
       loadDashboardData();
     }
-  }, [user, loadDashboardData]);
+  }, [user, loadDashboardData]));
 
+  // Refreshes server listings and inquiries after a pull gesture.
   const onRefresh = () => {
     setRefreshing(true);
     loadDashboardData();
@@ -75,7 +75,7 @@ export default function DashboardScreen() {
   const handleToggleStatus = async (prop: Property) => {
     if (!user) return;
     const nextStatus: PropertyStatus = prop.status === 'published' ? 'draft' : 'published';
-    await setPropertyStatus(db, user.id, prop.id, nextStatus);
+    await setPropertyStatus(prop.id, nextStatus);
     loadDashboardData();
   };
 
@@ -88,7 +88,7 @@ export default function DashboardScreen() {
         text: 'Hapus',
         style: 'destructive',
         onPress: async () => {
-          await deleteProperty(db, user.id, prop.id);
+          await deleteProperty(prop.id);
           loadDashboardData();
         },
       },
@@ -100,7 +100,7 @@ export default function DashboardScreen() {
     if (!user) return;
     const sequence: Lead['status'][] = ['new', 'contacted', 'scheduled', 'closed'];
     const next = sequence[(sequence.indexOf(lead.status) + 1) % sequence.length];
-    await updateLeadStatus(db, user.id, lead.id, next);
+    await updateLeadStatus(lead.id, next);
     loadDashboardData();
   };
 

@@ -18,14 +18,14 @@ interface FilterBarProps {
   onToggleView?: () => void;
 }
 
-const TYPE_PILLS: Array<{ value: TypeFilter; label: string }> = [
+const TYPE_PILLS: { value: TypeFilter; label: string }[] = [
   { value: 'all', label: 'Semua' },
   { value: 'house', label: 'Rumah' },
   { value: 'villa', label: 'Villa' },
   { value: 'other', label: 'Lainnya' },
 ];
 
-const PRICE_PILLS: Array<{ value: PriceRange; label: string }> = [
+const PRICE_PILLS: { value: PriceRange; label: string }[] = [
   { value: 'all', label: 'Semua Harga' },
   { value: 'under_3b', label: '< 3 Miliar' },
   { value: '3b_to_7b', label: '3 - 7 Miliar' },

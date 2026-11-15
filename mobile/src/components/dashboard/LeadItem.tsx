@@ -30,7 +30,7 @@ export function LeadItem({ lead, onAdvanceStatus }: LeadItemProps) {
       </View>
 
       <Text style={styles.date}>Diterima: {formatDate(lead.createdAt)}</Text>
-      {Boolean(lead.note) && <Text style={styles.note}>"{lead.note}"</Text>}
+      {Boolean(lead.note) && <Text style={styles.note}>&quot;{lead.note}&quot;</Text>}
 
       <TouchableOpacity onPress={() => Linking.openURL(waUrl)} style={styles.waBtn}>
         <Ionicons name="logo-whatsapp" size={16} color="#ffffff" />

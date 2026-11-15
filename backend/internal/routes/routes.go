@@ -2,7 +2,6 @@ package routes
 
 import (
 	"net/http"
-	"time"
 
 	"projectfai/backend/internal/config"
 	"projectfai/backend/internal/handlers"
@@ -24,6 +23,8 @@ type RouterDeps struct {
 	TourHdl       *handlers.TourHandler
 	EngagementHdl *handlers.EngagementHandler
 	AssistantHdl  *handlers.AssistantHandler
+	ActivityHdl   *handlers.ActivityHandler
+	ActivitySvc   services.ActivityService
 	RateLimiter   *middleware.RateLimiter
 	EventLimiter  *middleware.RateLimiter
 	AiLimiter     *middleware.RateLimiter
@@ -40,6 +41,7 @@ func SetupRoutes(deps RouterDeps) http.Handler {
 	// Auth routes
 	mux.Handle("/api/v1/auth/register", deps.RateLimiter.Limit(http.HandlerFunc(deps.AuthHdl.Register)))
 	mux.Handle("/api/v1/auth/login", deps.RateLimiter.Limit(http.HandlerFunc(deps.AuthHdl.Login)))
+	mux.Handle("/api/v1/auth/mobile/login", deps.RateLimiter.Limit(http.HandlerFunc(deps.AuthHdl.LoginMobile)))
 	mux.HandleFunc("/api/v1/auth/logout", deps.AuthHdl.Logout)
 	mux.Handle("/api/v1/auth/me", requireAuth(http.HandlerFunc(deps.AuthHdl.Me)))
 
@@ -70,6 +72,9 @@ func SetupRoutes(deps RouterDeps) http.Handler {
 
 	// Seller dashboard routes
 	mux.Handle("/api/v1/dashboard/summary", requireAuth(http.HandlerFunc(deps.PropHdl.GetDashboardSummary)))
+	if deps.ActivityHdl != nil {
+		mux.Handle("/api/v1/dashboard/activity", requireAuth(http.HandlerFunc(deps.ActivityHdl.List)))
+	}
 	mux.HandleFunc("/api/v1/dashboard/properties", func(w http.ResponseWriter, r *http.Request) {
 		requireAuth(http.HandlerFunc(deps.PropHdl.ListDashboard)).ServeHTTP(w, r)
 	})
@@ -109,15 +114,5 @@ func SetupRoutes(deps RouterDeps) http.Handler {
 	handler = middleware.Cors(deps.Config.FrontendOrigin)(handler)
 	handler = middleware.SecurityHeaders(handler)
 
-	return loggingMiddleware(handler)
-}
-
-// loggingMiddleware logs incoming HTTP requests with latency.
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		next.ServeHTTP(w, r)
-		// Non-health endpoints are logged silently if needed
-		_ = start
-	})
+	return loggingMiddleware(handler, deps.ActivitySvc)
 }

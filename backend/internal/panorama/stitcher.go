@@ -64,6 +64,11 @@ func Stitch(inputs []FrameInput, opts Options) (*Result, error) {
 	alignment := math.Max(0, globalScore(frames, nbrs))
 	gains := compensateGains(frames, nbrs)
 	pano, coverage := render(frames, gains, opts.OutputWidth)
+	if !opts.SkipRefine {
+		if err := validateStitch(alignment, coverage); err != nil {
+			return nil, err
+		}
+	}
 	return &Result{
 		Panorama:  pano,
 		FOV:       fov,

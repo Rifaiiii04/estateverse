@@ -32,7 +32,7 @@ Semua angka di dashboard dan bagian "Dampak" dihitung dari database (kunjungan, 
 - Pasang iklan rumah (foto, harga, luas, keunggulan lokasi, nomor WhatsApp).
 - **Rekam Ruangan 360°** dari HP:
   - titik target di layar, dan foto diambil otomatis saat HP stabil
-  - 3 putaran (tengah, atas, bawah) + plafon + lantai, kira-kira 30 foto
+  - jumlah foto otomatis: tiga foto awal untuk mengukur lensa, lalu backend menghitung sudut tambahan berdasarkan cakupan dan overlap; foto awal dipakai kembali
   - status pemrosesan dan skor kualitas sambungan
 - Unggah foto 360° yang sudah jadi (kamera 360/Photo Sphere) sebagai alternatif.
 - Atur **panah antar-ruangan** (hotspot) ala Street View.
@@ -54,16 +54,17 @@ HP penjual (browser, HTTPS)                        Server Go
 getUserMedia (kamera belakang)                     POST /api/v1/tours/captures
 DeviceOrientation (giroskop+akselerometer+kompas)    → validasi JPEG & quaternion, simpan privat
   → quaternion kamera tiap foto                      → antrian background (1 worker)
-Titik target 30 arah, auto-capture saat stabil     internal/panorama (Go murni):
-  → upload 30 JPEG + manifest orientasi              1. proyeksi kamera ↔ arah 3D (quaternion)
+Titik target dihitung backend dari bidang pandang lensa, auto-capture saat stabil  internal/panorama (Go murni):
+  → upload JPEG + manifest orientasi                 1. proyeksi kamera ↔ arah 3D (quaternion)
                                                      2. kalibrasi FOV lensa dari area tumpang-tindih
                                                      3. refine orientasi tiap foto (maks. NCC)
                                                      4. kompensasi exposure (gain)
                                                      5. blending → equirectangular 2:1 (4096 + 2048 px)
+                                                     6. status room ready/failed + pemberitahuan klien
 Viewer (React Three Fiber)                       ←  panorama publik + skor kualitas
 ```
 
-Foto di dinding/plafon polos tetap terpasang memakai sudut sensor, jadi cakupannya 100% tanpa bolong. Diuji dengan scene sintetis: FOV terdeteksi tepat, PSNR naik dari 16 dB (sensor saja) ke 25 dB setelah refine, sekitar 4 detik untuk 30 foto.
+Foto di dinding/plafon polos memakai sudut sensor sebagai perkiraan awal. Estimasi lensa menyesuaikan rasio frame kamera; foto dicocokkan lewat area tumpang-tindih sebelum exposure dan blending. Rekaman dengan cakupan kurang dari 98,5% atau skor korelasi sambungan kurang dari 0,45 ditolak, bukan dipublikasikan sebagai tur yang rusak. Angka ini adalah pemeriksaan teknis, bukan jaminan kualitas visual. Lihat [panduan capture](docs/walk-inside-capture.md) untuk metode dan batasannya.
 
 ## Tech Stack
 
@@ -86,7 +87,8 @@ frontend/           Next.js
   src/components/capture  perekam 360° full-screen
   src/components/tour     viewer 360°, hotspot, pengelola ruangan
 deploy/             docker-compose, Caddyfile, panduan VPS
-mobile/             prototipe aplikasi Expo (roadmap, belum dipakai di versi web)
+mobile/             aplikasi Expo: capture native dan akses ke Go API yang sama dengan website
+shared/             grid capture, quaternion, dan manifest yang dipakai web serta mobile
 ```
 
 ## Menjalankan Secara Lokal
@@ -113,6 +115,7 @@ mobile/             prototipe aplikasi Expo (roadmap, belum dipakai di versi web
 ```bash
 cd backend && go vet ./... && go test ./...      # termasuk tes stitching sintetis & layanan tur/asisten
 cd frontend && npx eslint src && npm run build
+cd frontend && npm run test:capture           # Node.js 22.18+ / 24+, tanpa dependensi tes tambahan
 ```
 
 Standar kode mengikuti [`AGENTS.md`](AGENTS.md): maksimal 250 baris per file, komentar di setiap fungsi, otorisasi dan cek kepemilikan di server, serta query terparameter.

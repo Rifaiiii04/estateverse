@@ -5,14 +5,20 @@ import { Camera, CheckCircle2, RotateCcw, Smartphone, UploadCloud } from "lucide
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
+interface CaptureIntroProps {
+  onStart: () => void;
+  isStarting: boolean;
+  error: string;
+}
+
 // CaptureIntroPanel explains how to record a room before the camera opens.
-export function CaptureIntroPanel({ onStart, isStarting, error }: { onStart: () => void; isStarting: boolean; error: string }) {
+export function CaptureIntroPanel({ onStart, isStarting, error }: CaptureIntroProps) {
   const tips = [
     "Berdiri di tengah ruangan dan nyalakan lampu.",
-    "Pegang HP tegak (portrait) setinggi mata, lengan agak ditekuk.",
+    "Matikan putar otomatis layar. Pegang HP tegak (portrait) setinggi mata.",
     "Putar HP di titik yang sama — bayangkan lensa kamera sebagai poros. Jangan berjalan atau mengayunkan HP melingkar, karena sambungan panorama bisa bergeser.",
-    "Arahkan lingkaran tengah ke setiap titik putih lalu tahan sebentar. Foto diambil otomatis.",
-    "Rekam 3 putaran (tengah, atas, bawah) lalu plafon dan lantai — sekitar 2 menit.",
+    "Ikuti panah ke titik berikutnya lalu tahan HP benar-benar diam sampai foto terambil. Jangan memiringkan HP ke samping.",
+    "Ambil tiga foto awal sesuai panduan. Sistem mengukur lensa dan menghitung jumlah serta arah foto berikutnya secara otomatis.",
   ];
   return (
     <div className="absolute inset-0 overflow-y-auto bg-neutral-950/90 text-white p-6 flex flex-col justify-center gap-5">

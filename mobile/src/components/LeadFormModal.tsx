@@ -10,11 +10,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 
 import { colors, radius, spacing, typography } from '@/constants/theme';
-import { createLead } from '@/db/leadRepository';
+import { createLead } from '@/lib/api/leads';
 import { normalizeWhatsAppNumber } from '@/lib/formatters';
 
 interface LeadFormModalProps {
@@ -31,13 +30,12 @@ export function LeadFormModal({
   propertyId,
   propertyTitle,
 }: LeadFormModalProps) {
-  const db = useSQLiteContext();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Submits the visit request and records it in the local SQLite database.
+  // Submits the visit request and sends it to the shared backend seller inbox.
   const handleSubmit = async () => {
     const trimmedName = name.trim();
     const cleanPhone = normalizeWhatsAppNumber(phone);
@@ -53,7 +51,7 @@ export function LeadFormModal({
 
     try {
       setSubmitting(true);
-      await createLead(db, {
+      await createLead({
         propertyId,
         name: trimmedName,
         phone: cleanPhone,

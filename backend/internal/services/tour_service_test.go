@@ -7,6 +7,7 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"projectfai/backend/internal/models"
 )
@@ -34,6 +35,10 @@ func TestStartCaptureStoresFramesAndQueues(t *testing.T) {
 	}
 	if room.Name != "Ruang Tamu" || room.Status != models.TourStatusProcessing {
 		t.Fatalf("unexpected room: %+v", room)
+	}
+	property, err := svc.props.GetByID(context.Background(), 1)
+	if err != nil || property.Status != models.StatusDraft {
+		t.Fatalf("capturing a published room must create a property draft, got %+v (err %v)", property, err)
 	}
 	if len(queue.ids) != 1 || queue.ids[0] != room.ID {
 		t.Fatalf("expected room queued, got %v", queue.ids)
@@ -70,7 +75,7 @@ func TestStartCaptureRejectsForeignAndInvalidInput(t *testing.T) {
 // TestQueueProcessProducesPanorama runs the real stitching worker over a stored capture.
 func TestQueueProcessProducesPanorama(t *testing.T) {
 	svc, tours, _, storage := newTourFixture(t)
-	room, err := svc.StartCapture(context.Background(), 1, 1, "Kamar", testCaptureFrames(12, 320, 400))
+	room, err := svc.StartCapture(context.Background(), 1, 1, "Kamar", roomSceneFrames())
 	if err != nil {
 		t.Fatalf("capture failed: %v", err)
 	}
@@ -83,6 +88,33 @@ func TestQueueProcessProducesPanorama(t *testing.T) {
 	}
 	if abs, _ := storage.GetAbsolutePath(captureDir(room.ID)); dirExists(abs) {
 		t.Fatal("capture frames should be removed after stitching")
+	}
+}
+
+// TestQueueStartRecoversProcessingRooms verifies interrupted jobs resume after the backend starts again.
+func TestQueueStartRecoversProcessingRooms(t *testing.T) {
+	svc, tours, _, storage := newTourFixture(t)
+	room, err := svc.StartCapture(context.Background(), 1, 1, "Kamar Recovery", roomSceneFrames())
+	if err != nil {
+		t.Fatalf("capture failed: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	NewTourQueue(tours, storage).Start(ctx)
+	deadline := time.NewTimer(90 * time.Second)
+	defer deadline.Stop()
+	ticker := time.NewTicker(25 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-deadline.C:
+			t.Fatalf("processing room was not recovered: %+v", tours.rooms[room.ID])
+		case <-ticker.C:
+			if tours.rooms[room.ID].Status == models.TourStatusReady {
+				return
+			}
+		}
 	}
 }
 

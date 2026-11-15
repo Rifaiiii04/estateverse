@@ -34,7 +34,9 @@
         }
       ],
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      ["expo-camera", { "cameraPermission": "Izinkan EstateVerse merekam foto ruangan untuk diproses menjadi tur 360°.", "recordAudioAndroid": false }],
+      ["expo-sensors", { "motionPermission": "Izinkan EstateVerse membaca orientasi HP saat foto ruangan diambil." }]
     ],
     "experiments": {
       "typedRoutes": true,

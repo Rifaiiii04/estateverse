@@ -52,7 +52,7 @@ export const id = {
     cta: "Tanya Asisten",
     blueprintTitle: "Tur 360° dari Rekaman HP",
     blueprintBadge: "Otomatis",
-    blueprintDesc: "Sistem menggabungkan sekitar 30 foto rekaman menjadi panorama 360° yang utuh, lengkap dengan panah antar-ruangan.",
+    blueprintDesc: "Rekam foto dengan panduan sudut otomatis untuk membuat panorama 360°, lengkap dengan panah antar-ruangan.",
     steps: [
       { title: "Penjual memasang iklan", desc: "Isi harga, luas, dan foto rumah. Pembeli langsung terhubung ke pemiliknya." },
       { title: "Rekam tiap ruangan dari HP", desc: "Berdiri di tengah ruangan dan putar HP di titik yang sama mengikuti titik di layar; foto diambil otomatis dan digabung menjadi Walk Inside 360°." },

@@ -25,6 +25,7 @@ type propertyService struct {
 	propRepo   repositories.PropertyRepository
 	imageRepo  repositories.PropertyImageRepository
 	modelQueue ModelQueue
+	tours      repositories.TourRepository
 }
 
 // NewPropertyService instantiates the property business service with background 3D processing.
@@ -33,10 +34,31 @@ func NewPropertyService(
 	iRepo repositories.PropertyImageRepository,
 	mQueue ModelQueue,
 ) PropertyService {
+	return newPropertyService(pRepo, iRepo, mQueue, nil)
+}
+
+// NewPropertyServiceWithTours wires tour state into publication checks for asynchronous panorama processing.
+func NewPropertyServiceWithTours(
+	pRepo repositories.PropertyRepository,
+	iRepo repositories.PropertyImageRepository,
+	mQueue ModelQueue,
+	tours repositories.TourRepository,
+) PropertyService {
+	return newPropertyService(pRepo, iRepo, mQueue, tours)
+}
+
+// newPropertyService constructs the property service with optional tour readiness checks.
+func newPropertyService(
+	pRepo repositories.PropertyRepository,
+	iRepo repositories.PropertyImageRepository,
+	mQueue ModelQueue,
+	tours repositories.TourRepository,
+) PropertyService {
 	return &propertyService{
 		propRepo:   pRepo,
 		imageRepo:  iRepo,
 		modelQueue: mQueue,
+		tours:      tours,
 	}
 }
 
@@ -104,6 +126,18 @@ func (s *propertyService) UpdateProperty(ctx context.Context, id int64, ownerID 
 		return nil, ErrNotFound
 	}
 
+	modelChanged := cleanIn.Model3DPath != "" && cleanIn.Model3DPath != existing.Model3DPath
+	requestedPublish := cleanIn.Status == models.StatusPublished
+	if requestedPublish {
+		ready, readinessErr := s.toursReadyForPublish(ctx, id)
+		if readinessErr != nil {
+			return nil, readinessErr
+		}
+		if !ready {
+			requestedPublish = false
+		}
+	}
+
 	existing.Title = cleanIn.Title
 	existing.Description = cleanIn.Description
 	existing.PropertyType = cleanIn.PropertyType
@@ -119,11 +153,11 @@ func (s *propertyService) UpdateProperty(ctx context.Context, id int64, ownerID 
 	existing.WhatsAppNumber = cleanIn.WhatsAppNumber
 	existing.Model3DPath = cleanIn.Model3DPath
 	existing.Benefits = cleanIn.Benefits
-	existing.Status = cleanIn.Status
-
-	modelChanged := cleanIn.Model3DPath != "" && cleanIn.Model3DPath != existing.Model3DPath
-	requestedPublish := cleanIn.Status == models.StatusPublished
-	if modelChanged && requestedPublish {
+	existing.Status = models.StatusDraft
+	if requestedPublish {
+		existing.Status = models.StatusPublished
+	}
+	if modelChanged {
 		existing.Status = models.StatusDraft
 	}
 
@@ -144,90 +178,4 @@ func (s *propertyService) UpdateProperty(ctx context.Context, id int64, ownerID 
 	}
 
 	return s.GetOwnerProperty(ctx, id, ownerID)
-}
-
-// DeleteProperty removes a property owned by the specified seller.
-func (s *propertyService) DeleteProperty(ctx context.Context, id int64, ownerID int64) error {
-	err := s.propRepo.Delete(ctx, id, ownerID)
-	if errors.Is(err, repositories.ErrNotFound) {
-		return ErrNotFound
-	}
-	return err
-}
-
-// GetPublicProperty fetches a single published listing with its images.
-func (s *propertyService) GetPublicProperty(ctx context.Context, slug string) (*models.Property, error) {
-	prop, err := s.propRepo.GetPublishedBySlug(ctx, slug)
-	if err != nil {
-		return nil, err
-	}
-	if prop == nil {
-		return nil, ErrNotFound
-	}
-
-	images, err := s.imageRepo.GetByPropertyID(ctx, prop.ID)
-	if err != nil {
-		return nil, err
-	}
-	prop.Images = images
-	return prop, nil
-}
-
-// ListPublicProperties lists published properties with pagination and batch image loading.
-func (s *propertyService) ListPublicProperties(ctx context.Context, page, limit int) ([]models.Property, int, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 50 {
-		limit = 12
-	}
-	offset := (page - 1) * limit
-
-	props, total, err := s.propRepo.ListPublished(ctx, limit, offset)
-	if err != nil || len(props) == 0 {
-		return props, total, err
-	}
-
-	if err := attachPropertyImagesBatch(ctx, s.imageRepo, props); err != nil {
-		return nil, 0, err
-	}
-
-	return props, total, nil
-}
-
-// GetOwnerProperty returns a specific property belonging to the owner.
-func (s *propertyService) GetOwnerProperty(ctx context.Context, id int64, ownerID int64) (*models.Property, error) {
-	prop, err := s.propRepo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if prop == nil || prop.OwnerID != ownerID {
-		return nil, ErrNotFound
-	}
-
-	images, err := s.imageRepo.GetByPropertyID(ctx, prop.ID)
-	if err != nil {
-		return nil, err
-	}
-	prop.Images = images
-	return prop, nil
-}
-
-// ListOwnerProperties returns all properties created by the seller using batch image lookup.
-func (s *propertyService) ListOwnerProperties(ctx context.Context, ownerID int64) ([]models.Property, error) {
-	props, err := s.propRepo.ListByOwner(ctx, ownerID)
-	if err != nil || len(props) == 0 {
-		return props, err
-	}
-
-	if err := attachPropertyImagesBatch(ctx, s.imageRepo, props); err != nil {
-		return nil, err
-	}
-
-	return props, nil
-}
-
-// GetDashboardSummary returns metrics count for the seller's properties.
-func (s *propertyService) GetDashboardSummary(ctx context.Context, ownerID int64) (*models.DashboardSummary, error) {
-	return s.propRepo.GetOwnerSummary(ctx, ownerID)
 }
