@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Edges, Html, Line } from "@react-three/drei";
+import { Edges, Line } from "@react-three/drei";
 import { DoubleSide, Shape, Vector2 } from "three";
 import { distanceBetween, formatMeters, FloorXZ } from "@/lib/measure/roomGeometry";
 import type { MeasureState, PlacedFurniture } from "./useMeasureTool";
+import { SpriteLabel as Label } from "./SpriteLabel";
 
 const DEG = Math.PI / 180;
 const FLOOR_LIFT_M = 0.01; // keeps overlays just above the floor plane so they do not flicker
 const ACCENT = "#a2c3b7";
+const FURNITURE_FILL = "#356859"; // darker sage so boxes stay visible on bright tiled floors
 
 interface MeasureOverlayProps {
   cameraHeightM: number;
@@ -92,21 +94,10 @@ function FurnitureBox({ item, floorY }: { item: PlacedFurniture; floorY: number 
     <group position={[item.at.x, floorY + heightM / 2, item.at.z]} rotation={[0, item.rotationDeg * DEG, 0]}>
       <mesh>
         <boxGeometry args={[widthM, heightM, depthM]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.35} depthWrite={false} />
+        <meshBasicMaterial color={FURNITURE_FILL} transparent opacity={0.45} depthWrite={false} />
         <Edges color="#ffffff" />
       </mesh>
       <Label position={[0, heightM / 2 + 0.05, 0]} text={label} />
     </group>
-  );
-}
-
-// Label is a small non-interactive text tag pinned to a 3D position.
-function Label({ position, text, strong = false }: { position: [number, number, number]; text: string; strong?: boolean }) {
-  return (
-    <Html position={position} center zIndexRange={[15, 0]} style={{ pointerEvents: "none" }}>
-      <span className={`whitespace-nowrap rounded-md px-1.5 py-0.5 text-white ${strong ? "bg-sage-700 text-sm font-bold" : "bg-black/65 text-[11px] font-semibold"}`}>
-        {text}
-      </span>
-    </Html>
   );
 }

@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS activity_logs (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    actor_user_id BIGINT UNSIGNED NULL,
+    actor_user_id BIGINT NULL, -- same type as users.id, otherwise MySQL rejects the foreign key (error 3780)
     action VARCHAR(100) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'success',
     method VARCHAR(10) NOT NULL DEFAULT '',
