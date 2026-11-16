@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Compass, Expand, Minus, Plus, Smartphone } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Compass, Expand, Minus, Plus, Ruler, Smartphone } from "lucide-react";
 import type { TourRoom } from "@/types/tour";
 import { needsMotionPermission, requestMotionPermission } from "@/lib/capture/orientation";
-import { SphereViewer, ViewerHotspot } from "./SphereViewer";
+import { formatArea, formatMeters, summarizeRoom } from "@/lib/measure/roomGeometry";
+import type { ViewerHotspot } from "./SphereViewer";
 import { RoomSelector } from "./RoomSelector";
-import { panoramaUrlFor } from "./tourImage";
+import { TourRoomStage } from "./TourRoomStage";
 import type { LookHandle } from "./useLookControls";
 
 interface TourViewerProps {
@@ -18,6 +19,7 @@ interface TourViewerProps {
 export function TourViewer({ rooms, propertyTitle }: TourViewerProps) {
   const [currentId, setCurrentId] = useState(rooms[0]?.id ?? 0);
   const [gyro, setGyro] = useState(false);
+  const [measuring, setMeasuring] = useState(false);
   const controls = useRef<LookHandle | null>(null);
   const room = rooms.find((r) => r.id === currentId) ?? rooms[0];
   const containerId = `tour-${room?.property_id ?? 0}`;
@@ -41,14 +43,19 @@ export function TourViewer({ rooms, propertyTitle }: TourViewerProps) {
     setGyro((g) => !g);
   };
 
+  const summary = summarizeRoom(room.floor_outline ?? [], room.camera_height_cm);
+  const showRooms = rooms.length > 1 && !measuring;
+
   return (
     <div id={containerId} className="relative w-full h-[380px] sm:h-[480px] lg:h-[580px] rounded-2xl overflow-hidden bg-neutral-900">
-      <SphereViewer
+      <TourRoomStage
         key={room.id}
-        imageUrl={panoramaUrlFor(room)}
+        room={room}
         hotspots={hotspots}
         gyro={gyro}
-        controlRef={controls}
+        controls={controls}
+        measuring={measuring}
+        raised={showRooms}
         ariaLabel={`Walk Inside 360° ${room.name} — ${propertyTitle}. Geser atau gunakan tombol panah untuk melihat sekeliling.`}
       />
       <div className="absolute top-3 left-3 max-w-[60%] bg-black/60 text-white rounded-xl px-3 py-2 space-y-0.5">
@@ -56,9 +63,18 @@ export function TourViewer({ rooms, propertyTitle }: TourViewerProps) {
           <Compass className="w-4 h-4 shrink-0" aria-hidden="true" />
           {room.name}
         </p>
+        {summary && (
+          <p className="text-[11px] font-semibold text-sage-200">
+            Luas ±{formatArea(summary.areaM2)}
+            {summary.sides && ` · ${formatMeters(summary.sides[0])} × ${formatMeters(summary.sides[1])}`}
+          </p>
+        )}
         {room.note && <p className="text-[11px] text-white/90">{room.note}</p>}
       </div>
       <div className="absolute top-3 right-3 flex gap-2">
+        <ViewerButton label={measuring ? "Tutup alat ukur" : "Ukur ruangan & coba furnitur"} onClick={() => setMeasuring((m) => !m)} active={measuring}>
+          <Ruler className="w-4 h-4" aria-hidden="true" />
+        </ViewerButton>
         <ViewerButton label={gyro ? "Matikan gerak HP" : "Gerakkan HP untuk melihat"} onClick={toggleGyro} active={gyro}>
           <Smartphone className="w-4 h-4" aria-hidden="true" />
         </ViewerButton>
@@ -66,8 +82,8 @@ export function TourViewer({ rooms, propertyTitle }: TourViewerProps) {
           <Expand className="w-4 h-4" aria-hidden="true" />
         </ViewerButton>
       </div>
-      {!gyro && <LookPad controls={controls} raised={rooms.length > 1} />}
-      {rooms.length > 1 && <RoomSelector rooms={rooms} currentId={room.id} onSelect={setCurrentId} />}
+      {!gyro && <LookPad controls={controls} raised={showRooms} />}
+      {showRooms && <RoomSelector rooms={rooms} currentId={room.id} onSelect={setCurrentId} />}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { Vector3 } from "three";
-import type { CapturedFrame, TourRoom } from "@/types/tour";
+import type { CapturedFrame, CaptureResult, TourRoom } from "@/types/tour";
 import { calibrateTourCapture, uploadTourCapture } from "@/lib/api/tours";
 import { calibratedTargets } from "../../../../shared/capturePolicy.ts";
 import { describeStartError, waitForSensor } from "./captureStartup";
@@ -16,6 +16,7 @@ import {
 } from "./captureTargets";
 import { grabFrame, startRearCamera, stopStream } from "./frameGrabber";
 import { angularSpeed, OrientationSample, requestMotionPermission, screenAngle, subscribeOrientation, toWireQuat } from "./orientation";
+import { useCaptureExtras } from "./useCaptureExtras";
 
 export type CapturePhase = "intro" | "starting" | "capturing" | "calibrating" | "review" | "uploading" | "done" | "error";
 
@@ -45,6 +46,7 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const sessionRef = useRef(0);
   const screenRef = useRef(0);
+  const { begin: beginExtras, stop: stopExtras, snapshot: snapshotExtras } = useCaptureExtras();
 
   // Switches phase in both state (for rendering) and ref (for sensor callbacks).
   const goTo = useCallback((next: CapturePhase) => {
@@ -52,14 +54,15 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
     setPhase(next);
   }, []);
 
-  // Releases the camera and stops listening to motion sensors.
+  // Releases the camera and stops listening to motion and GPS sensors.
   const stopDevices = useCallback(() => {
     sessionRef.current++;
     unsubscribeRef.current?.();
     unsubscribeRef.current = null;
     stopStream(streamRef.current);
     streamRef.current = null;
-  }, []);
+    stopExtras();
+  }, [stopExtras]);
 
   // planCapture reuses the initial photos and obtains additional directions measured by the backend.
   const planCapture = useCallback(async (session: number) => {
@@ -153,9 +156,10 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
     [goTo, stopDevices, takeShot]
   );
 
-  // Requests permissions, opens the camera, and waits for live sensor data before recording.
-  const start = useCallback(async () => {
+  // Requests permissions, opens the camera, and waits for live sensor data; GPS is collected alongside when allowed.
+  const start = useCallback(async (cameraHeightCm?: number) => {
     stopDevices();
+    beginExtras(cameraHeightCm);
     const session = sessionRef.current;
     targetPlan.current = buildCaptureTargets();
     planned.current = false;
@@ -188,7 +192,7 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
       setError(describeStartError(err));
       goTo("error");
     }
-  }, [goTo, handleSample, stopDevices, videoRef]);
+  }, [beginExtras, goTo, handleSample, stopDevices, videoRef]);
 
   // Clears captured frames so the room can be recorded again.
   const reset = useCallback(() => {
@@ -201,14 +205,21 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
     goTo("intro");
   }, [goTo, stopDevices]);
 
-  // Uploads all frames in target order and returns the room created for stitching.
+  // Packs the frames in target order with the phone height and GPS fix, or null while the recording is incomplete.
+  const finishedCapture = useCallback((): CaptureResult | null => {
+    if (!planned.current || framesRef.current.size !== targetPlan.current.length) return null;
+    const frames = [...framesRef.current.values()].sort((a, b) => a.targetId - b.targetId);
+    return { frames, extras: snapshotExtras() };
+  }, [snapshotExtras]);
+
+  // Uploads the finished recording and returns the room created for stitching.
   const upload = useCallback(
     async (propertyId: number, name: string): Promise<TourRoom | null> => {
-      if (!planned.current || framesRef.current.size !== targetPlan.current.length) return null;
+      const capture = finishedCapture();
+      if (!capture) return null;
       goTo("uploading");
       try {
-        const frames = [...framesRef.current.values()].sort((a, b) => a.targetId - b.targetId);
-        const room = await uploadTourCapture(propertyId, name, frames, setUploadProgress);
+        const room = await uploadTourCapture(propertyId, name, capture, setUploadProgress);
         goTo("done");
         return room;
       } catch (err) {
@@ -217,16 +228,16 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
         return null;
       }
     },
-    [goTo]
+    [finishedCapture, goTo]
   );
 
-  // Returns the recorded frames in target order and finishes without uploading (used before the property exists).
-  const collect = useCallback((): CapturedFrame[] => {
-    if (!planned.current || framesRef.current.size !== targetPlan.current.length) throw new Error("Rekaman belum lengkap.");
-    const frames = [...framesRef.current.values()].sort((a, b) => a.targetId - b.targetId);
+  // Returns the finished recording without uploading (used before the property exists).
+  const collect = useCallback((): CaptureResult => {
+    const capture = finishedCapture();
+    if (!capture) throw new Error("Rekaman belum lengkap.");
     goTo("done");
-    return frames;
-  }, [goTo]);
+    return capture;
+  }, [finishedCapture, goTo]);
 
   useEffect(() => stopDevices, [stopDevices]);
 

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import type { CapturedFrame, TourRoom } from "@/types/tour";
+import type { CaptureResult, TourRoom } from "@/types/tour";
 import { useSphereCapture } from "@/lib/capture/useSphereCapture";
 import { CaptureOverlay } from "./CaptureOverlay";
 import { CaptureIntroPanel, CaptureReviewPanel } from "./CapturePanels";
@@ -15,7 +15,7 @@ interface SphereCaptureModalProps {
   propertyId?: number;
   onUploaded?: (room: TourRoom) => void;
   /** Local mode (add page): frames are handed back and uploaded once the property is saved. */
-  onCaptured?: (name: string, frames: CapturedFrame[]) => void;
+  onCaptured?: (name: string, capture: CaptureResult) => void;
 }
 
 // SphereCaptureModal is the full-screen guided "Walk Inside 360°" recorder, rendered outside any parent form.

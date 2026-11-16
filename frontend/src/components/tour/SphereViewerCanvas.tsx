@@ -27,10 +27,13 @@ export interface SphereViewerProps {
   onPick?: (yaw: number, pitch: number) => void;
   controlRef?: React.RefObject<LookHandle | null>;
   ariaLabel: string;
+  /** Extra scene content in metres around the camera, e.g. measurement overlays. */
+  children?: React.ReactNode;
 }
 
 // SphereViewerCanvas renders an equirectangular panorama around the camera with look controls and hotspots.
-export function SphereViewerCanvas({ imageUrl, hotspots = [], gyro = false, initialYaw = 0, onPick, controlRef, ariaLabel }: SphereViewerProps) {
+export function SphereViewerCanvas(props: SphereViewerProps) {
+  const { imageUrl, hotspots = [], gyro = false, initialYaw = 0, onPick, controlRef, ariaLabel, children } = props;
   return (
     <Canvas
       camera={{ fov: 75, near: 0.1, far: 2000, position: [0, 0, 0] }}
@@ -46,6 +49,7 @@ export function SphereViewerCanvas({ imageUrl, hotspots = [], gyro = false, init
       {hotspots.map((h) => (
         <HotspotMarker key={h.id} hotspot={h} />
       ))}
+      {children}
     </Canvas>
   );
 }

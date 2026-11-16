@@ -13,7 +13,7 @@ import { Alert } from "@/components/ui/Alert";
 
 // uploadDraftRoom sends one locally recorded room (or 360° photo) to the newly created property.
 async function uploadDraftRoom(propertyId: number, room: DraftTourRoom) {
-  if (room.kind === "capture" && room.frames) return uploadTourCapture(propertyId, room.name, room.frames);
+  if (room.kind === "capture" && room.frames) return uploadTourCapture(propertyId, room.name, { frames: room.frames, extras: room.extras ?? {} });
   if (room.kind === "import" && room.file) return importTourPanorama(propertyId, room.name, room.file);
 }
 

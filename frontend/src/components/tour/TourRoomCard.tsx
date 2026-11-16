@@ -2,9 +2,11 @@
 
 import React, { useState } from "react";
 /* eslint-disable @next/next/no-img-element */
-import { AlertTriangle, Check, Loader2, MapPin, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, BadgeCheck, Check, Loader2, MapPin, Pencil, Ruler, Trash2 } from "lucide-react";
 import type { TourRoom } from "@/types/tour";
 import { getMediaUrl } from "@/lib/api/client";
+import { formatArea, summarizeRoom } from "@/lib/measure/roomGeometry";
+import { LOCATION_CHECK_TEXT, TONE_TEXT_CLASS } from "@/lib/trust/originLabels";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
@@ -13,10 +15,11 @@ interface TourRoomCardProps {
   onUpdate: (room: TourRoom, name: string, note: string) => Promise<void>;
   onDelete: (room: TourRoom) => Promise<void>;
   onEditHotspots: (room: TourRoom) => void;
+  onEditLayout: (room: TourRoom) => void;
 }
 
-// TourRoomCard shows one recorded room with its processing status, quality, and management actions.
-export function TourRoomCard({ room, onUpdate, onDelete, onEditHotspots }: TourRoomCardProps) {
+// TourRoomCard shows one recorded room with its processing status, size, origin proof, and management actions.
+export function TourRoomCard({ room, onUpdate, onDelete, onEditHotspots, onEditLayout }: TourRoomCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(room.name);
   const [note, setNote] = useState(room.note ?? "");
@@ -75,12 +78,18 @@ export function TourRoomCard({ room, onUpdate, onDelete, onEditHotspots }: TourR
           </div>
         )}
         {room.status === "ready" && <StatusBadge room={room} />}
+        {room.status === "ready" && <RoomFacts room={room} />}
         {room.status === "failed" && <p className="text-xs text-rose-700">{room.error_message}</p>}
-        <div className="flex gap-2 mt-auto pt-1">
+        <div className="flex flex-wrap gap-2 mt-auto pt-1">
           {room.status === "ready" && (
-            <Button variant="outline" className="flex-1" onClick={() => onEditHotspots(room)}>
-              <MapPin aria-hidden="true" /> Atur Panah
-            </Button>
+            <>
+              <Button variant="outline" className="flex-1" onClick={() => onEditHotspots(room)}>
+                <MapPin aria-hidden="true" /> Atur Panah
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={() => onEditLayout(room)}>
+                <Ruler aria-hidden="true" /> Ukur Ruangan
+              </Button>
+            </>
           )}
           <Button
             variant="destructive"
@@ -94,6 +103,24 @@ export function TourRoomCard({ room, onUpdate, onDelete, onEditHotspots }: TourR
         </div>
       </div>
     </li>
+  );
+}
+
+// RoomFacts shows the traced room size and whether the recording is proven to be on site.
+function RoomFacts({ room }: { room: TourRoom }) {
+  const summary = summarizeRoom(room.floor_outline ?? [], room.camera_height_cm);
+  const origin = room.location_check ? LOCATION_CHECK_TEXT[room.location_check] : null;
+  return (
+    <div className="space-y-0.5 text-xs">
+      <p className={summary ? "font-semibold text-neutral-800" : "text-neutral-500"}>
+        {summary ? `Luas ±${formatArea(summary.areaM2)}` : "Ukuran belum ditandai"}
+      </p>
+      {origin && (
+        <p className={`flex items-center gap-1 ${TONE_TEXT_CLASS[origin.tone]}`}>
+          <BadgeCheck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> {origin.label}
+        </p>
+      )}
+    </div>
   );
 }
 

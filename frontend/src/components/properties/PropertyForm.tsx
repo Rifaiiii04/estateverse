@@ -1,16 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { Property, PropertyInput, PropertyStatus } from "@/types/property";
 import { formatRupiahInput, parseRupiahInput } from "@/lib/utils/formatters";
 import { useToast } from "@/context/ToastContext";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { PropertyFormHeader } from "./PropertyFormHeader";
+import { GeoPin, MapPinField } from "./MapPinField";
 import { LocationSelector } from "./LocationSelector";
 import { DimensionsInputGrid, preventNonNumericKey } from "./DimensionsInputGrid";
 import { ImageGalleryUploader } from "./ImageGalleryUploader";
@@ -49,6 +47,7 @@ export function PropertyForm({
   const [address, setAddress] = useState(initialData?.address || "");
   const [city, setCity] = useState(initialData?.city || "");
   const [province, setProvince] = useState(initialData?.province || "");
+  const [pin, setPin] = useState<GeoPin | null>(initialPin(initialData));
   const [landArea, setLandArea] = useState(initialData?.land_area ? String(initialData.land_area) : "");
   const [buildingArea, setBuildingArea] = useState(initialData?.building_area ? String(initialData.building_area) : "");
   const [bedrooms, setBedrooms] = useState(initialData?.bedrooms ? String(initialData.bedrooms) : "3");
@@ -94,6 +93,8 @@ export function PropertyForm({
       address: address.trim(),
       city: city.trim(),
       province: province.trim(),
+      latitude: pin?.lat ?? null,
+      longitude: pin?.lng ?? null,
       land_area: Number(landArea) || 1,
       building_area: Number(buildingArea) || 1,
       bedrooms: Math.max(1, Number(bedrooms) || 1),
@@ -110,43 +111,7 @@ export function PropertyForm({
   return (
     <FadeIn y={14}>
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Compact Top Action Bar */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-4 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-center gap-3 min-w-0">
-            <Button
-              variant="outline"
-              size="icon-lg"
-              className="shrink-0"
-              aria-label="Kembali ke daftar listing"
-              render={<Link href="/dashboard/properties" title="Kembali ke Daftar Listing" />}
-            >
-              <ArrowLeft />
-            </Button>
-            <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-extrabold text-neutral-950 truncate leading-tight">
-                {initialData ? `Edit: ${initialData.title}` : "Tambah Listing Properti Baru"}
-              </h1>
-              <p className="text-xs text-neutral-500 truncate">
-                Isi data rumah, rekam Walk Inside 360° dari HP, lalu tambahkan foto.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-center shrink-0">
-            <Tabs value={status} onValueChange={(value) => setStatus(value as PropertyStatus)}>
-              <TabsList aria-label="Status listing">
-                {(["draft", "published"] as PropertyStatus[]).map((st) => (
-                  <TabsTrigger key={st} value={st} className="px-3 py-2 capitalize">
-                    {st}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-            <Button type="submit" size="sm" isLoading={isSubmitting} className="px-4">
-              {initialData ? "Simpan Perubahan" : "Simpan Properti"}
-            </Button>
-          </div>
-        </div>
+        <PropertyFormHeader editingTitle={initialData?.title} status={status} onStatusChange={setStatus} isSubmitting={isSubmitting} />
 
         {errorMessage && <Alert type="error" message={errorMessage} />}
 
@@ -210,6 +175,7 @@ export function PropertyForm({
                 </div>
               </div>
               <Input label="Alamat Lengkap *" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Jl. Karang Mas Sejahtera No. 15" required />
+              <MapPinField value={pin} onChange={setPin} />
               <DimensionsInputGrid
                 landArea={landArea}
                 buildingArea={buildingArea}
@@ -237,4 +203,10 @@ export function PropertyForm({
       </form>
     </FadeIn>
   );
+}
+
+// initialPin reads the stored map pin of a listing being edited, if it has one.
+function initialPin(property?: Property): GeoPin | null {
+  if (property?.latitude == null || property.longitude == null) return null;
+  return { lat: property.latitude, lng: property.longitude };
 }
