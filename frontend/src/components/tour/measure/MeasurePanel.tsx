@@ -27,7 +27,7 @@ const MODES: { mode: MeasureMode; label: string; icon: typeof Ruler }[] = [
 export function MeasurePanel(props: MeasurePanelProps) {
   const { state, cameraHeightCm, calibrated, raised, onMode, onPreset, onRotate, onClear } = props;
   return (
-    <div className={`absolute left-3 ${raised ? "bottom-16" : "bottom-3"} w-[min(18rem,calc(100%-10rem))] min-w-[11rem] space-y-2 rounded-xl bg-black/75 p-2.5 text-white`}>
+    <div className={`absolute inset-x-3 ${raised ? "bottom-16" : "bottom-3"} space-y-1.5 rounded-xl bg-black/75 p-2.5 text-white sm:inset-x-auto sm:left-3 sm:w-72`}>
       <div role="group" aria-label="Pilih alat ukur" className="grid grid-cols-3 gap-1">
         {MODES.map(({ mode, label, icon: Icon }) => (
           <button key={mode} type="button" onClick={() => onMode(mode)} aria-pressed={state.mode === mode}
@@ -43,12 +43,14 @@ export function MeasurePanel(props: MeasurePanelProps) {
           {FURNITURE_PRESETS.map((p) => <option key={p.id} value={p.id} className="text-neutral-900">{p.label}</option>)}
         </select>
       )}
-      <p aria-live="polite" className="text-sm font-bold">{resultText(state)}</p>
-      <p className="text-[11px] leading-snug text-white/85">{state.hint}</p>
-      <div className="flex gap-1.5">
-        {state.mode === "furniture" && <PanelButton label="Putar" icon={RotateCw} onClick={onRotate} />}
-        <PanelButton label="Hapus" icon={Trash2} onClick={onClear} />
+      <div className="flex items-center justify-between gap-2">
+        <p aria-live="polite" className="text-sm font-bold">{resultText(state)}</p>
+        <div className="flex shrink-0 gap-1.5">
+          {state.mode === "furniture" && <PanelButton label="Putar" icon={RotateCw} onClick={onRotate} />}
+          <PanelButton label="Hapus" icon={Trash2} onClick={onClear} />
+        </div>
       </div>
+      <p className="text-[11px] leading-snug text-white/85">{state.hint}</p>
       <p className="text-[10px] leading-snug text-white/65">
         Perkiraan dari panorama · tinggi kamera {cameraHeightCm} cm {calibrated ? "(diatur penjual)" : "(standar, belum dikalibrasi)"}
       </p>

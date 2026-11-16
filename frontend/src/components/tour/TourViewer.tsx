@@ -47,7 +47,7 @@ export function TourViewer({ rooms, propertyTitle }: TourViewerProps) {
   const showRooms = rooms.length > 1 && !measuring;
 
   return (
-    <div id={containerId} className="relative w-full h-[380px] sm:h-[480px] lg:h-[580px] rounded-2xl overflow-hidden bg-neutral-900">
+    <div id={containerId} className={`relative w-full ${measuring ? "h-[560px]" : "h-[380px]"} sm:h-[480px] lg:h-[580px] rounded-2xl overflow-hidden bg-neutral-900`}>
       <TourRoomStage
         key={room.id}
         room={room}
@@ -82,14 +82,14 @@ export function TourViewer({ rooms, propertyTitle }: TourViewerProps) {
           <Expand className="w-4 h-4" aria-hidden="true" />
         </ViewerButton>
       </div>
-      {!gyro && <LookPad controls={controls} raised={showRooms} />}
+      {!gyro && <LookPad controls={controls} position={lookPadPosition(showRooms, measuring)} />}
       {showRooms && <RoomSelector rooms={rooms} currentId={room.id} onSelect={setCurrentId} />}
     </div>
   );
 }
 
 // LookPad offers tap buttons to look around and zoom, an alternative to dragging (WCAG 2.2 SC 2.5.7).
-function LookPad({ controls, raised }: { controls: React.RefObject<LookHandle | null>; raised: boolean }) {
+function LookPad({ controls, position }: { controls: React.RefObject<LookHandle | null>; position: string }) {
   const buttons = [
     { label: "Perbesar", icon: Plus, run: () => controls.current?.zoom(-10) },
     { label: "Lihat ke atas", icon: ArrowUp, run: () => controls.current?.nudge(0, 10) },
@@ -99,7 +99,7 @@ function LookPad({ controls, raised }: { controls: React.RefObject<LookHandle | 
     { label: "Lihat ke kanan", icon: ArrowRight, run: () => controls.current?.nudge(15, 0) },
   ];
   return (
-    <div role="group" aria-label="Kontrol tampilan 360°" className={`absolute right-3 ${raised ? "bottom-16" : "bottom-3"} grid grid-cols-3 gap-1.5`}>
+    <div role="group" aria-label="Kontrol tampilan 360°" className={`absolute right-3 ${position} grid grid-cols-3 gap-1.5`}>
       {buttons.map(({ label, icon: Icon, run }) => (
         <button key={label} type="button" onClick={run} aria-label={label} title={label}
           className="w-11 h-11 rounded-xl bg-black/55 hover:bg-black/70 text-white flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
@@ -108,6 +108,12 @@ function LookPad({ controls, raised }: { controls: React.RefObject<LookHandle | 
       ))}
     </div>
   );
+}
+
+// lookPadPosition keeps the look buttons clear of the room chips, and on phones moves them mid-right while measuring.
+function lookPadPosition(raised: boolean, measuring: boolean): string {
+  if (measuring) return "top-1/2 -translate-y-1/2 sm:top-auto sm:translate-y-0 sm:bottom-3";
+  return raised ? "bottom-16" : "bottom-3";
 }
 
 // ViewerButton is a round icon button overlaid on the panorama.
