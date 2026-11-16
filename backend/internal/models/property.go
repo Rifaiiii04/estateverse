@@ -22,6 +22,8 @@ type Property struct {
 	Address        string           `json:"address"`
 	City           string           `json:"city"`
 	Province       string           `json:"province"`
+	Latitude       *float64         `json:"latitude"`
+	Longitude      *float64         `json:"longitude"`
 	LandArea       int              `json:"land_area"`
 	BuildingArea   int              `json:"building_area"`
 	Bedrooms       int              `json:"bedrooms"`
@@ -37,6 +39,7 @@ type Property struct {
 	Images         []PropertyImage  `json:"images,omitempty"`
 	OwnerName      string           `json:"owner_name,omitempty"`
 	HasTour        bool             `json:"has_tour"`
+	BorrowedPhotos int              `json:"borrowed_photo_count"`
 }
 
 // WalkCoordinate specifies a 3D vector for first-person spawn locations.
@@ -91,6 +94,8 @@ type PropertyInput struct {
 	Address        string         `json:"address"`
 	City           string         `json:"city"`
 	Province       string         `json:"province"`
+	Latitude       *float64       `json:"latitude"`
+	Longitude      *float64       `json:"longitude"`
 	LandArea       int            `json:"land_area"`
 	BuildingArea   int            `json:"building_area"`
 	Bedrooms       int            `json:"bedrooms"`

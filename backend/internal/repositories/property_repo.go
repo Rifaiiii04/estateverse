@@ -43,13 +43,13 @@ func (r *mysqlPropertyRepo) CreateWithImages(ctx context.Context, p *models.Prop
 	return withTx(ctx, r.db, func(tx *sql.Tx) error {
 		query := `INSERT INTO properties (
 			owner_id, title, slug, description, property_type, price,
-			address, city, province, land_area, building_area,
+			address, city, province, latitude, longitude, land_area, building_area,
 			bedrooms, bathrooms, floors, whatsapp_number, model_3d_path, benefits, status
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 		res, err := tx.ExecContext(ctx, query,
 			p.OwnerID, p.Title, p.Slug, p.Description, p.PropertyType, p.Price,
-			p.Address, p.City, p.Province, p.LandArea, p.BuildingArea,
+			p.Address, p.City, p.Province, p.Latitude, p.Longitude, p.LandArea, p.BuildingArea,
 			p.Bedrooms, p.Bathrooms, p.Floors, p.WhatsAppNumber, p.Model3DPath, string(benefitsJSON), p.Status,
 		)
 		if err != nil {
@@ -71,14 +71,14 @@ func (r *mysqlPropertyRepo) UpdateWithImages(ctx context.Context, p *models.Prop
 	return withTx(ctx, r.db, func(tx *sql.Tx) error {
 		query := `UPDATE properties SET
 			title = ?, description = ?, property_type = ?, price = ?,
-			address = ?, city = ?, province = ?, land_area = ?, building_area = ?,
+			address = ?, city = ?, province = ?, latitude = ?, longitude = ?, land_area = ?, building_area = ?,
 			bedrooms = ?, bathrooms = ?, floors = ?, whatsapp_number = ?,
 			model_3d_path = ?, benefits = ?, status = ?
 			WHERE id = ? AND owner_id = ?`
 
 		res, err := tx.ExecContext(ctx, query,
 			p.Title, p.Description, p.PropertyType, p.Price,
-			p.Address, p.City, p.Province, p.LandArea, p.BuildingArea,
+			p.Address, p.City, p.Province, p.Latitude, p.Longitude, p.LandArea, p.BuildingArea,
 			p.Bedrooms, p.Bathrooms, p.Floors, p.WhatsAppNumber,
 			p.Model3DPath, string(benefitsJSON), p.Status, p.ID, p.OwnerID,
 		)

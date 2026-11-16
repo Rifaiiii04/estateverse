@@ -56,6 +56,9 @@ func sanitizePropertyInput(in models.PropertyInput) (models.PropertyInput, error
 	if err := validatePropertyMedia(in); err != nil {
 		return in, err
 	}
+	if err := validatePropertyPin(in); err != nil {
+		return in, err
+	}
 	return in, nil
 }
 
@@ -171,4 +174,15 @@ func sanitizeBenefits(raw []string) []string {
 		}
 	}
 	return clean
+}
+
+// validatePropertyPin accepts either no map pin or a complete, in-range latitude/longitude pair.
+func validatePropertyPin(in models.PropertyInput) error {
+	if in.Latitude == nil && in.Longitude == nil {
+		return nil
+	}
+	if in.Latitude == nil || in.Longitude == nil || !validCoordinate(*in.Latitude, *in.Longitude) {
+		return newValidationError("titik lokasi peta tidak valid")
+	}
+	return nil
 }

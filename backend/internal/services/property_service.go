@@ -26,6 +26,7 @@ type propertyService struct {
 	imageRepo  repositories.PropertyImageRepository
 	modelQueue ModelQueue
 	tours      repositories.TourRepository
+	photos     PhotoFingerprinter
 }
 
 // NewPropertyService instantiates the property business service with background 3D processing.
@@ -34,31 +35,34 @@ func NewPropertyService(
 	iRepo repositories.PropertyImageRepository,
 	mQueue ModelQueue,
 ) PropertyService {
-	return newPropertyService(pRepo, iRepo, mQueue, nil)
+	return newPropertyService(pRepo, iRepo, mQueue, nil, nil)
 }
 
-// NewPropertyServiceWithTours wires tour state into publication checks for asynchronous panorama processing.
+// NewPropertyServiceWithTours wires tour readiness into publication checks and, when photos is set, flags borrowed listing photos.
 func NewPropertyServiceWithTours(
 	pRepo repositories.PropertyRepository,
 	iRepo repositories.PropertyImageRepository,
 	mQueue ModelQueue,
 	tours repositories.TourRepository,
+	photos PhotoFingerprinter,
 ) PropertyService {
-	return newPropertyService(pRepo, iRepo, mQueue, tours)
+	return newPropertyService(pRepo, iRepo, mQueue, tours, photos)
 }
 
-// newPropertyService constructs the property service with optional tour readiness checks.
+// newPropertyService constructs the property service with optional tour readiness and photo-origin checks.
 func newPropertyService(
 	pRepo repositories.PropertyRepository,
 	iRepo repositories.PropertyImageRepository,
 	mQueue ModelQueue,
 	tours repositories.TourRepository,
+	photos PhotoFingerprinter,
 ) PropertyService {
 	return &propertyService{
 		propRepo:   pRepo,
 		imageRepo:  iRepo,
 		modelQueue: mQueue,
 		tours:      tours,
+		photos:     photos,
 	}
 }
 
@@ -85,6 +89,8 @@ func (s *propertyService) CreateProperty(ctx context.Context, ownerID int64, in 
 		Address:        cleanIn.Address,
 		City:           cleanIn.City,
 		Province:       cleanIn.Province,
+		Latitude:       cleanIn.Latitude,
+		Longitude:      cleanIn.Longitude,
 		LandArea:       cleanIn.LandArea,
 		BuildingArea:   cleanIn.BuildingArea,
 		Bedrooms:       cleanIn.Bedrooms,
@@ -145,6 +151,9 @@ func (s *propertyService) UpdateProperty(ctx context.Context, id int64, ownerID 
 	existing.Address = cleanIn.Address
 	existing.City = cleanIn.City
 	existing.Province = cleanIn.Province
+	if cleanIn.Latitude != nil { // clients that do not send a pin (e.g. older mobile builds) keep the stored one
+		existing.Latitude, existing.Longitude = cleanIn.Latitude, cleanIn.Longitude
+	}
 	existing.LandArea = cleanIn.LandArea
 	existing.BuildingArea = cleanIn.BuildingArea
 	existing.Bedrooms = cleanIn.Bedrooms

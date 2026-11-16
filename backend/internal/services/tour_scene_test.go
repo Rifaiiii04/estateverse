@@ -58,7 +58,7 @@ func roomSceneJPEG(rot panorama.Mat3) []byte {
 // TestQueueRejectsUnrelatedFrames ensures a full camera sweep of unmatched photos is not published as a valid tour.
 func TestQueueRejectsUnrelatedFrames(t *testing.T) {
 	svc, tours, _, storage := newTourFixture(t)
-	room, err := svc.StartCapture(context.Background(), 1, 1, "Kamar", testCaptureFrames(12, 320, 400))
+	room, err := svc.StartCapture(context.Background(), 1, 1, "Kamar", testCaptureFrames(12, 320, 400), CaptureExtras{})
 	if err != nil {
 		t.Fatal(err)
 	}
