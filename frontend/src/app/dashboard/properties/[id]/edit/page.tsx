@@ -9,6 +9,7 @@ import { PropertyForm } from "@/components/properties/PropertyForm";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { Alert } from "@/components/ui/Alert";
 import { TourRoomsManager } from "@/components/tour/TourRoomsManager";
+import { PromoVideoCard } from "@/components/promo/PromoVideoCard";
 
 // EditPropertyPage loads existing property specifications into the compact seller workspace.
 export default function EditPropertyPage({
@@ -68,7 +69,12 @@ export default function EditPropertyPage({
       {property && (
         <PropertyForm
           initialData={property}
-          walkInsideSlot={<TourRoomsManager propertyId={property.id} />}
+          walkInsideSlot={
+            <>
+              <TourRoomsManager propertyId={property.id} />
+              <PromoVideoCard property={property} />
+            </>
+          }
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
         />
