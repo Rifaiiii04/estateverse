@@ -52,8 +52,8 @@ export function drawRoomCaption(ctx: CanvasRenderingContext2D, caption: PromoRoo
   ctx.font = `600 26px ${FONT}`;
   ctx.fillText(`Ruangan ${index + 1} dari ${total}`, MARGIN, top);
   ctx.fillStyle = "#ffffff";
-  ctx.font = `800 54px ${FONT}`;
-  ctx.fillText(caption.name, MARGIN, top + 66);
+  ctx.font = `800 ${fitFontSize(ctx, caption.name, 800, 54, 34)}px ${FONT}`;
+  ctx.fillText(caption.name, MARGIN, top + 66, PROMO_WIDTH - 2 * MARGIN);
   let y = top + 66;
   if (caption.sizeText) y = pill(ctx, caption.sizeText, MARGIN, y + 34);
   if (caption.note) {
@@ -87,18 +87,22 @@ export function drawOutro(ctx: CanvasRenderingContext2D, listing: PromoListing) 
   ctx.textAlign = "left";
 }
 
-// drawBrand stamps the EstateVerse mark on every frame.
+// drawBrand stamps the EstateVerse mark on every frame, sizing the pill to its text.
 export function drawBrand(ctx: CanvasRenderingContext2D) {
+  ctx.font = `800 26px ${FONT}`;
+  const brandWidth = ctx.measureText("EstateVerse").width;
+  ctx.font = `600 22px ${FONT}`;
+  const tagWidth = ctx.measureText("Walk Inside 360°").width;
   ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
   ctx.beginPath();
-  ctx.roundRect(MARGIN - 16, 52, 360, 56, 28);
+  ctx.roundRect(MARGIN - 16, 52, brandWidth + tagWidth + 56, 56, 28);
   ctx.fill();
   ctx.fillStyle = "#ffffff";
   ctx.font = `800 26px ${FONT}`;
   ctx.fillText("EstateVerse", MARGIN + 4, 89);
   ctx.font = `600 22px ${FONT}`;
   ctx.fillStyle = SAGE_PALE;
-  ctx.fillText("Walk Inside 360°", MARGIN + 170, 88);
+  ctx.fillText("Walk Inside 360°", MARGIN + 18 + brandWidth, 88);
 }
 
 // dipToBlack darkens the frame near scene boundaries; alpha 1 means fully visible.
@@ -146,4 +150,13 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number,
   if (line) lines.push(line);
   if (lines.length <= maxLines) return lines;
   return [...lines.slice(0, maxLines - 1), `${lines[maxLines - 1]}…`];
+}
+
+// fitFontSize shrinks a heading until it fits on one line, never going below the minimum size.
+function fitFontSize(ctx: CanvasRenderingContext2D, text: string, weight: number, max: number, min: number): number {
+  for (let size = max; size > min; size -= 2) {
+    ctx.font = `${weight} ${size}px ${FONT}`;
+    if (ctx.measureText(text).width <= PROMO_WIDTH - 2 * MARGIN) return size;
+  }
+  return min;
 }
