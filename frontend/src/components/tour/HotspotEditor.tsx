@@ -6,6 +6,7 @@ import { Trash2, X } from "lucide-react";
 import type { TourRoom } from "@/types/tour";
 import { createTourHotspot, deleteTourHotspot } from "@/lib/api/tours";
 import { Button } from "@/components/ui/Button";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import { SphereViewer, ViewerHotspot } from "./SphereViewer";
 import { panoramaUrlFor } from "./tourImage";
 
@@ -54,9 +55,15 @@ export function HotspotEditor({ room, rooms, onClose, onChanged }: HotspotEditor
     <div role="dialog" aria-modal="true" aria-label={`Atur panah ruangan ${room.name}`} className="fixed inset-0 z-[90] bg-black/80 flex flex-col">
       <div className="flex items-center justify-between p-3 text-white">
         <p className="text-sm font-semibold">Ketuk pintu/arah di panorama {room.name}, lalu pilih ruangan tujuan.</p>
-        <button type="button" onClick={onClose} aria-label="Tutup editor panah" className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center cursor-pointer">
-          <X className="w-5 h-5" aria-hidden="true" />
-        </button>
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          onClick={onClose}
+          aria-label="Tutup editor panah"
+          className="size-10 rounded-full bg-white/15 text-white hover:bg-white/25 hover:text-white"
+        >
+          <X className="size-5" aria-hidden="true" />
+        </Button>
       </div>
       <div className="flex-1 min-h-0">
         <SphereViewer imageUrl={panoramaUrlFor(room)} hotspots={markers} onPick={(yaw, pitch) => setPending({ yaw, pitch })} ariaLabel={`Editor panah ${room.name}`} />
@@ -65,11 +72,14 @@ export function HotspotEditor({ room, rooms, onClose, onChanged }: HotspotEditor
         {others.length === 0 && <p className="text-sm text-neutral-600">Rekam minimal satu ruangan lain untuk membuat panah perpindahan.</p>}
         {pending && others.length > 0 && (
           <div className="flex flex-wrap gap-2 items-center">
-            <label htmlFor="hotspot-target" className="text-sm font-semibold">Menuju:</label>
-            <select id="hotspot-target" value={targetId} onChange={(e) => setTargetId(Number(e.target.value))} className="h-10 px-3 rounded-lg border border-neutral-300 text-sm">
-              <option value={0}>Pilih ruangan…</option>
-              {others.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
+            <span className="text-sm font-semibold">Menuju:</span>
+            <CustomSelect
+              variant="compact"
+              placeholder="Pilih ruangan…"
+              options={others.map((r) => ({ value: String(r.id), label: r.name }))}
+              value={targetId ? String(targetId) : ""}
+              onChange={(value) => setTargetId(Number(value))}
+            />
             <Button type="button" onClick={save} isLoading={isSaving} disabled={!targetId}>Simpan Panah</Button>
           </div>
         )}
@@ -77,9 +87,9 @@ export function HotspotEditor({ room, rooms, onClose, onChanged }: HotspotEditor
           {room.hotspots.map((h) => (
             <li key={h.id} className="inline-flex items-center gap-2 bg-neutral-100 rounded-lg pl-3 pr-1 py-1 text-xs font-semibold">
               → {nameOf(h.to_room_id)}
-              <button type="button" onClick={() => remove(h.id)} aria-label={`Hapus panah ke ${nameOf(h.to_room_id)}`} className="w-7 h-7 rounded-md hover:bg-rose-100 text-rose-700 inline-flex items-center justify-center cursor-pointer">
-                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-              </button>
+              <Button variant="destructive" size="icon-sm" onClick={() => remove(h.id)} aria-label={`Hapus panah ke ${nameOf(h.to_room_id)}`}>
+                <Trash2 aria-hidden="true" />
+              </Button>
             </li>
           ))}
         </ul>

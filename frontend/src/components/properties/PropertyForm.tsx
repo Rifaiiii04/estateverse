@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { LocationSelector } from "./LocationSelector";
 import { DimensionsInputGrid, preventNonNumericKey } from "./DimensionsInputGrid";
 import { ImageGalleryUploader } from "./ImageGalleryUploader";
@@ -112,13 +113,15 @@ export function PropertyForm({
         {/* Compact Top Action Bar */}
         <div className="bg-white rounded-2xl border border-neutral-200 p-4 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-3 min-w-0">
-            <Link
-              href="/dashboard/properties"
-              className="w-9 h-9 rounded-xl border border-neutral-200 hover:border-sage-400 text-neutral-600 hover:text-neutral-950 flex items-center justify-center shrink-0 transition-colors"
-              title="Kembali ke Daftar Listing"
+            <Button
+              variant="outline"
+              size="icon-lg"
+              className="shrink-0"
+              aria-label="Kembali ke daftar listing"
+              render={<Link href="/dashboard/properties" title="Kembali ke Daftar Listing" />}
             >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
+              <ArrowLeft />
+            </Button>
             <div className="min-w-0">
               <h1 className="text-base sm:text-lg font-extrabold text-neutral-950 truncate leading-tight">
                 {initialData ? `Edit: ${initialData.title}` : "Tambah Listing Properti Baru"}
@@ -130,25 +133,16 @@ export function PropertyForm({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-center shrink-0">
-            <div className="h-9 bg-neutral-100 p-1 rounded-xl border border-neutral-200/80 inline-flex items-center text-xs font-semibold">
-              {(["draft", "published"] as PropertyStatus[]).map((st) => (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => setStatus(st)}
-                  className={`h-full px-3 rounded-lg transition-all cursor-pointer capitalize ${
-                    status === st
-                      ? st === "published"
-                        ? "bg-sage-600 text-white font-bold shadow-2xs"
-                        : "bg-white text-neutral-950 font-bold shadow-2xs"
-                      : "text-neutral-500 hover:text-neutral-900"
-                  }`}
-                >
-                  {st}
-                </button>
-              ))}
-            </div>
-            <Button type="submit" variant="primary" size="sm" isLoading={isSubmitting} className="px-4">
+            <Tabs value={status} onValueChange={(value) => setStatus(value as PropertyStatus)}>
+              <TabsList aria-label="Status listing">
+                {(["draft", "published"] as PropertyStatus[]).map((st) => (
+                  <TabsTrigger key={st} value={st} className="px-3 py-2 capitalize">
+                    {st}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            <Button type="submit" size="sm" isLoading={isSubmitting} className="px-4">
               {initialData ? "Simpan Perubahan" : "Simpan Properti"}
             </Button>
           </div>

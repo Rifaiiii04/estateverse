@@ -5,14 +5,16 @@ import { Send, CheckCircle2, Calendar } from "lucide-react";
 import { submitBuyerInquiry } from "@/lib/api/leads";
 import { hasViewedTour } from "@/lib/api/engagement";
 import { useToast } from "@/context/ToastContext";
+import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/Textarea";
 
 interface PropertyLeadFormProps {
   propertyId: number;
   propertyTitle: string;
 }
-
-const fieldClass =
-  "w-full text-sm px-3 py-2.5 rounded-xl border border-neutral-300 focus:outline-none focus:border-sage-600 focus:ring-2 focus:ring-sage-600/20 bg-white";
 
 // PropertyLeadForm lets buyers request a site visit, noting whether they already explored the virtual tour.
 export function PropertyLeadForm({ propertyId, propertyTitle }: PropertyLeadFormProps) {
@@ -79,39 +81,25 @@ export function PropertyLeadForm({ propertyId, propertyTitle }: PropertyLeadForm
       </p>
 
       <form onSubmit={handleSubmit} onFocusCapture={syncTourFlag} className="space-y-3 pt-1">
-        <div>
-          <label htmlFor="lead-name" className="text-xs font-semibold text-neutral-700 block mb-1">Nama Lengkap</label>
-          <input id="lead-name" type="text" required maxLength={100} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Contoh: Budi Santoso" className={fieldClass} />
-        </div>
-        <div>
-          <label htmlFor="lead-phone" className="text-xs font-semibold text-neutral-700 block mb-1">Nomor WhatsApp</label>
-          <input id="lead-phone" type="tel" required maxLength={30} autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0812xxxxxxxx" className={fieldClass} />
-        </div>
-        <div>
-          <label htmlFor="lead-note" className="text-xs font-semibold text-neutral-700 block mb-1">Catatan Tambahan (Opsional)</label>
-          <textarea id="lead-note" rows={2} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Kapan waktu luang Anda untuk survei lokasi?" className={`${fieldClass} resize-none`} />
-        </div>
-        <label htmlFor="lead-viewed-tour" className="flex items-start gap-2 text-xs text-neutral-700 cursor-pointer">
-          <input
+        <Input id="lead-name" label="Nama Lengkap" type="text" required maxLength={100} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Contoh: Budi Santoso" />
+        <Input id="lead-phone" label="Nomor WhatsApp" type="tel" required maxLength={30} autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0812xxxxxxxx" />
+        <Textarea id="lead-note" label="Catatan Tambahan (Opsional)" rows={2} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Kapan waktu luang Anda untuk survei lokasi?" className="resize-none" />
+        <Label htmlFor="lead-viewed-tour" className="items-start leading-snug font-normal text-muted-foreground">
+          <Checkbox
             id="lead-viewed-tour"
-            type="checkbox"
             checked={viewedTour}
-            onChange={(e) => {
+            onCheckedChange={(checked) => {
               setTourTouched(true);
-              setViewedTour(e.target.checked);
+              setViewedTour(checked);
             }}
-            className="mt-0.5 w-4 h-4 accent-sage-600"
+            className="mt-0.5"
           />
           <span>Saya sudah melihat tur virtual rumah ini sebelum meminta survei.</span>
-        </label>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-sage-600 text-white hover:bg-sage-700 disabled:opacity-50 text-sm font-semibold py-2.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-600/40"
-        >
-          <Send className="w-4 h-4" aria-hidden="true" />
+        </Label>
+        <Button type="submit" size="lg" className="w-full" isLoading={isSubmitting}>
+          {!isSubmitting && <Send aria-hidden="true" />}
           <span>{isSubmitting ? "Mengirim..." : "Kirim Permintaan Survei"}</span>
-        </button>
+        </Button>
       </form>
     </div>
   );

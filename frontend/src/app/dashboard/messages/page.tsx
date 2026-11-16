@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { MessageSquare, Copy, ExternalLink, Check, Sparkles } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import { Button } from "@/components/ui/Button";
 
 interface Template {
   id: string;
@@ -99,23 +100,19 @@ export default function DashboardMessagesPage() {
             </div>
 
             <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => copyTemplate(tpl)}
-                className="w-full inline-flex items-center justify-center gap-2 border border-neutral-200 hover:border-neutral-950 text-neutral-800 text-xs font-semibold px-4 py-2 rounded-xl transition-all hover:bg-neutral-50 cursor-pointer"
-              >
+              <Button variant="outline" onClick={() => copyTemplate(tpl)} className="w-full">
                 {copiedId === tpl.id ? (
                   <>
-                    <Check className="w-4 h-4 text-emerald-600" />
+                    <Check className="text-emerald-600" />
                     <span>Tersalin ke Clipboard!</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4 text-neutral-500" />
+                    <Copy className="text-muted-foreground" />
                     <span>Salin Pesan Template</span>
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         ))}

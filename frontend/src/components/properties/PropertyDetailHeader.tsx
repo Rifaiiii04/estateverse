@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { ArrowLeft, Share2, MapPin } from "lucide-react";
 import { MediaTab, Property } from "@/types/property";
+import { Button } from "@/components/ui/Button";
 import { MediaTabSwitcher } from "./MediaTabSwitcher";
 
 interface PropertyDetailHeaderProps {
@@ -61,14 +62,10 @@ export function PropertyDetailHeader({
       <div className="flex flex-wrap items-center gap-2 self-start lg:self-center shrink-0">
         <MediaTabSwitcher tabs={availableTabs} active={activeTab} photoCount={photoCount} onSwitch={onSwitchTab} />
 
-        <button
-          type="button"
-          onClick={onShare}
-          className="h-9 inline-flex items-center gap-1.5 px-3.5 rounded-xl border border-neutral-200 hover:border-sage-500 hover:text-sage-700 text-neutral-700 text-xs font-semibold transition-colors cursor-pointer bg-white shadow-2xs"
-        >
-          <Share2 className="w-3.5 h-3.5 text-sage-600" aria-hidden="true" />
+        <Button variant="outline" onClick={onShare}>
+          <Share2 className="text-primary" aria-hidden="true" />
           <span>Bagikan</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

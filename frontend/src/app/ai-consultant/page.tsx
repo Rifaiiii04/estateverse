@@ -6,6 +6,8 @@ import { Bot, RotateCcw, Send } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { FadeIn } from "@/components/ui/MotionPrimitives";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { ChatMessageBubble } from "@/components/assistant/ChatMessageBubble";
 import { useAssistantChat } from "@/lib/ai/useAssistantChat";
 
@@ -57,17 +59,23 @@ function AiConsultantContent() {
             </p>
           </div>
         </div>
-        <button type="button" onClick={reset} className="text-xs text-neutral-700 hover:text-sage-700 flex items-center gap-1.5 cursor-pointer">
-          <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+        <Button variant="ghost" size="sm" onClick={reset}>
+          <RotateCcw aria-hidden="true" />
           <span>Hapus Percakapan</span>
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-wrap gap-2">
         {SUGGESTIONS.map((s) => (
-          <button key={s} type="button" onClick={() => void send(s)} disabled={isThinking} className="min-h-9 text-left text-xs sm:text-[13px] font-semibold px-3.5 py-2 rounded-full bg-sage-50 hover:bg-sage-100 border border-sage-200 text-sage-800 cursor-pointer disabled:opacity-50">
+          <Button
+            key={s}
+            variant="secondary"
+            onClick={() => void send(s)}
+            disabled={isThinking}
+            className="h-auto min-h-9 rounded-full px-3.5 py-2 text-left whitespace-normal"
+          >
             {s}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -78,12 +86,20 @@ function AiConsultantContent() {
         {isThinking && <p className="text-xs text-neutral-600 pl-10">Asisten sedang mengetik…</p>}
       </div>
 
-      <form onSubmit={submit} className="flex items-center gap-2 bg-white border border-neutral-300 rounded-2xl p-1.5 focus-within:border-sage-600">
+      <form onSubmit={submit} className="flex items-center gap-2">
         <label htmlFor="assistant-input" className="sr-only">Tulis pertanyaan</label>
-        <input id="assistant-input" type="text" value={input} maxLength={1000} onChange={(e) => setInput(e.target.value)} placeholder="Tanyakan cicilan, dokumen KPR, biaya, atau tips menjual rumah…" className="flex-1 bg-transparent px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-500 focus:outline-none" />
-        <button type="submit" disabled={isThinking || !input.trim()} aria-label="Kirim pertanyaan" className="bg-sage-600 text-white p-2.5 rounded-xl hover:bg-sage-700 cursor-pointer disabled:opacity-50">
-          <Send className="w-4 h-4" aria-hidden="true" />
-        </button>
+        <Input
+          id="assistant-input"
+          type="text"
+          value={input}
+          maxLength={1000}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Tanyakan cicilan, dokumen KPR, biaya, atau tips menjual rumah…"
+          className="h-10 flex-1"
+        />
+        <Button type="submit" size="icon-lg" className="size-10" disabled={isThinking || !input.trim()} aria-label="Kirim pertanyaan">
+          <Send aria-hidden="true" />
+        </Button>
       </form>
       <p className="text-[11px] text-neutral-600">
         Jawaban asisten bisa keliru dan bukan nasihat keuangan. Angka cicilan dan biaya adalah perkiraan — konfirmasi ke bank atau notaris. Jangan menuliskan data pribadi seperti NIK atau nomor rekening.

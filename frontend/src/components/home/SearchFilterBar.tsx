@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { SlidersHorizontal, RotateCcw, Search } from "lucide-react";
 import { CustomSelect, SelectOption } from "@/components/ui/CustomSelect";
 import { FadeIn } from "@/components/ui/MotionPrimitives";
+import { Button } from "@/components/ui/Button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { useLanguage } from "@/context/LanguageContext";
 
 interface SearchFilterBarProps {
@@ -116,22 +118,15 @@ export function SearchFilterBar({ onFilterChange }: SearchFilterBarProps) {
         {/* Elevated Filter Bar Container (30% Secondary Surface & Border + 10% Sage Accents) */}
         <div className="bg-neutral-50/70 rounded-2xl sm:rounded-3xl border border-neutral-200 p-4 sm:p-6 lg:p-7 shadow-2xs">
           {/* Top Category Tabs */}
-          <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200/80 pb-4">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`h-9 px-4 rounded-xl text-xs sm:text-[13px] font-semibold transition-all cursor-pointer inline-flex items-center border ${
-                  activeTab === tab.id
-                    ? "bg-sage-600 text-white border-sage-600 shadow-2xs"
-                    : "bg-white border-neutral-200 text-neutral-600 hover:text-sage-700 hover:border-sage-400"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+            <TabsList className="w-full overflow-x-auto no-scrollbar">
+              {tabs.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
           {/* Form Filter Dropdowns Grid with Styled Options */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-5">
@@ -170,33 +165,21 @@ export function SearchFilterBar({ onFilterChange }: SearchFilterBarProps) {
 
           {/* Bottom Filter Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-neutral-200/70 text-xs">
-            <button
-              type="button"
-              onClick={handleApply}
-              className="inline-flex items-center gap-1.5 text-neutral-600 hover:text-sage-700 font-medium transition-colors cursor-pointer"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-sage-600" />
+            <Button variant="ghost" className="self-start" onClick={handleApply}>
+              <SlidersHorizontal className="text-primary" />
               <span>{t.search.moreFilters}</span>
-            </button>
+            </Button>
 
             <div className="flex items-center gap-2.5 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="inline-flex items-center justify-center gap-1.5 text-neutral-500 hover:text-neutral-900 transition-colors px-3 py-2.5 rounded-xl cursor-pointer font-medium"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
+              <Button variant="ghost" onClick={handleReset}>
+                <RotateCcw />
                 <span>{t.search.reset}</span>
-              </button>
+              </Button>
 
-              <button
-                type="button"
-                onClick={handleApply}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-sage-600 text-white hover:bg-sage-700 font-semibold px-5 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer"
-              >
-                <Search className="w-3.5 h-3.5" />
+              <Button size="lg" className="flex-1 px-4 sm:flex-initial" onClick={handleApply}>
+                <Search />
                 <span>{t.search.submit}</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>

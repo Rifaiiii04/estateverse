@@ -21,6 +21,7 @@ import { PropertyMortgageCard } from "@/components/properties/PropertyMortgageCa
 import { WhatsAppButton } from "@/components/properties/WhatsAppButton";
 import { SafetyNotice } from "@/components/properties/SafetyNotice";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { Button } from "@/components/ui/Button";
 import { FadeIn } from "@/components/ui/MotionPrimitives";
 import { useToast } from "@/context/ToastContext";
 
@@ -104,14 +105,9 @@ export default function PropertyDetailPage({
           <p className="text-xs sm:text-sm text-neutral-500 max-w-md mb-5">
             Listing yang Anda cari mungkin telah terjual, dinonaktifkan, atau URL yang Anda tuju keliru.
           </p>
-          <Link href="/properties">
-            <button
-              type="button"
-              className="bg-sage-600 hover:bg-sage-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer"
-            >
-              Kembali ke Katalog Properti
-            </button>
-          </Link>
+          <Button size="lg" className="px-4" render={<Link href="/properties" />}>
+            Kembali ke Katalog Properti
+          </Button>
         </main>
         <Footer />
       </>
@@ -196,14 +192,10 @@ export default function PropertyDetailPage({
                   </div>
 
                   {tourRooms.length > 0 && activeTab !== "tour" && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("tour")}
-                      className="h-9 px-3 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 border bg-sage-50 text-sage-800 border-sage-200 hover:bg-sage-100"
-                    >
-                      <Compass className="w-3.5 h-3.5 text-sage-600" aria-hidden="true" />
+                    <Button variant="secondary" className="shrink-0" onClick={() => setActiveTab("tour")}>
+                      <Compass aria-hidden="true" />
                       <span>Buka Walk Inside 360°</span>
-                    </button>
+                    </Button>
                   )}
                 </div>
 
@@ -227,7 +219,7 @@ export default function PropertyDetailPage({
                   <WhatsAppButton
                     phone={property.whatsapp_number}
                     propertyTitle={property.title}
-                    size="md"
+                    size="lg"
                     className="w-full"
                   />
                 </div>

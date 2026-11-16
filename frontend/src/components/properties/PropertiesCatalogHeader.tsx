@@ -5,6 +5,10 @@ import Link from "next/link";
 import { Plus, Search, X } from "lucide-react";
 import { formatCompactIDR } from "@/lib/utils/formatters";
 import { CustomSelect, SelectOption } from "@/components/ui/CustomSelect";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 
 import { PRICE_RANGES, PriceRangeFilter } from "@/lib/utils/priceRanges";
 
@@ -118,73 +122,40 @@ export function PropertiesCatalogHeader({
 
         {/* Right Controls: Segmented View Switcher & Add Listing CTA */}
         <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">
-          <div className="h-9 bg-neutral-200/75 p-1 rounded-full inline-flex items-center text-xs font-semibold border border-neutral-200/60">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`h-full px-3.5 rounded-full transition-all cursor-pointer inline-flex items-center ${
-                viewMode === "grid"
-                  ? "bg-white text-neutral-950 font-bold shadow-2xs"
-                  : "text-neutral-600 hover:text-neutral-950"
-              }`}
-            >
-              Grid
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`h-full px-3.5 rounded-full transition-all cursor-pointer inline-flex items-center ${
-                viewMode === "table"
-                  ? "bg-white text-neutral-950 font-bold shadow-2xs"
-                  : "text-neutral-600 hover:text-neutral-950"
-              }`}
-            >
-              {isEn ? "Table" : "Tabel"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab(activeTab === "3d" ? "all" : "3d")}
-              className={`h-full px-3.5 rounded-full transition-all cursor-pointer inline-flex items-center ${
-                activeTab === "3d"
-                  ? "bg-sage-600 text-white font-bold shadow-2xs"
-                  : "text-neutral-600 hover:text-neutral-950"
-              }`}
-            >
-              Walk Inside 360°
-            </button>
-          </div>
-
-          <Link
-            href={isAuthenticated ? "/dashboard/properties/new" : "/login"}
-            className="h-9 inline-flex items-center gap-1.5 bg-neutral-950 hover:bg-sage-700 text-white text-xs font-bold px-4 rounded-full transition-colors shadow-2xs border border-transparent"
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as typeof viewMode)}>
+            <TabsList>
+              <TabsTrigger value="grid" className="px-3 py-2">Grid</TabsTrigger>
+              <TabsTrigger value="table" className="px-3 py-2">{isEn ? "Table" : "Tabel"}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button
+            variant={activeTab === "3d" ? "default" : "outline"}
+            aria-pressed={activeTab === "3d"}
+            onClick={() => setActiveTab(activeTab === "3d" ? "all" : "3d")}
           >
-            <Plus className="w-3.5 h-3.5" />
+            Walk Inside 360°
+          </Button>
+
+          <Button render={<Link href={isAuthenticated ? "/dashboard/properties/new" : "/login"} />}>
+            <Plus />
             <span>{isEn ? "Add listing" : "Pasang iklan"}</span>
-          </Link>
+          </Button>
         </div>
       </div>
 
       {/* Row 2: Pill Filters, Price Range, Area Chip, Search, and Sort By */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pt-1">
         <div className="flex flex-wrap items-center gap-2 flex-1">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`h-9 px-3.5 rounded-full text-xs sm:text-[13px] font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 border ${
-                  isActive
-                    ? "bg-neutral-950 text-white border-neutral-950 shadow-2xs"
-                    : "bg-white border-neutral-200 text-neutral-700 hover:border-sage-400"
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span className={isActive ? "text-neutral-300" : "text-neutral-500"}>{tab.count}</span>
-              </button>
-            );
-          })}
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+            <TabsList className="max-w-full overflow-x-auto no-scrollbar">
+              {tabs.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id} className="px-3 py-2">
+                  <span>{tab.label}</span>
+                  <Badge variant="secondary">{tab.count}</Badge>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
           <div className="hidden sm:block h-5 w-px bg-neutral-300/80 mx-1" />
 
@@ -198,14 +169,15 @@ export function PropertiesCatalogHeader({
 
           {/* Area / City Chip or Styled Dropdown Pill */}
           {selectedCity ? (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              className="rounded-full px-3.5"
               onClick={() => setSelectedCity("")}
-              className="h-9 inline-flex items-center gap-1.5 bg-sage-100/90 text-sage-800 border border-sage-200 rounded-full px-3.5 text-xs sm:text-[13px] font-bold hover:bg-sage-200/70 transition-colors cursor-pointer"
+              aria-label={`Hapus filter area ${selectedCity}`}
             >
               <span>Area: {selectedCity}</span>
-              <X className="w-3.5 h-3.5 text-sage-700" />
-            </button>
+              <X />
+            </Button>
           ) : (
             <CustomSelect
               variant="pill"
@@ -216,18 +188,19 @@ export function PropertiesCatalogHeader({
           )}
 
           {/* Wide Search Input Pill */}
-          <div className="relative flex-1 min-w-[260px] sm:min-w-[340px] lg:min-w-[420px] max-w-xl h-9">
-            <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
+          <div className="relative flex-1 min-w-[260px] sm:min-w-[340px] lg:min-w-[420px] max-w-xl">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
               type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
+              aria-label={isEn ? "Search properties" : "Cari properti"}
               placeholder={
                 isEn
                   ? "Search properties by title, city, or address..."
                   : "Cari properti berdasarkan nama, kota, atau alamat..."
               }
-              className="w-full h-full bg-white border border-neutral-200 hover:border-sage-400 rounded-full pl-9 pr-4 text-xs sm:text-[13px] text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:border-sage-600 focus:ring-2 focus:ring-sage-600/15 transition-all"
+              className="rounded-full bg-background pl-9"
             />
           </div>
         </div>

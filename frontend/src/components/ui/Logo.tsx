@@ -17,21 +17,29 @@ export function LogoMark({ className = "w-9 h-9" }: { className?: string }) {
 interface LogoProps {
   tagline?: string;
   size?: "sm" | "md";
+  tone?: "dark" | "light";
 }
 
+// Wordmark colors for light backgrounds ("dark" ink) and dark backgrounds ("light" ink).
+const toneClasses = {
+  dark: { word: "text-neutral-950", accent: "text-sage-600", tagline: "text-neutral-600" },
+  light: { word: "text-white", accent: "text-sage-300", tagline: "text-white/75" },
+};
+
 // Logo combines the mark with the ESTATEVERSE wordmark and an optional tagline.
-export function Logo({ tagline = "Walk Inside 360°", size = "md" }: LogoProps) {
+export function Logo({ tagline = "Walk Inside 360°", size = "md", tone = "dark" }: LogoProps) {
   const markClass = size === "sm" ? "w-8 h-8" : "w-9 h-9 sm:w-10 sm:h-10";
   const wordClass = size === "sm" ? "text-base" : "text-lg sm:text-xl";
+  const colors = toneClasses[tone];
   return (
     <span className="flex items-center gap-2.5">
       <LogoMark className={`${markClass} shrink-0`} />
       <span className="flex flex-col">
-        <span className={`font-extrabold ${wordClass} tracking-tight text-neutral-950 uppercase leading-none`}>
-          Estate<span className="text-sage-600">Verse</span>
+        <span className={`font-extrabold ${wordClass} tracking-tight ${colors.word} uppercase leading-none`}>
+          Estate<span className={colors.accent}>Verse</span>
         </span>
         {tagline && (
-          <span className="text-[10px] tracking-widest text-neutral-600 font-semibold uppercase mt-0.5">{tagline}</span>
+          <span className={`text-[10px] tracking-widest ${colors.tagline} font-semibold uppercase mt-0.5`}>{tagline}</span>
         )}
       </span>
     </span>

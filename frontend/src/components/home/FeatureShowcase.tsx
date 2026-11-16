@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Layers, CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { FadeIn, smoothEase } from "@/components/ui/MotionPrimitives";
+import { Button } from "@/components/ui/Button";
 
 // FeatureShowcase renders a responsive process walkthrough with Framer Motion step transitions.
 export function FeatureShowcase() {
@@ -60,36 +61,26 @@ export function FeatureShowcase() {
                 </AnimatePresence>
 
                 <div className="pt-2">
-                  <Link href="/ai-consultant">
-                    <motion.button
-                      type="button"
-                      whileHover={{ y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="h-10 inline-flex items-center gap-2 bg-sage-600 hover:bg-sage-700 rounded-xl px-5 text-xs sm:text-[13px] font-semibold text-white transition-colors shadow-2xs cursor-pointer"
-                    >
-                      <span>{t.features.cta}</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-sage-100" />
-                    </motion.button>
-                  </Link>
+                  <Button size="lg" className="px-4" render={<Link href="/ai-consultant" />}>
+                    <span>{t.features.cta}</span>
+                    <ArrowRight />
+                  </Button>
                 </div>
               </div>
 
               {/* Stepper Navigation List */}
               <div className="space-y-2 pt-4 border-t border-neutral-200/70">
                 {steps.map((st, idx) => (
-                  <button
+                  <Button
                     key={st.title}
-                    type="button"
+                    variant={activeStep === idx ? "secondary" : "ghost"}
+                    aria-pressed={activeStep === idx}
                     onClick={() => setActiveStep(idx)}
-                    className={`w-full text-left text-xs font-medium py-2 px-3 rounded-xl transition-all flex items-center justify-between cursor-pointer ${
-                      activeStep === idx
-                        ? "bg-white text-sage-800 font-bold border border-sage-200 shadow-2xs"
-                        : "text-neutral-500 hover:text-neutral-900 hover:bg-white/60"
-                    }`}
+                    className="w-full justify-between text-left"
                   >
                     <span>{st.title}</span>
-                    {activeStep === idx && <CheckCircle2 className="w-4 h-4 text-sage-600 shrink-0" />}
-                  </button>
+                    {activeStep === idx && <CheckCircle2 className="text-primary" />}
+                  </Button>
                 ))}
               </div>
             </div>

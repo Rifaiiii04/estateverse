@@ -16,6 +16,7 @@ import {
   SortByOption,
 } from "@/components/properties/PropertiesCatalogHeader";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { Button } from "@/components/ui/Button";
 import { FadeIn, smoothEase } from "@/components/ui/MotionPrimitives";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
@@ -141,19 +142,19 @@ function PropertiesContent() {
               ? `Showing ${filteredProperties.length} of ${stats.totalCount} listings`
               : `Menampilkan ${filteredProperties.length} dari ${stats.totalCount} properti`}
           </span>
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => {
               setActiveTab("all");
               setPriceRange("all");
               setSelectedCity("");
               setKeyword("");
             }}
-            className="inline-flex items-center gap-1 text-sage-700 hover:text-sage-900 font-bold cursor-pointer"
           >
-            <RotateCcw className="w-3 h-3" />
+            <RotateCcw />
             <span>{isEn ? "Reset all filters" : "Atur ulang filter"}</span>
-          </button>
+          </Button>
         </div>
       )}
 

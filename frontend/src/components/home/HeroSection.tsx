@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { smoothEase } from "@/components/ui/MotionPrimitives";
+import { Button } from "@/components/ui/Button";
 
 // HeroSection renders the responsive architectural hero showcase with smooth Framer Motion entrance animations.
 export function HeroSection() {
@@ -39,17 +40,10 @@ export function HeroSection() {
               {t.hero.description}
             </p>
 
-            <Link href="/properties" className="w-full sm:w-auto">
-              <motion.button
-                type="button"
-                whileHover={{ y: -2, scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full sm:w-auto h-11 inline-flex items-center justify-center gap-2 bg-sage-600 text-white hover:bg-sage-700 text-xs sm:text-sm font-semibold px-6 rounded-xl transition-colors shadow-2xs border border-transparent cursor-pointer"
-              >
-                <span>{t.hero.ctaPrimary}</span>
-                <ArrowUpRight className="w-4 h-4 text-sage-100" />
-              </motion.button>
-            </Link>
+            <Button size="lg" className="h-11 w-full px-5 sm:w-auto" render={<Link href="/properties" />}>
+              <span>{t.hero.ctaPrimary}</span>
+              <ArrowUpRight />
+            </Button>
           </motion.div>
         </div>
 

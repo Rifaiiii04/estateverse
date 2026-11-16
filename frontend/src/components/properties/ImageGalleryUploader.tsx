@@ -5,6 +5,7 @@ import React, { useState, useRef } from "react";
 import { X, ImagePlus, Star } from "lucide-react";
 import { uploadImage } from "@/lib/api/properties";
 import { getMediaUrl } from "@/lib/api/client";
+import { Button } from "@/components/ui/Button";
 
 interface ImageGalleryUploaderProps {
   images: string[];
@@ -99,19 +100,20 @@ export function ImageGalleryUploader({
         className="hidden"
       />
 
-      <button
-        type="button"
+      <Button
+        variant="outline"
+        size="lg"
         disabled={isUploading}
         onClick={() => fileInputRef.current?.click()}
-        className="w-full h-10 rounded-xl border border-dashed border-neutral-300 hover:border-sage-500 hover:bg-sage-50/40 text-xs font-semibold text-neutral-700 hover:text-sage-800 inline-flex items-center justify-center gap-2 transition-colors cursor-pointer"
+        className="w-full border-dashed"
       >
-        <ImagePlus className="w-4 h-4 text-sage-600" />
+        <ImagePlus className="text-primary" />
         <span>
           {isUploading
             ? `Mengunggah ${uploadingCount} foto...`
             : "Pilih & Upload Foto Rumah (Bisa Lebih dari 1)"}
         </span>
-      </button>
+      </Button>
 
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">

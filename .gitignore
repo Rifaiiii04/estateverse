@@ -8,3 +8,4 @@ frontend/dev.log
 backend/storage/
 backend/*.exe
 seventx/
+DEPLOY_SERVER.md

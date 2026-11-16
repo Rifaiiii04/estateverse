@@ -1,39 +1,37 @@
-import React from "react";
+import * as React from "react";
+import { cn } from "@/lib/utils/cn";
+import { FormField, fieldIdFrom } from "@/components/ui/FormField";
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+// Shared classes for multiline text controls.
+export const textareaClassName =
+  "flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm";
+
+interface TextareaProps extends React.ComponentProps<"textarea"> {
   label?: string;
   error?: string;
   helperText?: string;
 }
 
-// Textarea renders a multiline text input with label and validation feedback.
-export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, helperText, className = "", id, rows = 4, ...props }, ref) => {
-    const textareaId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+// Renders a multiline input, wrapped with label and validation feedback when those props are given.
+export function Textarea({ label, error, helperText, className, id, rows = 4, ...props }: TextareaProps) {
+  const textareaId = fieldIdFrom(id, label);
+  const control = (
+    <textarea
+      id={textareaId}
+      rows={rows}
+      data-slot="textarea"
+      aria-invalid={error ? true : undefined}
+      aria-describedby={error && textareaId ? `${textareaId}-error` : undefined}
+      className={cn(textareaClassName, className)}
+      {...props}
+    />
+  );
 
-    return (
-      <div className="w-full space-y-1.5">
-        {label && (
-          <label htmlFor={textareaId} className="block text-xs font-semibold text-neutral-700">
-            {label}
-          </label>
-        )}
-        <textarea
-          ref={ref}
-          id={textareaId}
-          rows={rows}
-          className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm transition-all focus:outline-none focus:ring-2 focus:ring-sage-600/15 focus:border-sage-600 disabled:bg-neutral-50 disabled:text-neutral-500 ${
-            error
-              ? "border-rose-400 bg-rose-50/20 text-rose-900"
-              : "border-neutral-200 hover:border-neutral-300 bg-white text-neutral-950 placeholder:text-neutral-500"
-          } ${className}`}
-          {...props}
-        />
-        {error && <p className="text-xs text-rose-600 font-medium">{error}</p>}
-        {helperText && !error && <p className="text-xs text-neutral-500">{helperText}</p>}
-      </div>
-    );
-  }
-);
+  if (!label && !error && !helperText) return control;
 
-Textarea.displayName = "Textarea";
+  return (
+    <FormField id={textareaId} label={label} error={error} helperText={helperText}>
+      {control}
+    </FormField>
+  );
+}

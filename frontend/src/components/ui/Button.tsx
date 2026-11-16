@@ -1,72 +1,78 @@
-import React from "react";
+"use client";
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "danger" | "ghost";
-  size?: "sm" | "md" | "lg";
-  isLoading?: boolean;
-}
+import { Button as ButtonPrimitive } from "@base-ui/react/button";
+import { cva, type VariantProps } from "class-variance-authority";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 
-// Button renders accessible interactive buttons with unified 60-30-10 styling variants.
-export function Button({
-  children,
-  variant = "primary",
-  size = "md",
+// Maps each button variant and size to the shared design-system classes.
+const buttonVariants = cva(
+  "group/button inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        outline:
+          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+        ghost: "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
+        destructive:
+          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default:
+          "h-8 gap-1.5 px-2.5 max-md:min-h-11 max-md:px-3.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs max-md:min-h-10 max-md:px-2.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] max-md:min-h-10 max-md:px-3 [&_svg:not([class*='size-'])]:size-3.5",
+        lg: "h-9 gap-1.5 px-2.5 max-md:min-h-11 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        icon: "size-8 max-md:min-h-11 max-md:min-w-11",
+        "icon-xs":
+          "size-6 rounded-[min(var(--radius-md),10px)] max-md:min-h-10 max-md:min-w-10 [&_svg:not([class*='size-'])]:size-3",
+        "icon-sm": "size-7 rounded-[min(var(--radius-md),12px)] max-md:min-h-10 max-md:min-w-10",
+        "icon-lg": "size-9 max-md:min-h-11 max-md:min-w-11",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+type ButtonProps = ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    isLoading?: boolean;
+  };
+
+// Renders an accessible button (or a custom element via `render`) with a loading spinner option.
+function Button({
+  className,
+  variant = "default",
+  size = "default",
+  render,
+  nativeButton,
   isLoading = false,
-  className = "",
   disabled,
+  children,
   ...props
 }: ButtonProps) {
-  const baseStyles =
-    "inline-flex items-center justify-center font-semibold transition-all rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-600 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
-
-  const sizeStyles = {
-    sm: "h-9 px-3.5 text-xs gap-1.5",
-    md: "h-10 px-4 text-xs sm:text-sm gap-2",
-    lg: "h-11 px-6 text-sm gap-2.5",
-  }[size];
-
-  const variantStyles = {
-    primary:
-      "bg-sage-600 hover:bg-sage-700 text-white border border-transparent shadow-2xs",
-    secondary:
-      "bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-200/80 shadow-2xs",
-    outline:
-      "border border-neutral-200 hover:border-sage-600 hover:bg-sage-50/50 text-neutral-800 hover:text-sage-800 bg-white shadow-2xs",
-    danger:
-      "bg-rose-600 hover:bg-rose-700 text-white border border-transparent shadow-2xs",
-    ghost:
-      "text-neutral-600 hover:bg-sage-50 hover:text-sage-700 border border-transparent",
-  }[variant];
-
   return (
-    <button
-      className={`${baseStyles} ${sizeStyles} ${variantStyles} ${className}`}
+    <ButtonPrimitive
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      render={render}
+      // A button rendered as <a>/<Link> is not a native <button>; without this Base UI logs a console error.
+      nativeButton={nativeButton ?? render === undefined}
       disabled={disabled || isLoading}
+      aria-busy={isLoading || undefined}
       {...props}
     >
-      {isLoading && (
-        <svg
-          className="animate-spin h-4 w-4 text-current"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v8H4z"
-          />
-        </svg>
-      )}
+      {isLoading && <Loader2 className="animate-spin" aria-hidden="true" />}
       {children}
-    </button>
+    </ButtonPrimitive>
   );
 }
+
+export { Button, buttonVariants };

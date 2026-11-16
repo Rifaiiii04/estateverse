@@ -7,6 +7,8 @@ import { Plus, Edit3, Trash2, Eye, Box, Bed, Bath, Maximize2 } from "lucide-reac
 import { Property } from "@/types/property";
 import { formatIDR } from "@/lib/utils/formatters";
 import { getMediaUrl } from "@/lib/api/client";
+import { Button } from "@/components/ui/Button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 
 interface ActiveAdvertisementsProps {
   properties: Property[];
@@ -47,48 +49,21 @@ export function ActiveAdvertisements({ properties, onDelete }: ActiveAdvertiseme
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/dashboard/properties/new">
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 bg-neutral-950 text-white hover:bg-neutral-800 text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Listing Baru</span>
-            </button>
-          </Link>
+          <Button render={<Link href="/dashboard/properties/new" />}>
+            <Plus />
+            <span>Listing Baru</span>
+          </Button>
         </div>
       </div>
 
       {/* Tabs Filter Bar */}
-      <div className="flex flex-wrap items-center gap-1.5 text-xs">
-        <button
-          type="button"
-          onClick={() => setFilterTab("all")}
-          className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
-            filterTab === "all" ? "bg-neutral-950 text-white" : "text-neutral-500 hover:bg-neutral-100"
-          }`}
-        >
-          Semua ({properties.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterTab("house")}
-          className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
-            filterTab === "house" ? "bg-neutral-950 text-white" : "text-neutral-500 hover:bg-neutral-100"
-          }`}
-        >
-          Rumah ({houseCount})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterTab("villa")}
-          className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
-            filterTab === "villa" ? "bg-neutral-950 text-white" : "text-neutral-500 hover:bg-neutral-100"
-          }`}
-        >
-          Villa ({villaCount})
-        </button>
-      </div>
+      <Tabs value={filterTab} onValueChange={(value) => setFilterTab(value as typeof filterTab)}>
+        <TabsList>
+          <TabsTrigger value="all" className="px-3 py-2">Semua ({properties.length})</TabsTrigger>
+          <TabsTrigger value="house" className="px-3 py-2">Rumah ({houseCount})</TabsTrigger>
+          <TabsTrigger value="villa" className="px-3 py-2">Villa ({villaCount})</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Listings List */}
       <div className="space-y-4">
@@ -160,35 +135,34 @@ export function ActiveAdvertisements({ properties, onDelete }: ActiveAdvertiseme
                 {/* Right Actions & Status */}
                 <div className="flex items-center gap-2 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-neutral-100">
                   {property.status === "published" && (
-                    <Link href={`/properties/${property.slug}`} target="_blank">
-                      <button
-                        type="button"
-                        title="Lihat Tampilan Publik 3D"
-                        className="p-2 rounded-lg border border-neutral-200 text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 transition-colors cursor-pointer"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </Link>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label="Lihat tampilan publik"
+                      render={<Link href={`/properties/${property.slug}`} target="_blank" title="Lihat Tampilan Publik 3D" />}
+                    >
+                      <Eye />
+                    </Button>
                   )}
 
-                  <Link href={`/dashboard/properties/${property.id}/edit`}>
-                    <button
-                      type="button"
-                      title="Edit Properti & Model 3D"
-                      className="p-2 rounded-lg border border-neutral-200 text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 transition-colors cursor-pointer"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => onDelete(property.id, property.title)}
-                    title="Hapus Properti"
-                    className="p-2 rounded-lg border border-neutral-200 text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Edit properti"
+                    render={<Link href={`/dashboard/properties/${property.id}/edit`} title="Edit Properti & Model 3D" />}
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <Edit3 />
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => onDelete(property.id, property.title)}
+                    aria-label="Hapus properti"
+                    title="Hapus Properti"
+                  >
+                    <Trash2 />
+                  </Button>
                 </div>
               </div>
             );
