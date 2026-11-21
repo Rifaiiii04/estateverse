@@ -35,7 +35,8 @@ func (h *TourHandler) CreateCapture(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	room, err := h.tours.StartCapture(r.Context(), currentUserID(r), propertyID, meta.Name, frames)
+	extras := services.CaptureExtras{CameraHeightCm: meta.CameraHeightCm, Location: meta.Location}
+	room, err := h.tours.StartCapture(r.Context(), currentUserID(r), propertyID, meta.Name, frames, extras)
 	respond(w, r, http.StatusAccepted, room, err)
 }
 

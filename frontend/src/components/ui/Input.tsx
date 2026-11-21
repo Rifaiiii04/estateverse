@@ -1,40 +1,40 @@
-import React from "react";
+"use client";
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+import * as React from "react";
+import { Input as InputPrimitive } from "@base-ui/react/input";
+import { cn } from "@/lib/utils/cn";
+import { FormField, fieldIdFrom } from "@/components/ui/FormField";
+
+// Shared classes for single-line text controls.
+export const inputClassName =
+  "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none max-md:min-h-11 file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm";
+
+interface InputProps extends React.ComponentProps<"input"> {
   label?: string;
   error?: string;
   helperText?: string;
 }
 
-// Input renders an accessible form input field with optional label and validation error.
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, className = "", id, ...props }, ref) => {
-    const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+// Renders a text input, wrapped with label and validation feedback when those props are given.
+export function Input({ label, error, helperText, className, id, type, ...props }: InputProps) {
+  const inputId = fieldIdFrom(id, label);
+  const control = (
+    <InputPrimitive
+      id={inputId}
+      type={type}
+      data-slot="input"
+      aria-invalid={error ? true : undefined}
+      aria-describedby={error && inputId ? `${inputId}-error` : undefined}
+      className={cn(inputClassName, className)}
+      {...props}
+    />
+  );
 
-    return (
-      <div className="w-full space-y-1.5">
-        {label && (
-          <label htmlFor={inputId} className="block text-xs font-semibold text-neutral-700">
-            {label}
-          </label>
-        )}
-        <input
-          ref={ref}
-          id={inputId}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? `${inputId}-error` : undefined}
-          className={`w-full h-10 px-3.5 rounded-xl border text-xs sm:text-sm transition-all focus:outline-none focus:ring-2 focus:ring-sage-600/30 focus:border-sage-600 disabled:bg-neutral-50 disabled:text-neutral-500 ${
-            error
-              ? "border-rose-400 bg-rose-50/20 text-rose-900"
-              : "border-neutral-200 hover:border-neutral-300 bg-white text-neutral-900 placeholder:text-neutral-500"
-          } ${className}`}
-          {...props}
-        />
-        {error && <p id={`${inputId}-error`} role="alert" className="text-xs text-rose-700 font-medium">{error}</p>}
-        {helperText && !error && <p className="text-xs text-neutral-500">{helperText}</p>}
-      </div>
-    );
-  }
-);
+  if (!label && !error && !helperText) return control;
 
-Input.displayName = "Input";
+  return (
+    <FormField id={inputId} label={label} error={error} helperText={helperText}>
+      {control}
+    </FormField>
+  );
+}

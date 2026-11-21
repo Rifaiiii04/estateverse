@@ -14,11 +14,12 @@ import (
 // StorageHandler handles file uploads and static asset delivery.
 type StorageHandler struct {
 	storageSvc services.StorageService
+	photos     services.PhotoFingerprinter
 }
 
-// NewStorageHandler instantiates a storage HTTP handler.
-func NewStorageHandler(storageSvc services.StorageService) *StorageHandler {
-	return &StorageHandler{storageSvc: storageSvc}
+// NewStorageHandler instantiates a storage HTTP handler; photos may be nil when fingerprinting is disabled.
+func NewStorageHandler(storageSvc services.StorageService, photos services.PhotoFingerprinter) *StorageHandler {
+	return &StorageHandler{storageSvc: storageSvc, photos: photos}
 }
 
 // UploadImage handles image upload from form multipart payload.
@@ -47,6 +48,9 @@ func (h *StorageHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	urlPath := fmt.Sprintf("/api/v1/storage/%s", relPath)
+	if h.photos != nil {
+		h.photos.RecordUpload(r.Context(), currentUserID(r), urlPath)
+	}
 	WriteJSON(w, http.StatusCreated, map[string]string{
 		"path": urlPath,
 	})

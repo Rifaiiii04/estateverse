@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "./ui-theme.css";
 @source "../**/*.{js,ts,jsx,tsx}";
 
 @theme {
@@ -32,6 +34,12 @@
   --accent-soft: #e3ede9;
 }
 
+/* Clip (not hide) sideways overflow on both roots: phones can no longer pan right, and sticky headers keep working. */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
@@ -42,7 +50,6 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
 /* Harmonized form controls and interactive triggers */

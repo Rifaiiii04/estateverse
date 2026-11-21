@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { Box, Eye, EyeOff, RotateCcw, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 const DynamicCanvas = dynamic(
   () => import("./HouseCanvas").then((mod) => mod.HouseCanvas),
@@ -28,23 +29,14 @@ export function FormModelPreview({ modelUrl, onRemove }: FormModelPreviewProps) 
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setIsOpen((prev) => !prev)}
-            className="h-7 px-2.5 rounded-lg border border-neutral-200 bg-white hover:border-sage-400 text-neutral-700 hover:text-sage-800 text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
-          >
-            {isOpen ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-sage-600" />}
+          <Button variant="outline" size="sm" onClick={() => setIsOpen((prev) => !prev)}>
+            {isOpen ? <EyeOff /> : <Eye className="text-primary" />}
             <span>{isOpen ? "Tutup" : "Preview 3D"}</span>
-          </button>
+          </Button>
 
-          <button
-            type="button"
-            onClick={onRemove}
-            className="h-7 px-2 rounded-lg border border-neutral-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-rose-500 text-xs inline-flex items-center justify-center transition-colors cursor-pointer"
-            title="Hapus Model 3D"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <Button variant="destructive" size="icon-sm" onClick={onRemove} aria-label="Hapus model 3D" title="Hapus Model 3D">
+            <Trash2 />
+          </Button>
         </div>
       </div>
 
@@ -55,14 +47,10 @@ export function FormModelPreview({ modelUrl, onRemove }: FormModelPreviewProps) 
           </div>
           <div className="px-3.5 py-2 bg-white border-t border-neutral-200/70 text-[11px] text-neutral-500 flex items-center justify-between">
             <span>Klik &amp; geser untuk mencoba tampilan 3D</span>
-            <button
-              type="button"
-              onClick={() => setPreviewKey((k) => k + 1)}
-              className="text-sage-700 hover:text-sage-900 font-semibold flex items-center gap-1 cursor-pointer"
-            >
-              <RotateCcw className="w-3 h-3" />
+            <Button variant="link" size="xs" className="px-0" onClick={() => setPreviewKey((k) => k + 1)}>
+              <RotateCcw />
               <span>Muat Ulang</span>
-            </button>
+            </Button>
           </div>
         </div>
       ) : (

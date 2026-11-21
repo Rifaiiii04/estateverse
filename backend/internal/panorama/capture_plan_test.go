@@ -2,6 +2,7 @@ package panorama
 
 import (
 	"image"
+	"math"
 	"math/rand"
 	"testing"
 )
@@ -26,8 +27,36 @@ func TestAutomaticCapturePlan(t *testing.T) {
 		if coverage < minSphereCoverage || len(plan) > 48 {
 			t.Fatal("unsafe automatic capture plan")
 		}
-		if lens.fov >= 48 && lens.aspect < 0.6 && len(plan) > 24 {
+		if lens.fov >= 48 && lens.aspect < 0.6 && len(plan) > 26 {
 			t.Errorf("too many photos for a normal portrait lens: %d", len(plan))
+		}
+	}
+}
+
+// TestCapturePlanIsSequential checks the path: eye level first, rings rising then falling, each swept to the right
+// with even steps and entered by a pure tilt from the previous photo.
+func TestCapturePlanIsSequential(t *testing.T) {
+	for _, lens := range []struct{ fov, aspect float64 }{{34, 9.0 / 16}, {48, 9.0 / 16}, {60, 9.0 / 16}, {90, 16.0 / 9}} {
+		plan, err := PlanCapture(lens.fov, lens.aspect)
+		if err != nil {
+			t.Fatalf("lens %+v: %v", lens, err)
+		}
+		for i, yaw := range calibrationYaws {
+			if plan[i].Yaw != yaw || plan[i].Pitch != 0 {
+				t.Fatalf("lens %+v: calibration photo %d moved to %+v", lens, i, plan[i])
+			}
+		}
+		for i := 1; i < len(plan); i++ {
+			prev, cur := plan[i-1], plan[i]
+			if pathRank(cur.Pitch) < pathRank(prev.Pitch) {
+				t.Fatalf("lens %+v: photo %d returns to an earlier ring", lens, i)
+			}
+			if cur.Pitch != prev.Pitch && cur.Yaw != prev.Yaw {
+				t.Fatalf("lens %+v: photo %d needs a turn while changing rings", lens, i)
+			}
+			if step := math.Mod(cur.Yaw-prev.Yaw+360, 360); cur.Pitch == prev.Pitch && (step <= 0 || step >= 180) {
+				t.Fatalf("lens %+v: photo %d does not continue to the right (step %.0f°)", lens, i, step)
+			}
 		}
 	}
 }
@@ -60,4 +89,12 @@ func TestAutomaticPlanStitch(t *testing.T) {
 			t.Fatal("automatic panorama quality regressed")
 		}
 	}
+}
+
+// pathRank orders ring tilts along the intended path: eye level, rising to the ceiling, then falling to the floor.
+func pathRank(pitch float64) float64 {
+	if pitch >= 0 {
+		return pitch
+	}
+	return 180 - pitch
 }

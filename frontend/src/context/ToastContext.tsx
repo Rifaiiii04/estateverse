@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -53,14 +54,15 @@ function ToastItemView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: s
         {item.title && <h4 className="font-bold text-slate-900 text-sm">{item.title}</h4>}
         <p className="text-slate-600 leading-relaxed font-normal">{item.message}</p>
       </div>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-xs"
         onClick={() => onDismiss(item.id)}
-        className="text-slate-400 hover:text-slate-600 p-0.5 rounded-lg hover:bg-slate-100 transition-colors"
+        className="text-muted-foreground"
         aria-label="Tutup notifikasi"
       >
-        <X className="w-4 h-4" />
-      </button>
+        <X />
+      </Button>
     </div>
   );
 }

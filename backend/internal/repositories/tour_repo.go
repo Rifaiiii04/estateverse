@@ -18,6 +18,7 @@ type TourRepository interface {
 	MarkReady(ctx context.Context, id int64, panoramaPath, previewPath string, quality int) error
 	MarkFailed(ctx context.Context, id int64, message string) error
 	UpdateRoom(ctx context.Context, id int64, name, note string) error
+	SaveLayout(ctx context.Context, id int64, layout models.RoomLayout) error
 	DeleteRoom(ctx context.Context, id int64) error
 	ReorderRooms(ctx context.Context, propertyID int64, orderedIDs []int64) error
 	AddHotspot(ctx context.Context, h *models.TourHotspot) error
@@ -35,15 +36,18 @@ func NewTourRepository(db *sql.DB) TourRepository {
 	return &mysqlTourRepo{db: db}
 }
 
-const tourRoomColumns = `id, property_id, name, note, status, panorama_path, preview_path,
+const tourRoomColumns = `id, property_id, name, note, source, camera_height_cm, floor_outline,
+	capture_lat, capture_lng, capture_accuracy_m, status, panorama_path, preview_path,
 	quality_score, error_message, sort_order, created_at`
 
 // CreateRoom inserts a room at the end of the property's room order.
 func (r *mysqlTourRepo) CreateRoom(ctx context.Context, room *models.TourRoom) error {
-	query := `INSERT INTO property_tour_rooms (property_id, name, status, panorama_path, preview_path, quality_score, sort_order)
-		SELECT ?, ?, ?, ?, ?, ?, COALESCE(MAX(sort_order), -1) + 1 FROM property_tour_rooms WHERE property_id = ?`
-	res, err := r.db.ExecContext(ctx, query, room.PropertyID, room.Name, room.Status,
-		room.PanoramaPath, room.PreviewPath, room.QualityScore, room.PropertyID)
+	query := `INSERT INTO property_tour_rooms (property_id, name, source, camera_height_cm, capture_lat, capture_lng,
+		capture_accuracy_m, status, panorama_path, preview_path, quality_score, sort_order)
+		SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(MAX(sort_order), -1) + 1 FROM property_tour_rooms WHERE property_id = ?`
+	lat, lng, accuracy := fixColumns(room.CaptureFix)
+	res, err := r.db.ExecContext(ctx, query, room.PropertyID, room.Name, sourceOrUnknown(room.Source), room.CameraHeightCm,
+		lat, lng, accuracy, room.Status, room.PanoramaPath, room.PreviewPath, room.QualityScore, room.PropertyID)
 	if err != nil {
 		return fmt.Errorf("failed inserting tour room: %w", err)
 	}
@@ -139,17 +143,6 @@ func (r *mysqlTourRepo) queryRooms(ctx context.Context, query string, args ...in
 		rooms = append(rooms, *room)
 	}
 	return rooms, rows.Err()
-}
-
-// scanTourRoom maps one row into a TourRoom with an empty hotspot list.
-func scanTourRoom(s rowScanner) (*models.TourRoom, error) {
-	room := models.TourRoom{Hotspots: []models.TourHotspot{}}
-	err := s.Scan(&room.ID, &room.PropertyID, &room.Name, &room.Note, &room.Status, &room.PanoramaPath, &room.PreviewPath,
-		&room.QualityScore, &room.ErrorMessage, &room.SortOrder, &room.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
-	return &room, nil
 }
 
 // truncate shortens a string to at most n bytes for bounded columns.

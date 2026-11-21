@@ -1,6 +1,6 @@
 import { apiClient, apiUrl, ApiError } from "./client";
 import { buildCaptureManifest, type CaptureCalibration } from "../../../../shared/capturePolicy.ts";
-import { CapturedFrame, TourHotspot, TourRoom } from "@/types/tour";
+import { CapturedFrame, CaptureResult, RoomLayout, TourHotspot, TourRoom } from "@/types/tour";
 
 // getPublicTourRooms fetches the ready 360° rooms of a published property.
 export async function getPublicTourRooms(propertyId: number): Promise<TourRoom[]> {
@@ -42,19 +42,22 @@ export async function deleteTourHotspot(hotspotId: number): Promise<void> {
   await apiClient(`/tours/hotspots/${hotspotId}`, { method: "DELETE" });
 }
 
-// uploadTourCapture sends auto-captured frames with their orientations, reporting upload progress (0..1).
+// saveTourRoomLayout stores the camera height and traced floor outline used to measure a room.
+export async function saveTourRoomLayout(roomId: number, layout: RoomLayout): Promise<void> {
+  await apiClient(`/tours/layouts/${roomId}`, { method: "PUT", body: JSON.stringify(layout) });
+}
+
+// uploadTourCapture sends auto-captured frames with their orientations and optional extras, reporting progress (0..1).
 export function uploadTourCapture(
   propertyId: number,
   name: string,
-  frames: CapturedFrame[],
+  capture: CaptureResult,
   onProgress?: (fraction: number) => void
 ): Promise<TourRoom> {
+  const { frames, extras } = capture;
   const form = new FormData();
   form.append("property_id", String(propertyId));
-  form.append(
-    "meta",
-    JSON.stringify(buildCaptureManifest(name, frames))
-  );
+  form.append("meta", JSON.stringify(buildCaptureManifest(name, frames, extras)));
   frames.forEach((f, index) => form.append(`frame_${index}`, f.blob, `frame_${index}.jpg`));
   return sendMultipart<TourRoom>("/tours/captures", form, onProgress);
 }

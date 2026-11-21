@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Box, Cpu, FileText, Bot, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 // DashboardHelpPage provides sellers with 3D model asset guidelines and background queue documentation.
 export default function DashboardHelpPage() {
@@ -77,15 +78,10 @@ export default function DashboardHelpPage() {
           </p>
         </div>
 
-        <Link href="/ai-consultant">
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 bg-white text-neutral-950 hover:bg-neutral-100 text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl transition-all cursor-pointer shrink-0"
-          >
-            <span>Konsultasi dengan AI</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </Link>
+        <Button variant="outline" size="lg" className="shrink-0" render={<Link href="/ai-consultant" />}>
+          <span>Konsultasi dengan AI</span>
+          <ArrowRight />
+        </Button>
       </div>
     </div>
   );

@@ -27,26 +27,35 @@ export interface SphereViewerProps {
   onPick?: (yaw: number, pitch: number) => void;
   controlRef?: React.RefObject<LookHandle | null>;
   ariaLabel: string;
+  /** Extra scene content in metres around the camera, e.g. measurement overlays. */
+  children?: React.ReactNode;
 }
 
 // SphereViewerCanvas renders an equirectangular panorama around the camera with look controls and hotspots.
-export function SphereViewerCanvas({ imageUrl, hotspots = [], gyro = false, initialYaw = 0, onPick, controlRef, ariaLabel }: SphereViewerProps) {
+export function SphereViewerCanvas(props: SphereViewerProps) {
+  const { imageUrl, hotspots = [], gyro = false, initialYaw = 0, onPick, controlRef, ariaLabel, children } = props;
   return (
-    <Canvas
-      camera={{ fov: 75, near: 0.1, far: 2000, position: [0, 0, 0] }}
-      gl={{ antialias: false }}
-      tabIndex={0}
-      aria-label={ariaLabel}
-      className="touch-none cursor-grab active:cursor-grabbing focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-500"
-    >
-      <Suspense fallback={<Html center><span className="text-xs text-white">Memuat panorama…</span></Html>}>
-        <PanoramaSphere url={imageUrl} />
-      </Suspense>
-      <Controls gyro={gyro} initialYaw={initialYaw} onPick={onPick} controlRef={controlRef} />
-      {hotspots.map((h) => (
-        <HotspotMarker key={h.id} hotspot={h} />
-      ))}
-    </Canvas>
+    <div className="relative h-full w-full">
+      {/* Loading text sits behind the transparent canvas and is covered once the panorama draws. A drei <Html>
+          fallback would unmount mid-render and trip React 19's synchronous-unmount error. */}
+      <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center text-xs text-white/80">Memuat panorama…</span>
+      <Canvas
+        camera={{ fov: 75, near: 0.1, far: 2000, position: [0, 0, 0] }}
+        gl={{ antialias: false }}
+        tabIndex={0}
+        aria-label={ariaLabel}
+        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-500"
+      >
+        <Suspense fallback={null}>
+          <PanoramaSphere url={imageUrl} />
+        </Suspense>
+        <Controls gyro={gyro} initialYaw={initialYaw} onPick={onPick} controlRef={controlRef} />
+        {hotspots.map((h) => (
+          <HotspotMarker key={h.id} hotspot={h} />
+        ))}
+        {children}
+      </Canvas>
+    </div>
   );
 }
 

@@ -42,7 +42,11 @@ func Build(ctx context.Context, cfg *config.Config, db *sql.DB) http.Handler {
 	}
 
 	authSvc := services.NewAuthService(userRepo, sessionRepo, cfg.SessionTTL)
-	propSvc := services.NewPropertyServiceWithTours(propRepo, imgRepo, modelQueue, tourRepo)
+	photos := services.NewPhotoFingerprinter(repositories.NewImageFingerprintRepository(db), storageSvc)
+	if db != nil {
+		photos.StartBackfill(ctx)
+	}
+	propSvc := services.NewPropertyServiceWithTours(propRepo, imgRepo, modelQueue, tourRepo, photos)
 	tourSvc := services.NewTourService(tourRepo, propRepo, storageSvc, tourQueue)
 	assistantSvc := services.NewAssistantService(cfg.OpenRouterKey, cfg.OpenRouterModel, propRepo)
 
@@ -54,7 +58,7 @@ func Build(ctx context.Context, cfg *config.Config, db *sql.DB) http.Handler {
 		HealthHdl:     handlers.NewHealthHandler(db),
 		AuthHdl:       handlers.NewAuthHandler(authSvc, cfg.IsProduction(), activitySvc),
 		PropHdl:       handlers.NewPropertyHandler(propSvc),
-		StorageHdl:    handlers.NewStorageHandler(storageSvc),
+		StorageHdl:    handlers.NewStorageHandler(storageSvc, photos),
 		LeadHdl:       handlers.NewLeadHandler(leadRepo, propRepo),
 		TourHdl:       handlers.NewTourHandler(tourSvc),
 		EngagementHdl: handlers.NewEngagementHandler(statsRepo, propRepo),

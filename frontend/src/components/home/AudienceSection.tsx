@@ -3,6 +3,8 @@
 import React from "react";
 import { Building2, Home, KeyRound } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { cn } from "@/lib/utils/cn";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
 import { StaggerContainer, StaggerItem } from "@/components/ui/MotionPrimitives";
 
 const ICONS = [Home, Building2, KeyRound];
@@ -12,7 +14,7 @@ export function AudienceSection() {
   const { t } = useLanguage();
   return (
     <section aria-labelledby="audience-title" className="py-14 sm:py-16 bg-neutral-50/60 border-y border-neutral-100">
-      <div className="w-full max-w-[1840px] mx-auto px-4 sm:px-8 lg:px-14 space-y-8">
+      <div className={cn(PAGE_CONTAINER, "space-y-8")}>
         <h2 id="audience-title" className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-950">
           {t.audience.title}
         </h2>

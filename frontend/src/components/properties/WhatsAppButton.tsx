@@ -1,12 +1,13 @@
 import React from "react";
-import { MessageCircle } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/utils/whatsapp";
+import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/Button";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 
 interface WhatsAppButtonProps {
   phone: string;
   propertyTitle: string;
-  size?: "sm" | "md" | "lg";
+  size?: "default" | "sm" | "lg";
   className?: string;
 }
 
@@ -14,26 +15,19 @@ interface WhatsAppButtonProps {
 export function WhatsAppButton({
   phone,
   propertyTitle,
-  size = "md",
+  size = "default",
   className = "",
 }: WhatsAppButtonProps) {
   const href = buildWhatsAppLink(phone, propertyTitle);
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`inline-block ${className}`}
+    <Button
+      size={size}
+      className={cn("px-4", className)}
+      render={<a href={href} target="_blank" rel="noopener noreferrer" />}
     >
-      <Button
-        variant="primary"
-        size={size}
-        className="w-full bg-sage-600 hover:bg-sage-700 focus:ring-sage-600 font-semibold shadow-sm gap-2"
-      >
-        <MessageCircle className="w-5 h-5" />
-        <span>Hubungi Seller via WhatsApp</span>
-      </Button>
-    </a>
+      <WhatsAppIcon />
+      <span>Hubungi Seller via WhatsApp</span>
+    </Button>
   );
 }

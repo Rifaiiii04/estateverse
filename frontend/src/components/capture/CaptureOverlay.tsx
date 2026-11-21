@@ -1,8 +1,9 @@
 "use client";
 
 import React, { RefObject, useEffect, useRef } from "react";
-import { Vector3 } from "three";
-import { CaptureTarget, nextPending, ringLabel, STEADY_SPEED_DEG_S } from "@/lib/capture/captureTargets";
+import { Quaternion, Vector3 } from "three";
+import { guideHint } from "@/lib/capture/captureGuide";
+import { CaptureTarget, nextPending } from "@/lib/capture/captureTargets";
 import type { OrientationSample } from "@/lib/capture/orientation";
 import type { SteadyState } from "@/lib/capture/useSphereCapture";
 import { drawGuideArrow, drawMiniMap, drawReticle, drawTargets } from "./overlayDrawing";
@@ -47,7 +48,7 @@ export function CaptureOverlay({ targets, doneIds, sampleRef, speedRef, steadyRe
       drawGuideArrow(ctx, state, w, h);
       drawReticle(ctx, state, w, h);
       drawMiniMap(ctx, state, sample.yaw, sample.pitch, w);
-      updateHint(hintRef.current, nearest?.target ?? null, speedRef.current ?? 0);
+      updateHint(hintRef.current, targets, nearest?.target ?? null, sample.quaternion, speedRef.current ?? 0);
     };
     frame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frame);
@@ -79,13 +80,14 @@ function resizeCanvas(canvas: HTMLCanvasElement) {
 }
 
 // updateHint writes the current instruction directly into the DOM to avoid 60 fps state updates.
-function updateHint(el: HTMLParagraphElement | null, target: CaptureTarget | null, speed: number) {
+function updateHint(
+  el: HTMLParagraphElement | null,
+  targets: CaptureTarget[],
+  target: CaptureTarget | null,
+  pose: Quaternion,
+  speed: number
+) {
   if (!el) return;
-  let text = "Semua titik sudah terekam!";
-  if (target) {
-    text = speed > STEADY_SPEED_DEG_S * 1.5
-      ? "Terlalu cepat — putar lebih pelan"
-      : `${ringLabel(target.ring)} — putar HP di titik yang sama, arahkan lingkaran ke titik putih lalu tahan sebentar`;
-  }
+  const text = target ? guideHint(targets, target, pose, speed) : "Semua titik sudah terekam!";
   if (el.textContent !== text) el.textContent = text;
 }

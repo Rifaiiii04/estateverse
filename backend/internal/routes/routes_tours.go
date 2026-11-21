@@ -23,6 +23,7 @@ func registerTourRoutes(mux *http.ServeMux, deps RouterDeps, requireAuth func(ht
 	mux.Handle("/api/v1/tours/imports", onlyMethod(http.MethodPost, limited(h.ImportPanorama)))
 	mux.Handle("/api/v1/tours/order", onlyMethod(http.MethodPut, requireAuth(http.HandlerFunc(h.Reorder))))
 	mux.Handle("/api/v1/tours/rooms/", requireAuth(http.HandlerFunc(h.Room)))
+	mux.Handle("/api/v1/tours/layouts/", onlyMethod(http.MethodPut, requireAuth(http.HandlerFunc(h.SaveLayout))))
 	mux.Handle("/api/v1/tours/hotspots", onlyMethod(http.MethodPost, requireAuth(http.HandlerFunc(h.CreateHotspot))))
 	mux.Handle("/api/v1/tours/hotspots/", onlyMethod(http.MethodDelete, requireAuth(http.HandlerFunc(h.DeleteHotspot))))
 }

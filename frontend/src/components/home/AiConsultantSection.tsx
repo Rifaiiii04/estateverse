@@ -4,6 +4,9 @@ import React from "react";
 import Link from "next/link";
 import { Sparkles, ArrowRight, ShieldCheck, Camera, Calculator } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { cn } from "@/lib/utils/cn";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
+import { Button } from "@/components/ui/Button";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/MotionPrimitives";
 import { formatIDR } from "@/lib/utils/formatters";
 import { assessAffordability, monthlyInstallment } from "@/lib/utils/mortgage";
@@ -54,7 +57,7 @@ export function AiConsultantSection() {
 
   return (
     <section id="ai-consultant" aria-labelledby="assistant-title" className="py-14 sm:py-20 bg-sage-50/55 border-y border-sage-200/60">
-      <div className="w-full max-w-[1840px] mx-auto px-4 sm:px-8 lg:px-14 space-y-10 sm:space-y-12">
+      <div className={cn(PAGE_CONTAINER, "space-y-10 sm:space-y-12")}>
         <FadeIn>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 border-b border-neutral-200/70 pb-6">
             <div className="space-y-2">
@@ -63,14 +66,11 @@ export function AiConsultantSection() {
               </h2>
               <p className="text-sm sm:text-[15px] text-neutral-700 max-w-xl">{t.agents.subtitle}</p>
             </div>
-            <Link
-              href="/ai-consultant"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-sage-600 text-white hover:bg-sage-700 text-sm font-semibold px-5 py-3 rounded-xl shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-600/40"
-            >
-              <Sparkles className="w-4 h-4" aria-hidden="true" />
+            <Button size="lg" className="w-full sm:w-auto" render={<Link href="/ai-consultant" />}>
+              <Sparkles aria-hidden="true" />
               <span>Mulai Tanya Asisten</span>
-              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </Link>
+              <ArrowRight aria-hidden="true" />
+            </Button>
           </div>
         </FadeIn>
 

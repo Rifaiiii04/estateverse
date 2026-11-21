@@ -1,11 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { MessageSquare, Search, SlidersHorizontal, ArrowUpRight } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowUpRight } from "lucide-react";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { getOwnerLeads, updateLeadStatus, Lead } from "@/lib/api/leads";
 import { useToast } from "@/context/ToastContext";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { CustomSelect, SelectOption } from "@/components/ui/CustomSelect";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/MotionPrimitives";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 
@@ -89,38 +93,32 @@ export default function DashboardLeadsPage() {
       {/* Filters and Search Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-neutral-200/80">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nama pembeli, properti..."
-            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:border-neutral-950"
+            aria-label="Cari prospek"
+            className="pl-8"
           />
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {[
-            { id: "all", label: "Semua" },
-            { id: "new", label: "Baru" },
-            { id: "contacted", label: "Dihubungi" },
-            { id: "scheduled", label: "Jadwal Tur" },
-            { id: "closed", label: "Deal" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setStatusFilter(tab.id)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                statusFilter === tab.id
-                  ? "bg-neutral-950 text-white"
-                  : "text-neutral-600 hover:bg-neutral-100"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <Tabs value={statusFilter} onValueChange={(value) => setStatusFilter(String(value))}>
+          <TabsList className="max-w-full overflow-x-auto no-scrollbar">
+            {[
+              { id: "all", label: "Semua" },
+              { id: "new", label: "Baru" },
+              { id: "contacted", label: "Dihubungi" },
+              { id: "scheduled", label: "Jadwal Tur" },
+              { id: "closed", label: "Deal" },
+            ].map((tab) => (
+              <TabsTrigger key={tab.id} value={tab.id} className="px-3 py-2">
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Leads Content */}
@@ -161,16 +159,20 @@ export default function DashboardLeadsPage() {
                     onChange={(val) => handleStatusChange(item.id, val as Lead["status"])}
                   />
 
-                  <a
-                    href={`https://wa.me/${item.phone}?text=${encodeURIComponent(`Halo Bapak/Ibu ${item.name}, saya pemilik properti ${item.property_title || ""}. Terima kasih atas minat Anda melalui EstateVerse.`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                  <Button
+                    size="sm"
+                    render={
+                      <a
+                        href={`https://wa.me/${item.phone}?text=${encodeURIComponent(`Halo Bapak/Ibu ${item.name}, saya pemilik properti ${item.property_title || ""}. Terima kasih atas minat Anda melalui EstateVerse.`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      />
+                    }
                   >
-                    <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+                    <WhatsAppIcon />
                     <span>Chat WA</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-neutral-500" />
-                  </a>
+                    <ArrowUpRight />
+                  </Button>
                 </div>
               </div>
 

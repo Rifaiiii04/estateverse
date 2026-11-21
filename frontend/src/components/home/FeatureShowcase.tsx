@@ -6,7 +6,10 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Layers, CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { cn } from "@/lib/utils/cn";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
 import { FadeIn, smoothEase } from "@/components/ui/MotionPrimitives";
+import { Button } from "@/components/ui/Button";
 
 // FeatureShowcase renders a responsive process walkthrough with Framer Motion step transitions.
 export function FeatureShowcase() {
@@ -16,7 +19,7 @@ export function FeatureShowcase() {
 
   return (
     <section id="how-it-works" className="py-14 sm:py-22 bg-white">
-      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-12">
+      <div className={cn(PAGE_CONTAINER, "space-y-10 sm:space-y-12")}>
         {/* Section Heading Split */}
         <FadeIn>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
@@ -35,9 +38,9 @@ export function FeatureShowcase() {
           </div>
         </FadeIn>
 
-        {/* Feature Split Container */}
+        {/* Feature Split — plain grid, no wrapping card, so the photo and its caption card are not nested in another card */}
         <FadeIn delay={0.08}>
-          <div className="bg-neutral-50/80 rounded-2xl sm:rounded-3xl border border-neutral-200 p-5 sm:p-8 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Column: Interactive Steps with AnimatePresence */}
             <div className="lg:col-span-5 flex flex-col justify-between space-y-6 sm:space-y-8">
               <div className="space-y-3 sm:space-y-4 min-h-[160px]">
@@ -60,36 +63,26 @@ export function FeatureShowcase() {
                 </AnimatePresence>
 
                 <div className="pt-2">
-                  <Link href="/ai-consultant">
-                    <motion.button
-                      type="button"
-                      whileHover={{ y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="h-10 inline-flex items-center gap-2 bg-sage-600 hover:bg-sage-700 rounded-xl px-5 text-xs sm:text-[13px] font-semibold text-white transition-colors shadow-2xs cursor-pointer"
-                    >
-                      <span>{t.features.cta}</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-sage-100" />
-                    </motion.button>
-                  </Link>
+                  <Button size="lg" render={<Link href="/ai-consultant" />}>
+                    <span>{t.features.cta}</span>
+                    <ArrowRight />
+                  </Button>
                 </div>
               </div>
 
               {/* Stepper Navigation List */}
               <div className="space-y-2 pt-4 border-t border-neutral-200/70">
                 {steps.map((st, idx) => (
-                  <button
+                  <Button
                     key={st.title}
-                    type="button"
+                    variant={activeStep === idx ? "secondary" : "ghost"}
+                    aria-pressed={activeStep === idx}
                     onClick={() => setActiveStep(idx)}
-                    className={`w-full text-left text-xs font-medium py-2 px-3 rounded-xl transition-all flex items-center justify-between cursor-pointer ${
-                      activeStep === idx
-                        ? "bg-white text-sage-800 font-bold border border-sage-200 shadow-2xs"
-                        : "text-neutral-500 hover:text-neutral-900 hover:bg-white/60"
-                    }`}
+                    className="w-full justify-between text-left"
                   >
                     <span>{st.title}</span>
-                    {activeStep === idx && <CheckCircle2 className="w-4 h-4 text-sage-600 shrink-0" />}
-                  </button>
+                    {activeStep === idx && <CheckCircle2 className="text-primary" />}
+                  </Button>
                 ))}
               </div>
             </div>

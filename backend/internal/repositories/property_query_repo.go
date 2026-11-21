@@ -12,7 +12,7 @@ import (
 
 // propertyColumns lists the selected property columns in scan order.
 const propertyColumns = `p.id, p.owner_id, p.title, p.slug, p.description, p.property_type,
-	p.price, p.address, p.city, p.province, p.land_area, p.building_area,
+	p.price, p.address, p.city, p.province, p.latitude, p.longitude, p.land_area, p.building_area,
 	p.bedrooms, p.bathrooms, p.floors, p.whatsapp_number, COALESCE(p.model_3d_path, ''),
 	COALESCE(p.model_metadata, ''), COALESCE(p.benefits, '[]'), p.status, p.created_at, p.updated_at, COALESCE(u.name, ''),
 	EXISTS(SELECT 1 FROM property_tour_rooms t WHERE t.property_id = p.id AND t.status = 'ready')`
@@ -132,14 +132,18 @@ type rowScanner interface {
 func scanPropertyInto(s rowScanner, p *models.Property) error {
 	var metaRaw string
 	var benefitsRaw string
+	var lat, lng sql.NullFloat64
 	err := s.Scan(
 		&p.ID, &p.OwnerID, &p.Title, &p.Slug, &p.Description, &p.PropertyType,
-		&p.Price, &p.Address, &p.City, &p.Province, &p.LandArea, &p.BuildingArea,
+		&p.Price, &p.Address, &p.City, &p.Province, &lat, &lng, &p.LandArea, &p.BuildingArea,
 		&p.Bedrooms, &p.Bathrooms, &p.Floors, &p.WhatsAppNumber, &p.Model3DPath,
 		&metaRaw, &benefitsRaw, &p.Status, &p.CreatedAt, &p.UpdatedAt, &p.OwnerName, &p.HasTour,
 	)
 	if err != nil {
 		return err
+	}
+	if lat.Valid && lng.Valid {
+		p.Latitude, p.Longitude = &lat.Float64, &lng.Float64
 	}
 	if metaRaw != "" && metaRaw != "{}" {
 		var meta models.Model3DMetadata

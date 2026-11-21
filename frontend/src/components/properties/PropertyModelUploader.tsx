@@ -6,6 +6,7 @@ import { uploadModel } from "@/lib/api/properties";
 import { getMediaUrl } from "@/lib/api/client";
 import { useToast } from "@/context/ToastContext";
 import { FormModelPreview } from "@/components/three/FormModelPreview";
+import { Button } from "@/components/ui/Button";
 import { ModelUploadProgress } from "./ModelUploadProgress";
 
 interface PropertyModelUploaderProps {
@@ -72,15 +73,16 @@ export function PropertyModelUploader({
         className="hidden"
       />
 
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="lg"
         disabled={uploadingModel}
         onClick={() => modelInputRef.current?.click()}
-        className="w-full h-10 rounded-xl border border-dashed border-sage-400 bg-sage-50/40 hover:bg-sage-50 text-xs font-semibold text-sage-800 inline-flex items-center justify-center gap-2 transition-colors cursor-pointer"
+        className="w-full border-dashed border-primary/40"
       >
-        <Upload className="w-4 h-4 text-sage-600" />
+        <Upload />
         <span>{model3DPath ? "Ganti File Model 3D" : "Unggah File Model 3D"}</span>
-      </button>
+      </Button>
 
       {uploadingModel && uploadingFile && (
         <ModelUploadProgress

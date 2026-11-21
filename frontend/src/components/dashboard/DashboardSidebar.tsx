@@ -3,164 +3,145 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Megaphone, Users, TrendingUp, MessageSquare, Settings, HelpCircle, X } from "lucide-react";
+import {
+  HelpCircle,
+  LayoutDashboard,
+  LogOut,
+  Megaphone,
+  MessageSquare,
+  Settings,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 import { Logo } from "@/components/ui/Logo";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
+} from "@/components/ui/sidebar";
 
-interface DashboardSidebarProps {
-  isOpen?: boolean;
-  onClose?: () => void;
-  activeListingCount?: number;
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
-// DashboardSidebar renders the luxury architectural seller navigation sidebar matching the reference layout.
-export function DashboardSidebar({
-  isOpen = false,
-  onClose,
-  activeListingCount = 0,
-}: DashboardSidebarProps) {
+const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Menu Utama",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/dashboard/properties", label: "Listing & Iklan", icon: Megaphone },
+      { href: "/dashboard/leads", label: "Minat Pembeli", icon: Users },
+      { href: "/dashboard/analytics", label: "Statistik Portofolio", icon: TrendingUp },
+    ],
+  },
+  {
+    label: "Komunikasi",
+    items: [{ href: "/dashboard/messages", label: "Pesan WhatsApp", icon: MessageSquare }],
+  },
+  {
+    label: "Lainnya",
+    items: [
+      { href: "/dashboard/settings", label: "Pengaturan Akun", icon: Settings },
+      { href: "/dashboard/help", label: "Bantuan & FAQ", icon: HelpCircle },
+    ],
+  },
+];
+
+// Checks whether a dashboard link matches the route; the overview only matches exactly.
+function isActiveRoute(pathname: string, href: string) {
+  return href === "/dashboard" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+}
+
+// Renders the signed-in seller's identity and the logout action at the bottom of the sidebar.
+function SidebarAccount() {
+  const { user, logout } = useAuth();
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <div className="flex items-center gap-2 px-2 py-1.5">
+          <Avatar size="sm">
+            <AvatarFallback className="bg-primary text-primary-foreground uppercase">
+              {user?.name ? user.name.charAt(0) : "S"}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate text-sm font-medium">{user?.name ?? "Penjual"}</span>
+            <span className="truncate text-xs text-muted-foreground">{user?.email ?? "Penjual"}</span>
+          </div>
+        </div>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={logout}>
+          <LogOut />
+          <span>Keluar</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+
+// Renders the seller portal sidebar with grouped navigation and account actions.
+export function DashboardSidebar() {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
 
-  const mainNav = [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/dashboard/properties", label: "Listing & Iklan", icon: Megaphone, badge: activeListingCount },
-    { href: "/dashboard/leads", label: "Minat Pembeli", icon: Users },
-    { href: "/dashboard/analytics", label: "Statistik Portofolio", icon: TrendingUp },
-  ];
-
-  const secondaryNav = [
-    { href: "/dashboard/messages", label: "Pesan WhatsApp", icon: MessageSquare },
-  ];
-
-  const bottomNav = [
-    { href: "/dashboard/settings", label: "Pengaturan Akun", icon: Settings },
-    { href: "/dashboard/help", label: "Bantuan & FAQ", icon: HelpCircle },
-  ];
+  // Closes the mobile sheet once a destination is chosen.
+  const handleNavigate = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   return (
-    <>
-      {/* Mobile Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-neutral-950/40 backdrop-blur-xs z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Sidebar Container */}
-      <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-white border-r border-neutral-200/80 flex flex-col justify-between py-6 px-4 transition-transform duration-200 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:self-start lg:h-screen lg:overflow-y-auto lg:overscroll-contain shrink-0 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="space-y-6">
-          {/* Brand Header */}
-          <div className="flex items-center justify-between px-2">
-            <Link href="/" aria-label="EstateVerse — ke website" className="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-600">
-              <Logo size="sm" tagline="Portal Penjual" />
-            </Link>
-
-            {onClose && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="lg:hidden p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Main Navigation Group */}
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 px-3 block mb-2">
-              Menu Utama
-            </span>
-            {mainNav.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={onClose}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-sage-600 text-white shadow-2xs"
-                      : "text-neutral-600 hover:text-neutral-950 hover:bg-sage-50/70"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-neutral-500"}`} />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isActive
-                          ? "bg-sage-700 text-white"
-                          : "bg-sage-50 text-sage-700"
-                      }`}
+    <Sidebar>
+      <SidebarHeader>
+        <Link
+          href="/"
+          onClick={handleNavigate}
+          aria-label="EstateVerse — ke website"
+          className="rounded-lg px-2 py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+        >
+          <Logo size="sm" tagline="Portal Penjual" />
+        </Link>
+      </SidebarHeader>
+      <SidebarContent>
+        {NAV_GROUPS.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      isActive={isActiveRoute(pathname, item.href)}
+                      onClick={handleNavigate}
+                      render={<Link href={item.href} />}
                     >
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Activity Navigation Group */}
-          <div className="space-y-1 pt-2 border-t border-neutral-100">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 px-3 block mb-2">
-              Komunikasi
-            </span>
-            {secondaryNav.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={onClose}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-sage-600 text-white font-semibold shadow-2xs"
-                      : "text-neutral-600 hover:text-neutral-950 hover:bg-sage-50/70"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-neutral-500"}`} />
-                    <span>{item.label}</span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Bottom Utility Navigation */}
-        <div className="space-y-1 pt-4 border-t border-neutral-100">
-          {bottomNav.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-sage-600 text-white font-semibold"
-                    : "text-neutral-500 hover:text-neutral-950 hover:bg-sage-50/70"
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-neutral-500"}`} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </aside>
-    </>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+      <SidebarFooter>
+        <SidebarAccount />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
   );
 }

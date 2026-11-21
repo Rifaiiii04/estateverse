@@ -2,35 +2,37 @@
 
 import React from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { cn } from "@/lib/utils/cn";
 
-// LanguageSwitcher renders an ultra-clean minimalist bilingual toggle for English and Indonesian.
-export function LanguageSwitcher() {
+const LANGUAGES = [
+  { code: "en", label: "EN" },
+  { code: "id", label: "ID" },
+] as const;
+
+// Renders a compact segmented toggle between English and Indonesian.
+export function LanguageSwitcher({ className }: { className?: string }) {
   const { lang, setLang } = useLanguage();
 
   return (
-    <div className="inline-flex items-center h-9 rounded-xl bg-neutral-100 p-1 text-xs font-semibold border border-neutral-200/80">
-      <button
-        type="button"
-        onClick={() => setLang("en")}
-        className={`h-full px-2.5 rounded-lg transition-all cursor-pointer inline-flex items-center ${
-          lang === "en"
-            ? "bg-sage-600 text-white shadow-2xs"
-            : "text-neutral-500 hover:text-neutral-900"
-        }`}
-      >
-        EN
-      </button>
-      <button
-        type="button"
-        onClick={() => setLang("id")}
-        className={`h-full px-2.5 rounded-lg transition-all cursor-pointer inline-flex items-center ${
-          lang === "id"
-            ? "bg-sage-600 text-white shadow-2xs"
-            : "text-neutral-500 hover:text-neutral-900"
-        }`}
-      >
-        ID
-      </button>
+    <div
+      role="group"
+      aria-label="Bahasa"
+      className={cn("inline-flex h-8 items-center rounded-lg bg-muted p-0.5 text-xs font-medium", className)}
+    >
+      {LANGUAGES.map((option) => (
+        <button
+          key={option.code}
+          type="button"
+          aria-pressed={lang === option.code}
+          onClick={() => setLang(option.code)}
+          className={cn(
+            "inline-flex h-full min-w-9 cursor-pointer items-center justify-center rounded-md px-2.5 transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+            lang === option.code ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
     </div>
   );
 }

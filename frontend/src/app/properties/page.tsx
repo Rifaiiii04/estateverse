@@ -1,8 +1,6 @@
 "use client";
 
-import { hasVirtualTour } from "@/lib/utils/media";
-import React, { useEffect, useState, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { useEffect, useState, Suspense } from "react";
 import { SlidersHorizontal, RotateCcw } from "lucide-react";
 import { Property } from "@/types/property";
 import { getPublicProperties } from "@/lib/api/properties";
@@ -10,38 +8,28 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertyGridView } from "@/components/properties/PropertyGridView";
 import { PropertyTableView } from "@/components/properties/PropertyTableView";
-import {
-  PropertiesCatalogHeader,
-  PriceRangeFilter,
-  SortByOption,
-} from "@/components/properties/PropertiesCatalogHeader";
+import { PropertiesCatalogHeader } from "@/components/properties/PropertiesCatalogHeader";
+import { usePropertyFilters } from "@/components/properties/usePropertyFilters";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { Button } from "@/components/ui/Button";
 import { FadeIn, smoothEase } from "@/components/ui/MotionPrimitives";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
-import { useDebounce } from "@/lib/hooks/useDebounce";
-import { matchesPriceRange, parsePriceRange } from "@/lib/utils/priceRanges";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 
 // PropertiesContent orchestrates data fetching, filtering, sorting, and full-width responsive display.
 function PropertiesContent() {
-  const searchParams = useSearchParams();
   const { lang } = useLanguage();
   const { isAuthenticated } = useAuth();
   const isEn = lang === "en";
 
-  const initialType = searchParams.get("type")?.toLowerCase() || "all";
   const [dbProps, setDbProps] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [activeTab, setActiveTab] = useState<string>(
-    initialType === "house" || initialType === "villa" ? initialType : "all"
-  );
-  const [priceRange, setPriceRange] = useState<PriceRangeFilter>(parsePriceRange(searchParams.get("priceRange")));
-  const [selectedCity, setSelectedCity] = useState<string>(searchParams.get("city") || "");
-  const [keyword, setKeyword] = useState<string>(searchParams.get("q") || "");
-  const debouncedKeyword = useDebounce(keyword, 300);
-  const [sortBy, setSortBy] = useState<SortByOption>("newest");
+  const { filters, stats, visible: filteredProperties, hasActiveFilters } = usePropertyFilters(dbProps);
+  // Phones always get the card grid; the table only fits tablets and larger.
+  const shownView = useIsMobile() ? "grid" : viewMode;
 
   useEffect(() => {
     let mounted = true;
@@ -58,102 +46,33 @@ function PropertiesContent() {
     };
   }, []);
 
-  const stats = useMemo(() => {
-    const totalCount = dbProps.length;
-    const totalValue = dbProps.reduce((sum, p) => sum + (p.price || 0), 0);
-    const count3D = dbProps.filter((p) => hasVirtualTour(p)).length;
-    const houseCount = dbProps.filter((p) => (p.property_type || "").toLowerCase() === "house").length;
-    const villaCount = dbProps.filter((p) => (p.property_type || "").toLowerCase() === "villa").length;
-    const otherCount = Math.max(0, totalCount - houseCount - villaCount);
-    const cities = Array.from(new Set(dbProps.map((p) => p.city).filter(Boolean))).sort();
-    return { totalCount, totalValue, count3D, houseCount, villaCount, otherCount, cities };
-  }, [dbProps]);
-
-  const filteredProperties = useMemo(() => {
-    const filtered = dbProps.filter((item) => {
-      const pType = (item.property_type || "").toLowerCase();
-      if (activeTab === "3d" && !hasVirtualTour(item)) return false;
-      if (activeTab === "house" && pType !== "house") return false;
-      if (activeTab === "villa" && pType !== "villa") return false;
-      if (activeTab === "other" && (pType === "house" || pType === "villa")) return false;
-
-      if (!matchesPriceRange(item.price, priceRange)) return false;
-
-      if (selectedCity && item.city.toLowerCase() !== selectedCity.toLowerCase()) return false;
-
-      if (debouncedKeyword.trim()) {
-        const q = debouncedKeyword.toLowerCase();
-        const match =
-          item.title.toLowerCase().includes(q) ||
-          item.city.toLowerCase().includes(q) ||
-          item.province.toLowerCase().includes(q) ||
-          item.description.toLowerCase().includes(q);
-        if (!match) return false;
-      }
-      return true;
-    });
-
-    return [...filtered].sort((a, b) => {
-      if (sortBy === "price_asc") return a.price - b.price;
-      if (sortBy === "price_desc") return b.price - a.price;
-      if (sortBy === "area_desc") return b.building_area - a.building_area;
-      return b.id - a.id;
-    });
-  }, [dbProps, activeTab, priceRange, selectedCity, debouncedKeyword, sortBy]);
-
-  const hasActiveFilters =
-    activeTab !== "all" || priceRange !== "all" || Boolean(selectedCity) || Boolean(keyword.trim());
-
   return (
-    <div className="w-full max-w-[1840px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-7 sm:py-9 space-y-6">
-      {/* Header & Pill Filter Toolbar */}
+    <div className="w-full max-w-[1840px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-6 sm:py-9 space-y-5 sm:space-y-6">
+      {/* Header, desktop filter toolbar, and phone search + filter sheet */}
       <FadeIn y={12}>
         <PropertiesCatalogHeader
           isEn={isEn}
           isAuthenticated={isAuthenticated}
-          totalCount={stats.totalCount}
-          totalValue={stats.totalValue}
-          count3D={stats.count3D}
-          houseCount={stats.houseCount}
-          villaCount={stats.villaCount}
-          otherCount={stats.otherCount}
-          cities={stats.cities}
+          stats={stats}
+          filters={filters}
+          resultCount={filteredProperties.length}
           viewMode={viewMode}
           setViewMode={setViewMode}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          priceRange={priceRange}
-          setPriceRange={setPriceRange}
-          selectedCity={selectedCity}
-          setSelectedCity={setSelectedCity}
-          keyword={keyword}
-          setKeyword={setKeyword}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
         />
       </FadeIn>
 
       {/* Active Filter Reset Bar (only shown when filtered) */}
       {hasActiveFilters && (
-        <div className="flex items-center justify-between text-xs text-neutral-500 pt-1">
+        <div className="flex items-center justify-between gap-3 text-xs text-neutral-500 pt-1">
           <span>
             {isEn
               ? `Showing ${filteredProperties.length} of ${stats.totalCount} listings`
               : `Menampilkan ${filteredProperties.length} dari ${stats.totalCount} properti`}
           </span>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("all");
-              setPriceRange("all");
-              setSelectedCity("");
-              setKeyword("");
-            }}
-            className="inline-flex items-center gap-1 text-sage-700 hover:text-sage-900 font-bold cursor-pointer"
-          >
-            <RotateCcw className="w-3 h-3" />
+          <Button variant="link" size="sm" onClick={filters.reset}>
+            <RotateCcw />
             <span>{isEn ? "Reset all filters" : "Atur ulang filter"}</span>
-          </button>
+          </Button>
         </div>
       )}
 
@@ -176,7 +95,7 @@ function PropertiesContent() {
         </div>
       ) : (
         <AnimatePresence mode="wait">
-          {viewMode === "table" ? (
+          {shownView === "table" ? (
             <motion.div
               key="table"
               initial={{ opacity: 0, y: 12 }}

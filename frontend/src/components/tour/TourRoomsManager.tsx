@@ -6,10 +6,12 @@ import type { TourRoom } from "@/types/tour";
 import { deleteTourRoom, getOwnerTourRooms, importTourPanorama, updateTourRoom } from "@/lib/api/tours";
 import { captureSupportIssue, isLikelyDesktop } from "@/lib/capture/frameGrabber";
 import { useToast } from "@/context/ToastContext";
-import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils/cn";
+import { Button, buttonVariants } from "@/components/ui/Button";
 import { SphereCaptureModal } from "@/components/capture/SphereCaptureModal";
 import { TourRoomCard } from "./TourRoomCard";
 import { HotspotEditor } from "./HotspotEditor";
+import { RoomLayoutEditor } from "./layout/RoomLayoutEditor";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -20,11 +22,13 @@ export function TourRoomsManager({ propertyId }: { propertyId: number }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [layoutId, setLayoutId] = useState<number | null>(null);
   // Rendered only after the property loads on the client, so browser checks are safe in initializers.
   const [captureIssue] = useState<string | null>(() => captureSupportIssue());
   const [isDesktop] = useState(() => isLikelyDesktop());
   const previousStatuses = useRef<Map<number, TourRoom["status"]> | null>(null);
   const editingRoom = useMemo(() => rooms.find((r) => r.id === editingId) ?? null, [rooms, editingId]);
+  const layoutRoom = useMemo(() => rooms.find((r) => r.id === layoutId) ?? null, [rooms, layoutId]);
 
   // applyRooms updates the list and announces when background stitching reaches a terminal state.
   const applyRooms = useCallback((next: TourRoom[]) => {
@@ -107,10 +111,10 @@ export function TourRoomsManager({ propertyId }: { propertyId: number }) {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" onClick={() => setIsRecording(true)} disabled={Boolean(recordBlocked)}>
-            <Camera className="w-4 h-4" aria-hidden="true" /> Rekam Ruangan
+            <Camera aria-hidden="true" /> Rekam Ruangan
           </Button>
-          <label className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-neutral-200 text-xs sm:text-sm font-semibold cursor-pointer hover:border-sage-600 focus-within:ring-2 focus-within:ring-sage-600/30">
-            <ImageUp className="w-4 h-4" aria-hidden="true" />
+          <label className={cn(buttonVariants({ variant: "outline" }), "focus-within:ring-3 focus-within:ring-ring/50")}>
+            <ImageUp aria-hidden="true" />
             {isImporting ? "Mengunggah…" : "Unggah Foto 360"}
             <input type="file" accept="image/jpeg,image/png" className="sr-only" disabled={isImporting} onChange={(e) => handleImport(e.target.files?.[0])} />
           </label>
@@ -128,7 +132,7 @@ export function TourRoomsManager({ propertyId }: { propertyId: number }) {
       ) : (
         <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
           {rooms.map((room) => (
-            <TourRoomCard key={room.id} room={room} onUpdate={handleUpdate} onDelete={handleDelete} onEditHotspots={(r) => setEditingId(r.id)} />
+            <TourRoomCard key={room.id} room={room} onUpdate={handleUpdate} onDelete={handleDelete} onEditHotspots={(r) => setEditingId(r.id)} onEditLayout={(r) => setLayoutId(r.id)} />
           ))}
         </ul>
       )}
@@ -142,6 +146,7 @@ export function TourRoomsManager({ propertyId }: { propertyId: number }) {
         />
       )}
       {editingRoom && <HotspotEditor room={editingRoom} rooms={rooms} onClose={() => setEditingId(null)} onChanged={load} />}
+      {layoutRoom && <RoomLayoutEditor room={layoutRoom} onClose={() => setLayoutId(null)} onSaved={load} />}
     </section>
   );
 }
