@@ -27,10 +27,7 @@ export const id = {
     titleLine2: "Anggaran Anda",
     description:
       "Saring berdasarkan kota, tipe, dan rentang harga — mulai dari rumah pertama yang terjangkau, lengkap dengan Walk Inside 360° dari penjualnya.",
-    tabBuy: "Beli Rumah",
-    tabRent: "Sewa",
-    tabNew: "Ada Walk Inside 360°",
-    tabCommercial: "Ruko & Lainnya",
+    walkInside: "Ada Walk Inside 360°",
     locLabel: "Wilayah / Kota",
     locPlaceholder: "Semua Kota di Indonesia",
     typeLabel: "Jenis Properti",

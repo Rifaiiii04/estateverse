@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageSquare, Copy, ExternalLink, Check, Sparkles } from "lucide-react";
+import { Copy, ExternalLink, Check, Sparkles } from "lucide-react";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { useToast } from "@/context/ToastContext";
 import { Button } from "@/components/ui/Button";
 
@@ -70,7 +71,7 @@ export default function DashboardMessagesPage() {
           rel="noreferrer"
           className="inline-flex items-center gap-2 bg-neutral-950 text-white hover:bg-neutral-800 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
         >
-          <MessageSquare className="w-4 h-4 text-emerald-400" />
+          <WhatsAppIcon className="w-4 h-4 text-emerald-400" />
           <span>Buka WhatsApp Web</span>
           <ExternalLink className="w-3.5 h-3.5 text-neutral-500" />
         </a>

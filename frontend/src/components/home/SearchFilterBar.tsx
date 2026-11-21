@@ -7,21 +7,19 @@ import { SlidersHorizontal, RotateCcw, Search } from "lucide-react";
 import { CustomSelect, SelectOption } from "@/components/ui/CustomSelect";
 import { FadeIn } from "@/components/ui/MotionPrimitives";
 import { Button } from "@/components/ui/Button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { useLanguage } from "@/context/LanguageContext";
+import { cn } from "@/lib/utils/cn";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
 
-interface SearchFilterBarProps {
-  onFilterChange?: (filters: { tab: string; city: string; type: string; priceRange: string }) => void;
-}
-
-// SearchFilterBar renders an architectural search and filter widget with tabbed categories and styled options.
-export function SearchFilterBar({ onFilterChange }: SearchFilterBarProps) {
+// SearchFilterBar renders the landing search card: filter dropdowns, a Walk Inside checkbox and the search actions.
+export function SearchFilterBar() {
   const { lang, t } = useLanguage();
-  const [activeTab, setActiveTab] = useState("buy");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedPrice, setSelectedPrice] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
+  const [walkInside, setWalkInside] = useState(false);
 
   const isEn = lang === "en";
 
@@ -57,48 +55,31 @@ export function SearchFilterBar({ onFilterChange }: SearchFilterBarProps) {
     { value: "500", label: "> 250 m²", description: isEn ? "Large family home" : "Rumah besar & halaman luas" },
   ];
 
-  const tabs = [
-    { id: "buy", label: t.search.tabBuy },
-    { id: "rent", label: t.search.tabRent },
-    { id: "new", label: t.search.tabNew },
-    { id: "commercial", label: t.search.tabCommercial },
-  ];
-
   const router = useRouter();
 
-  // Applies the current filter selection or navigates to the catalog page.
+  // Opens the catalog page with the chosen filters in the URL.
   const handleApply = () => {
-    if (onFilterChange) {
-      onFilterChange({
-        tab: activeTab,
-        city: selectedCity,
-        type: selectedType,
-        priceRange: selectedPrice,
-      });
-      return;
-    }
     const params = new URLSearchParams();
     if (selectedType) params.set("type", selectedType);
     if (selectedCity) params.set("city", selectedCity);
     if (selectedPrice) params.set("priceRange", selectedPrice);
+    if (walkInside) params.set("walkInside", "1");
     const qs = params.toString();
     router.push(qs ? `/properties?${qs}` : "/properties");
   };
 
-  // Resets all filter dropdowns back to default unselected states.
+  // Resets every filter back to its default unselected state.
   const handleReset = () => {
     setSelectedCity("");
     setSelectedType("");
     setSelectedPrice("");
     setSelectedArea("");
-    if (onFilterChange) {
-      onFilterChange({ tab: activeTab, city: "", type: "", priceRange: "" });
-    }
+    setWalkInside(false);
   };
 
   return (
     <section className="py-10 sm:py-12 bg-white">
-      <FadeIn className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-7 sm:space-y-8">
+      <FadeIn className={cn(PAGE_CONTAINER, "space-y-7 sm:space-y-8")}>
         {/* Section Heading Split */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
           <div className="lg:col-span-7">
@@ -117,19 +98,8 @@ export function SearchFilterBar({ onFilterChange }: SearchFilterBarProps) {
 
         {/* Elevated Filter Bar Container (30% Secondary Surface & Border + 10% Sage Accents) */}
         <div className="bg-neutral-50/70 rounded-2xl sm:rounded-3xl border border-neutral-200 p-4 sm:p-6 lg:p-7 shadow-2xs">
-          {/* Top Category Tabs */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-            <TabsList className="w-full overflow-x-auto no-scrollbar">
-              {tabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id}>
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-
           {/* Form Filter Dropdowns Grid with Styled Options */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-5">
             <CustomSelect
               label={t.search.locLabel}
               options={locationOptions}
@@ -163,24 +133,27 @@ export function SearchFilterBar({ onFilterChange }: SearchFilterBarProps) {
             />
           </div>
 
-          {/* Bottom Filter Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-neutral-200/70 text-xs">
-            <Button variant="ghost" className="self-start" onClick={handleApply}>
+          <label className="flex w-fit cursor-pointer items-center gap-2.5 pb-5 text-sm font-medium text-neutral-800">
+            <Checkbox checked={walkInside} onCheckedChange={setWalkInside} />
+            <span>{t.search.walkInside}</span>
+          </label>
+
+          {/* Phones: More Filters left, Reset right, full-width Search below. Wider screens: one row. */}
+          <div className="grid grid-cols-2 items-center gap-3 pt-4 border-t border-neutral-200/70 text-xs sm:flex">
+            <Button variant="ghost" className="justify-self-start" onClick={handleApply}>
               <SlidersHorizontal className="text-primary" />
               <span>{t.search.moreFilters}</span>
             </Button>
 
-            <div className="flex items-center gap-2.5 w-full sm:w-auto">
-              <Button variant="ghost" onClick={handleReset}>
-                <RotateCcw />
-                <span>{t.search.reset}</span>
-              </Button>
+            <Button variant="ghost" className="justify-self-end sm:ml-auto" onClick={handleReset}>
+              <RotateCcw />
+              <span>{t.search.reset}</span>
+            </Button>
 
-              <Button size="lg" className="flex-1 px-4 sm:flex-initial" onClick={handleApply}>
-                <Search />
-                <span>{t.search.submit}</span>
-              </Button>
-            </div>
+            <Button size="lg" className="col-span-2 w-full sm:w-auto" onClick={handleApply}>
+              <Search />
+              <span>{t.search.submit}</span>
+            </Button>
           </div>
         </div>
       </FadeIn>

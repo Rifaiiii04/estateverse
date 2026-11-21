@@ -1,8 +1,8 @@
 import React from "react";
-import { MessageCircle } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/utils/whatsapp";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/Button";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 
 interface WhatsAppButtonProps {
   phone: string;
@@ -26,7 +26,7 @@ export function WhatsAppButton({
       className={cn("px-4", className)}
       render={<a href={href} target="_blank" rel="noopener noreferrer" />}
     >
-      <MessageCircle />
+      <WhatsAppIcon />
       <span>Hubungi Seller via WhatsApp</span>
     </Button>
   );

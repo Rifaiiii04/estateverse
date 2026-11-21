@@ -19,16 +19,16 @@ export function NavbarMobileMenu({ items }: { items: MainNavItem[] }) {
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger render={<Button variant="outline" size="icon" className="size-11 lg:hidden" aria-label="Buka menu" />}>
-        <Menu className="size-5" />
+      <SheetTrigger render={<Button variant="outline" size="icon" className="lg:hidden" aria-label="Buka menu" />}>
+        <Menu />
       </SheetTrigger>
-      <SheetContent side="right">
-        <SheetHeader>
+      <SheetContent side="right" className="overflow-x-hidden overflow-y-auto data-[side=right]:w-[min(18rem,82vw)]">
+        <SheetHeader className="pr-12">
           <SheetTitle>
             <Logo size="sm" tagline="" />
           </SheetTitle>
         </SheetHeader>
-        <nav aria-label="Navigasi seluler" className="flex flex-col px-4">
+        <nav aria-label="Navigasi seluler" className="flex flex-col gap-0.5 px-3">
           {items.map((item) => (
             <Link
               key={item.href}
@@ -36,7 +36,7 @@ export function NavbarMobileMenu({ items }: { items: MainNavItem[] }) {
               onClick={close}
               aria-current={item.isActive ? "page" : undefined}
               className={cn(
-                "flex min-h-11 items-center justify-between rounded-lg px-3 text-base font-medium",
+                "flex min-h-11 items-center justify-between rounded-lg px-3 text-[15px] font-medium",
                 item.isActive ? "bg-secondary text-secondary-foreground" : "hover:bg-muted"
               )}
             >
@@ -45,7 +45,7 @@ export function NavbarMobileMenu({ items }: { items: MainNavItem[] }) {
             </Link>
           ))}
         </nav>
-        <div className="mt-auto flex flex-col gap-2 p-4">
+        <div className="mt-auto flex min-w-0 flex-col gap-2 p-4">
           <AccountActions layout="stacked" onNavigate={close} />
         </div>
       </SheetContent>

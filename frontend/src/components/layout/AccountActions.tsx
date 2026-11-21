@@ -17,7 +17,7 @@ export function AccountActions({ layout = "inline", onNavigate }: AccountActions
   const { user, isAuthenticated, logout } = useAuth();
   const { t } = useLanguage();
   const isStacked = layout === "stacked";
-  const buttonClass = cn(isStacked && "h-11 w-full justify-center text-base");
+  const buttonClass = cn(isStacked && "w-full min-w-0 justify-center [&>span]:truncate");
 
   // Closes the surrounding menu, then signs the seller out.
   const handleLogout = () => {
@@ -30,11 +30,11 @@ export function AccountActions({ layout = "inline", onNavigate }: AccountActions
       <>
         <Button variant="ghost" className={buttonClass} onClick={onNavigate} render={<Link href="/dashboard" />}>
           <LayoutDashboard />
-          {t.nav.dashboard} ({user?.name.split(" ")[0]})
+          <span>{t.nav.dashboard} ({user?.name.split(" ")[0]})</span>
         </Button>
         <Button variant={isStacked ? "outline" : "ghost"} className={buttonClass} onClick={handleLogout}>
           <LogOut />
-          {t.nav.logout}
+          <span>{t.nav.logout}</span>
         </Button>
       </>
     );
@@ -44,11 +44,11 @@ export function AccountActions({ layout = "inline", onNavigate }: AccountActions
     <>
       <Button variant="ghost" className={buttonClass} onClick={onNavigate} render={<Link href="/login" />}>
         <LogIn />
-        {t.nav.login}
+        <span>{t.nav.login}</span>
       </Button>
       <Button className={buttonClass} onClick={onNavigate} render={<Link href="/register" />}>
         <PlusCircle />
-        {t.nav.postProperty}
+        <span>{t.nav.postProperty}</span>
       </Button>
     </>
   );

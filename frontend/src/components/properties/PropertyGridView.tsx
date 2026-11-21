@@ -25,9 +25,9 @@ export function PropertyGridView({ properties, isEn }: PropertyGridViewProps) {
 
   return (
     <div className="space-y-4">
-      {/* If expanded and scrollable, wrap in a fixed max-height container with internal scroll */}
+      {/* Expanded on tablets and up: a fixed-height box with its own scroll. Phones keep one natural page scroll. */}
       {isExpanded ? (
-        <div className="relative max-h-[660px] sm:max-h-[720px] overflow-y-auto pr-1.5 pb-2 rounded-2xl border border-neutral-200/60 p-2 sm:p-3 bg-neutral-100/40">
+        <div className="md:relative md:max-h-[720px] md:overflow-y-auto md:rounded-2xl md:border md:border-neutral-200/60 md:bg-neutral-100/40 md:p-3 md:pr-1.5">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3.5 sm:gap-4">
             {displayedItems.map((prop) => (
               <PropertyCard key={prop.id} property={prop} />
@@ -46,7 +46,7 @@ export function PropertyGridView({ properties, isEn }: PropertyGridViewProps) {
       {shouldLimit && (
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           {!isExpanded ? (
-            <Button variant="outline" size="lg" className="rounded-full px-5" onClick={() => setIsExpanded(true)}>
+            <Button variant="outline" size="lg" className="rounded-full" onClick={() => setIsExpanded(true)}>
               <span>
                 {isEn
                   ? `Show More (+${properties.length - INITIAL_GRID_LIMIT} listings)`
@@ -55,11 +55,9 @@ export function PropertyGridView({ properties, isEn }: PropertyGridViewProps) {
               <ChevronDown className="text-primary" />
             </Button>
           ) : (
-            <div className="w-full flex items-center justify-between px-3 py-2 bg-white rounded-xl border border-neutral-200/80 text-xs text-neutral-600 shadow-2xs">
+            <div className="w-full flex items-center justify-between gap-3 px-3 py-2 bg-white rounded-xl border border-neutral-200/80 text-xs text-neutral-600 shadow-2xs">
               <span className="font-medium text-neutral-500">
-                {isEn
-                  ? `Showing all ${properties.length} listings. Scroll inside container to explore.`
-                  : `Menampilkan seluruh ${properties.length} properti. Scroll di dalam kontainer untuk melihat selengkapnya.`}
+                {isEn ? `Showing all ${properties.length} listings` : `Menampilkan seluruh ${properties.length} properti`}
               </span>
               <Button variant="link" size="sm" onClick={() => setIsExpanded(false)}>
                 <span>{isEn ? "Collapse" : "Perkecil"}</span>

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { MessageSquare, Search, SlidersHorizontal, ArrowUpRight } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowUpRight } from "lucide-react";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { getOwnerLeads, updateLeadStatus, Lead } from "@/lib/api/leads";
 import { useToast } from "@/context/ToastContext";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -168,7 +169,7 @@ export default function DashboardLeadsPage() {
                       />
                     }
                   >
-                    <MessageSquare />
+                    <WhatsAppIcon />
                     <span>Chat WA</span>
                     <ArrowUpRight />
                   </Button>
