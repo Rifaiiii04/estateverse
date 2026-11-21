@@ -25,8 +25,9 @@ export function CaptureIntroPanel({ onStart, isStarting, error }: CaptureIntroPr
     "Berdiri di tengah ruangan dan nyalakan lampu.",
     "Matikan putar otomatis layar. Pegang HP tegak (portrait) setinggi mata.",
     "Putar HP di titik yang sama — bayangkan lensa kamera sebagai poros. Jangan berjalan atau mengayunkan HP melingkar, karena sambungan panorama bisa bergeser.",
-    "Ikuti panah ke titik berikutnya lalu tahan HP benar-benar diam sampai foto terambil. Jangan memiringkan HP ke samping.",
-    "Ambil tiga foto awal sesuai panduan. Sistem mengukur lensa dan menghitung jumlah serta arah foto berikutnya secara otomatis.",
+    "Ikuti satu titik putih saja. Putar badan pelan ke kanan sampai satu putaran penuh setinggi mata, lalu panduan meminta Anda menengadah dan menunduk untuk putaran berikutnya — tetap ke kanan.",
+    "Saat lingkaran tengah menyentuh titik putih, tahan HP benar-benar diam sampai foto terambil. Jangan memiringkan HP ke samping.",
+    "Tiga foto pertama dipakai untuk mengukur lensa. Setelah itu sistem menyusun urutan foto berikutnya secara otomatis.",
   ];
   return (
     <div className="absolute inset-0 overflow-y-auto bg-neutral-950/90 text-white p-6 flex flex-col justify-center gap-5">

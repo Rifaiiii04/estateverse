@@ -4,6 +4,8 @@ import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import type { CaptureResult, TourRoom } from "@/types/tour";
+import { captureStage } from "@/lib/capture/captureGuide";
+import type { CaptureTarget } from "@/lib/capture/captureTargets";
 import { useSphereCapture } from "@/lib/capture/useSphereCapture";
 import { CaptureOverlay } from "./CaptureOverlay";
 import { CaptureIntroPanel, CaptureReviewPanel } from "./CapturePanels";
@@ -77,7 +79,7 @@ export function SphereCaptureModal({ defaultRoomName, onClose, propertyId, onUpl
             steadyRef={capture.steadyRef}
           />
           <div className="absolute top-4 left-4 bg-black/60 text-white text-sm font-bold rounded-xl px-3 py-2">
-            {targets.length === 3 ? "Kalibrasi kamera · " : ""}{doneIds.size}/{targets.length} titik
+            {stageText(targets, doneIds)}{doneIds.size}/{targets.length} titik
           </div>
           {capture.error && (
             <p role="status" className="absolute top-20 inset-x-4 rounded-xl bg-amber-950/90 p-3 text-sm text-white">
@@ -91,7 +93,7 @@ export function SphereCaptureModal({ defaultRoomName, onClose, propertyId, onUpl
         <CaptureIntroPanel onStart={capture.start} isStarting={phase === "starting"} error={capture.error} />
       )}
 
-      {phase === "calibrating" && <div role="status" className="absolute inset-0 flex items-center justify-center bg-black/70 p-8 text-center text-white">Mengukur lensa dan menghitung sudut yang masih perlu difoto…</div>}
+      {phase === "calibrating" && <div role="status" className="absolute inset-0 flex items-center justify-center bg-black/70 p-8 text-center text-white">Mengukur lensa dan menyusun urutan foto berikutnya…</div>}
 
       {(phase === "review" || phase === "uploading" || phase === "done") && (
         <CaptureReviewPanel
@@ -120,4 +122,13 @@ export function SphereCaptureModal({ defaultRoomName, onClose, propertyId, onUpl
     </div>,
     document.body
   );
+}
+
+// stageText labels the current sweep of the path, e.g. "Tahap 2/3 · Atas · ", or the calibration step.
+function stageText(targets: CaptureTarget[], doneIds: ReadonlySet<number>): string {
+  if (targets.length === 3) return "Kalibrasi kamera · ";
+  const next = targets.find((t) => !doneIds.has(t.id));
+  if (!next) return "";
+  const stage = captureStage(targets, next);
+  return `Tahap ${stage.index + 1}/${stage.total} · ${stage.label} · `;
 }

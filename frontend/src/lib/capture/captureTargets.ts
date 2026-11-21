@@ -18,7 +18,7 @@ export function angleBetween(a: Vector3, b: Vector3): number {
   return Math.acos(Math.max(-1, Math.min(1, a.dot(b)))) / DEG;
 }
 
-// nextPending keeps capture order predictable so adjacent photos overlap before moving to another ring.
+// nextPending returns the first unphotographed target of the server's sequential path; later ones never fire early.
 export function nextPending(
   targets: CaptureTarget[],
   done: ReadonlySet<number>,
@@ -26,16 +26,4 @@ export function nextPending(
 ): { target: CaptureTarget; distance: number } | null {
   const target = targets.find((t) => !done.has(t.id));
   return target ? { target, distance: angleBetween(forward, directionFromAngles(target.yaw, target.pitch)) } : null;
-}
-
-// ringLabel gives Indonesian guidance for where the next target is.
-export function ringLabel(ring: CaptureTarget["ring"]): string {
-  const labels: Record<CaptureTarget["ring"], string> = {
-    horizon: "Arahkan lurus ke depan",
-    up: "Dongakkan HP sedikit ke atas",
-    down: "Arahkan HP sedikit ke bawah",
-    ceiling: "Arahkan HP lurus ke plafon",
-    floor: "Arahkan HP lurus ke lantai",
-  };
-  return labels[ring];
 }

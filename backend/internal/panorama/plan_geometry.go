@@ -15,9 +15,26 @@ type sphereSample struct {
 	weight    float64
 }
 type captureFootprint struct {
-	target  CaptureTarget
 	samples []int
 	area    float64
+}
+
+// lensFootprint holds the usable half-angles (degrees) of one photo after reserving a margin for aiming error.
+type lensFootprint struct {
+	halfH, halfV float64
+}
+
+// newLensFootprint derives the guaranteed photo extent from the measured horizontal FOV and frame aspect.
+func newLensFootprint(hfov, aspect float64) lensFootprint {
+	return lensFootprint{
+		halfH: math.Max(10, hfov/2-2),
+		halfV: math.Atan(math.Tan(deg(hfov)/2)/aspect)*180/math.Pi - 2,
+	}
+}
+
+// halfYaw is how far one photo reaches sideways around the room at its centre row for a given tilt.
+func (l lensFootprint) halfYaw(pitch float64) float64 {
+	return math.Atan(math.Tan(deg(l.halfH))/math.Cos(deg(pitch))) * 180 / math.Pi
 }
 
 // sphereSamples distributes weighted coverage probes over the entire sphere including ceiling and floor.
@@ -31,47 +48,18 @@ func sphereSamples() []sphereSample {
 	return points
 }
 
-// targetFootprint projects coverage probes through the measured lens with a margin for aiming error.
-func targetFootprint(target CaptureTarget, points []sphereSample, hfov, aspect float64) captureFootprint {
-	halfH := math.Max(10, hfov/2-2)
-	halfV := math.Atan(math.Tan(deg(hfov)/2)/aspect)*180/math.Pi - 2
+// targetFootprint projects coverage probes through the lens tilted straight from the target heading, which is
+// also how a ceiling or floor photo is held after tilting up or down from the previous photo.
+func targetFootprint(target CaptureTarget, points []sphereSample, lens lensFootprint) captureFootprint {
 	rot := EulerToMat(deg(target.Yaw), deg(target.Pitch), 0)
-	out := captureFootprint{target: target}
+	tanH, tanV := math.Tan(deg(lens.halfH)), math.Tan(deg(lens.halfV))
+	var out captureFootprint
 	for i, point := range points {
 		p := rot.MulTVec(point.direction)
-		inside := p.Z < 0 && math.Abs(p.X/-p.Z) <= math.Tan(deg(halfH)) && math.Abs(p.Y/-p.Z) <= math.Tan(deg(halfV))
-		if inside {
+		if p.Z < 0 && math.Abs(p.X/-p.Z) <= tanH && math.Abs(p.Y/-p.Z) <= tanV {
 			out.samples = append(out.samples, i)
 			out.area += point.weight
 		}
 	}
 	return out
-}
-
-// captureCandidates generates possible viewpoints for the optimizer rather than exposing fixed photo-count modes.
-func captureCandidates(points []sphereSample, hfov, aspect float64, fine bool) []captureFootprint {
-	var candidates []captureFootprint
-	pitches := []float64{0, 30, -30, 45, -45, 60, -60, 90, -90}
-	stepSize := 15.0
-	if fine {
-		pitches = []float64{0, 30, -30, 45, -45, 55, -55, 65, -65, 75, -75, 90, -90}
-		stepSize = 10
-	}
-	for _, pitch := range pitches {
-		step := stepSize
-		if math.Abs(pitch) == 90 {
-			step = 360
-		}
-		for yaw := 0.0; yaw < 360; yaw += step {
-			ring := "horizon"
-			if pitch > 0 {
-				ring = "up"
-			}
-			if pitch < 0 {
-				ring = "down"
-			}
-			candidates = append(candidates, targetFootprint(CaptureTarget{Yaw: yaw, Pitch: pitch, Ring: ring}, points, hfov, aspect))
-		}
-	}
-	return candidates
 }
