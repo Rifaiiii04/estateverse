@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 import { ArrowUp } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { cn } from "@/lib/utils/cn";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
+import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
 import { FooterCtaBanner } from "./FooterCtaBanner";
 
@@ -37,7 +39,7 @@ export function Footer({ showCtaBanner }: FooterProps) {
       {isLandingPage && <FooterCtaBanner />}
 
       <div className="bg-sage-900 text-white">
-        <div className="mx-auto grid w-full max-w-[1440px] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.2fr_1fr] lg:px-10">
+        <div className={cn(PAGE_CONTAINER, "grid gap-10 py-12 md:grid-cols-[1.2fr_1fr]")}>
           <div>
             <Logo size="sm" tone="light" tagline="Walk Inside 360° langsung dari HP" />
           </div>
@@ -57,19 +59,19 @@ export function Footer({ showCtaBanner }: FooterProps) {
         </div>
 
         <div className="border-t border-white/15">
-          <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-4 text-sm sm:px-6 lg:px-10">
+          <div className={cn(PAGE_CONTAINER, "flex items-center justify-between gap-4 py-4 text-sm")}>
             <p className="opacity-90">
               &copy; {new Date().getFullYear()} EstateVerse. {t.footer.rights}
             </p>
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.94 }}
+            <Button
+              variant="outline"
+              size="icon"
               onClick={scrollToTop}
               aria-label="Kembali ke atas"
-              className="flex size-11 cursor-pointer items-center justify-center rounded-lg border border-white/30 hover:bg-white/10"
+              className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
             >
-              <ArrowUp className="size-4" />
-            </motion.button>
+              <ArrowUp />
+            </Button>
           </div>
         </div>
       </div>

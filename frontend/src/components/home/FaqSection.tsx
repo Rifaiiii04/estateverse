@@ -5,6 +5,8 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ArrowUpRight, MessageSquare } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
+import { Button } from "@/components/ui/Button";
 import { FadeIn, StaggerContainer, StaggerItem, smoothEase } from "@/components/ui/MotionPrimitives";
 
 // FaqSection renders an interactive Framer Motion accordion of frequently asked questions above the footer.
@@ -19,7 +21,7 @@ export function FaqSection() {
 
   return (
     <section id="faq" className="py-14 sm:py-20 bg-neutral-50/60 border-t border-neutral-200/70">
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className={PAGE_CONTAINER}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Column: Section Heading & Direct AI Consultant Helper Card */}
           <FadeIn className="lg:col-span-5 space-y-6 lg:sticky lg:top-28">
@@ -48,17 +50,10 @@ export function FaqSection() {
                 </div>
               </div>
 
-              <Link href="/ai-consultant" className="inline-block">
-                <motion.button
-                  type="button"
-                  whileHover={{ y: -1.5 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="h-9 inline-flex items-center gap-1.5 bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold px-4 rounded-xl transition-colors shadow-2xs cursor-pointer"
-                >
-                  <span>{t.faq.askAiBtn}</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-sage-100" />
-                </motion.button>
-              </Link>
+              <Button render={<Link href="/ai-consultant" />}>
+                <span>{t.faq.askAiBtn}</span>
+                <ArrowUpRight />
+              </Button>
             </div>
           </FadeIn>
 

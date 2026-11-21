@@ -5,6 +5,8 @@ import { Sparkles } from "lucide-react";
 import type { ImpactStats } from "@/types/property";
 import { getImpactStats } from "@/lib/api/engagement";
 import { useLanguage } from "@/context/LanguageContext";
+import { cn } from "@/lib/utils/cn";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
 import { FadeIn } from "@/components/ui/MotionPrimitives";
 
 const STAT_KEYS: (keyof ImpactStats)[] = [
@@ -43,7 +45,7 @@ export function ImpactSection() {
 
   return (
     <section id="impact" aria-labelledby="impact-title" className="py-14 sm:py-20 bg-white">
-      <div className="w-full max-w-[1840px] mx-auto px-4 sm:px-8 lg:px-14 space-y-10">
+      <div className={cn(PAGE_CONTAINER, "space-y-10")}>
         <FadeIn>
           <div className="space-y-3 max-w-3xl">
             <span className="inline-flex items-center gap-2 text-xs font-bold text-sage-800 bg-sage-50 border border-sage-200 rounded-full px-3 py-1.5">

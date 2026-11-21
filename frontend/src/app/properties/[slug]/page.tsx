@@ -106,7 +106,7 @@ export default function PropertyDetailPage({
           <p className="text-xs sm:text-sm text-neutral-500 max-w-md mb-5">
             Listing yang Anda cari mungkin telah terjual, dinonaktifkan, atau URL yang Anda tuju keliru.
           </p>
-          <Button size="lg" className="px-4" render={<Link href="/properties" />}>
+          <Button size="lg" render={<Link href="/properties" />}>
             Kembali ke Katalog Properti
           </Button>
         </main>

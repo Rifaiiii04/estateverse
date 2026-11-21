@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { Logo } from "@/components/ui/Logo";
 import { AccountActions } from "./AccountActions";
@@ -54,7 +55,7 @@ export function Navbar() {
         isScrolled ? "bg-background/90 backdrop-blur-md" : "border-transparent bg-background"
       )}
     >
-      <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center gap-3 px-4 sm:px-6 lg:px-10">
+      <div className={cn(PAGE_CONTAINER, "flex h-16 items-center gap-3")}>
         <Link
           href="/"
           aria-label="EstateVerse — beranda"

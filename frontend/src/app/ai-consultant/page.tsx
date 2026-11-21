@@ -97,7 +97,7 @@ function AiConsultantContent() {
           placeholder="Tanyakan cicilan, dokumen KPR, biaya, atau tips menjual rumah…"
           className="h-10 flex-1"
         />
-        <Button type="submit" size="icon-lg" className="size-10" disabled={isThinking || !input.trim()} aria-label="Kirim pertanyaan">
+        <Button type="submit" size="icon-lg" disabled={isThinking || !input.trim()} aria-label="Kirim pertanyaan">
           <Send aria-hidden="true" />
         </Button>
       </form>

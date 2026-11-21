@@ -78,7 +78,7 @@ export default function DashboardHelpPage() {
           </p>
         </div>
 
-        <Button variant="outline" size="lg" className="shrink-0 px-4" render={<Link href="/ai-consultant" />}>
+        <Button variant="outline" size="lg" className="shrink-0" render={<Link href="/ai-consultant" />}>
           <span>Konsultasi dengan AI</span>
           <ArrowRight />
         </Button>

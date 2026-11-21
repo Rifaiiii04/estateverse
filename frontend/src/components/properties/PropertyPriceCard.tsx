@@ -33,12 +33,13 @@ export function PropertyPriceCard({ property, showTourButton, onOpenTour }: Prop
       </div>
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        {/* On phones the "Tanpa perantara" badge drops under the seller name, as wide as the WhatsApp button. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <span className="text-[11px] uppercase font-bold tracking-wider text-neutral-600 block">Dijual Langsung Oleh</span>
             <span className="text-sm font-bold text-neutral-950">{property.owner_name || "Pemilik rumah"}</span>
           </div>
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sage-700 bg-sage-50 border border-sage-200 px-2 py-0.5 rounded-md">
+          <span className="inline-flex w-full items-center justify-center gap-1 text-[11px] font-semibold text-sage-700 bg-sage-50 border border-sage-200 px-2 py-1 rounded-lg sm:w-auto sm:py-0.5 sm:rounded-md">
             <ShieldCheck className="w-3 h-3 text-sage-600" aria-hidden="true" />
             <span>Tanpa perantara</span>
           </span>

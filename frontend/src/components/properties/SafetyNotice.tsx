@@ -14,6 +14,10 @@ const REASONS: { value: ReportReason; label: string }[] = [
   { value: "other", label: "Lainnya" },
 ];
 
+// On phones the report link becomes a full-width red button so it is easy to find and tap.
+const REPORT_BUTTON_MOBILE =
+  "max-sm:h-8 max-sm:w-full max-sm:px-2.5 max-sm:bg-destructive max-sm:text-destructive-foreground max-sm:hover:bg-destructive/90 max-sm:hover:no-underline";
+
 // SafetyNotice gives buyers anti-scam guidance and lets them report a suspicious listing.
 export function SafetyNotice({ propertyId }: { propertyId: number }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,7 +50,7 @@ export function SafetyNotice({ propertyId }: { propertyId: number }) {
       {status === "sent" ? (
         <p role="status" className="text-xs font-semibold text-sage-800">Terima kasih, laporan Anda sudah kami terima.</p>
       ) : !isOpen ? (
-        <Button variant="link" size="sm" className="px-0 text-amber-800" onClick={() => setIsOpen(true)}>
+        <Button variant="link" size="sm" className={`px-0 text-amber-800 ${REPORT_BUTTON_MOBILE}`} onClick={() => setIsOpen(true)}>
           <Flag aria-hidden="true" /> Laporkan iklan ini
         </Button>
       ) : (

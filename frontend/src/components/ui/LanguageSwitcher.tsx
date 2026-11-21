@@ -17,7 +17,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
     <div
       role="group"
       aria-label="Bahasa"
-      className={cn("inline-flex h-8 items-center rounded-lg bg-muted p-0.5 text-xs font-medium max-md:h-11", className)}
+      className={cn("inline-flex h-8 items-center rounded-lg bg-muted p-0.5 text-xs font-medium", className)}
     >
       {LANGUAGES.map((option) => (
         <button

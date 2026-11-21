@@ -142,7 +142,7 @@ export function PropertyBenefitsInput({
               <Button
                 variant="ghost"
                 size="icon-xs"
-                className="size-5 max-md:min-h-0 max-md:min-w-0 hover:text-destructive"
+                className="size-5 hover:text-destructive"
                 onClick={() => removeBenefit(customItem)}
                 aria-label={`Hapus benefit ${customItem}`}
                 title="Hapus benefit ini"

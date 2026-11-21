@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
 import { smoothEase } from "@/components/ui/MotionPrimitives";
 import { Button } from "@/components/ui/Button";
 
@@ -15,7 +16,7 @@ export function HeroSection() {
 
   return (
     <section className="pt-8 pb-8 sm:pt-10 sm:pb-10 lg:pt-12 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className={PAGE_CONTAINER}>
         {/* Typography Headline Split — Responsive across Mobile, Tablet, Desktop */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-end mb-8 sm:mb-10">
           <motion.div
@@ -40,7 +41,7 @@ export function HeroSection() {
               {t.hero.description}
             </p>
 
-            <Button size="lg" className="h-11 w-full px-5 sm:w-auto" render={<Link href="/properties" />}>
+            <Button size="lg" className="w-full sm:w-auto" render={<Link href="/properties" />}>
               <span>{t.hero.ctaPrimary}</span>
               <ArrowUpRight />
             </Button>

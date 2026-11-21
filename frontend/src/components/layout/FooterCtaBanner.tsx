@@ -4,6 +4,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
+import { cn } from "@/lib/utils/cn";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
 import { Button } from "@/components/ui/Button";
 import { FadeIn, smoothEase } from "@/components/ui/MotionPrimitives";
 
@@ -48,7 +50,7 @@ export function FooterCtaBanner() {
   const { t } = useLanguage();
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] space-y-14 px-4 pt-12 pb-14 sm:space-y-20 sm:px-6 sm:pt-20 sm:pb-20 lg:px-10">
+    <div className={cn(PAGE_CONTAINER, "space-y-14 pt-12 pb-14 sm:space-y-20 sm:pt-20 sm:pb-20")}>
       <FadeIn y={24}>
         <div className="grid grid-cols-1 items-center gap-8 overflow-hidden rounded-2xl bg-sidebar p-6 ring-1 ring-foreground/10 sm:p-10 lg:grid-cols-12 lg:gap-10 lg:p-12">
           <div className="space-y-5 lg:col-span-7">
@@ -58,10 +60,10 @@ export function FooterCtaBanner() {
             </h2>
             <p className="max-w-lg text-base text-pretty text-muted-foreground">{t.footer.bannerDesc}</p>
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              <Button size="lg" className="w-full px-4 sm:w-auto" render={<Link href="/properties" />}>
+              <Button size="lg" className="w-full sm:w-auto" render={<Link href="/properties" />}>
                 {t.footer.exploreBtn}
               </Button>
-              <Button size="lg" variant="outline" className="w-full px-4 sm:w-auto" render={<Link href="/ai-consultant" />}>
+              <Button size="lg" variant="outline" className="w-full sm:w-auto" render={<Link href="/ai-consultant" />}>
                 {t.footer.consultBtn}
               </Button>
             </div>
