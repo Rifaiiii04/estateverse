@@ -96,11 +96,11 @@ func TestStitchRejectsBadInput(t *testing.T) {
 	}
 }
 
-// BenchmarkStitchPhoneSize measures a full capture at phone frame size (720×1280) into a 4096-wide panorama.
+// BenchmarkStitchPhoneSize measures a textured capture at phone frame size (720×1280) into a 4096-wide panorama,
+// so corner matching, bundle adjustment, and seam cutting all run as they do on real rooms.
 func BenchmarkStitchPhoneSize(b *testing.B) {
-	inputs := syntheticCapture(3, 720, 1280, testFOV, 3)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	inputs, _ := syntheticRig(3, 720, 1280, testFOV, 3, -0.02)
+	for b.Loop() {
 		if _, err := Stitch(inputs, DefaultOptions()); err != nil {
 			b.Fatal(err)
 		}

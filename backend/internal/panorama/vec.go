@@ -120,9 +120,15 @@ func LonLatFromDir(d Vec3) (lon, lat float64) {
 	return math.Atan2(n.X, -n.Z), math.Asin(clamp(n.Y, -1, 1))
 }
 
-// clamp limits v to the closed interval [lo, hi].
+// clamp limits v to the closed interval [lo, hi] using plain comparisons, since it sits in every pixel lookup.
 func clamp(v, lo, hi float64) float64 {
-	return math.Max(lo, math.Min(hi, v))
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
 }
 
 // deg converts degrees to radians.

@@ -3,13 +3,15 @@ package panorama
 import (
 	"image"
 	"math"
-	"runtime"
-	"sync"
 )
 
-const footprintMargin = 0.02 // radians added to each frame's angular radius when culling
+const (
+	footprintMargin = 0.02 // radians added to each frame's angular radius when culling
+	wideBlendDeg    = 1.5  // angular scale of the low band and of its blend across seams
+	narrowBlendDeg  = 0.3  // angular width over which detail crosses a seam
+)
 
-// renderFrame caches per-frame values used while blending the output panorama.
+// renderFrame caches per-frame values used while compositing the output panorama.
 type renderFrame struct {
 	f        *Frame
 	gain     float64
@@ -17,105 +19,75 @@ type renderFrame struct {
 	cosLimit float64
 	lat      float64
 	radius   float64
+	small    lowBand // reduced, unblurred copy that seams compare
+	low      lowBand // the same copy blurred to wideBlendDeg: the low-frequency band
+	wide     softMask
+	narrow   softMask
 }
 
-// render blends all frames into an equirectangular image of the given width and returns pixel coverage.
+// renderGrid maps output pixels onto the seam grid that holds every frame's blending weights.
+type renderGrid struct {
+	w, h         int // output size
+	seamW, seamH int
+}
+
+// render composites all frames into an equirectangular image: a graph cut picks which photo owns each region,
+// then low frequencies blend widely and detail narrowly across seams. It also returns real pixel coverage.
 func render(frames []*Frame, gains []float64, width int) (*image.RGBA, float64) {
 	height := width / 2
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	holes := make([]bool, width*height)
 	rfs := prepareRenderFrames(frames, gains)
-
-	rows := make(chan int, height)
-	for v := 0; v < height; v++ {
-		rows <- v
-	}
-	close(rows)
-
-	var wg sync.WaitGroup
-	for w := 0; w < runtime.NumCPU(); w++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for v := range rows {
-				renderRow(img, holes, rfs, v)
-			}
-		}()
-	}
-	wg.Wait()
+	seams := newSeamGrid(rfs, width)
+	seams.cutSeams()
+	seams.attachSoftMasks(rfs)
+	grid := renderGrid{w: width, h: height, seamW: seams.w, seamH: seams.h}
+	parallelFor(height, func(v int) { renderRow(img, holes, rfs, grid, v) })
 	return img, fillHoles(img, holes)
 }
 
-// prepareRenderFrames precomputes optical axes and angular footprints for culling.
-func prepareRenderFrames(frames []*Frame, gains []float64) []renderFrame {
-	out := make([]renderFrame, len(frames))
-	for i, f := range frames {
+// prepareRenderFrames precomputes optical axes, angular footprints, and low-frequency copies.
+func prepareRenderFrames(frames []*Frame, gains []float64) []*renderFrame {
+	out := make([]*renderFrame, len(frames))
+	parallelFor(len(frames), func(i int) {
+		f := frames[i]
 		fwd := f.rot.Forward()
 		_, lat := LonLatFromDir(fwd)
 		radius := f.halfDiagonal() + footprintMargin
-		out[i] = renderFrame{f: f, gain: gains[i], fwd: fwd, cosLimit: math.Cos(radius), lat: lat, radius: radius}
-	}
+		small := shrinkFrame(f.rgb)
+		low := small.blurred(f.full.f * deg(wideBlendDeg) / small.k)
+		out[i] = &renderFrame{f: f, gain: gains[i], fwd: fwd, cosLimit: math.Cos(radius), lat: lat, radius: radius, small: small, low: low}
+	})
 	return out
 }
 
 // renderRow fills one output row, marking pixels no frame covers as holes.
-func renderRow(img *image.RGBA, holes []bool, rfs []renderFrame, v int) {
-	w, h := img.Rect.Dx(), img.Rect.Dy()
-	lat := math.Pi/2 - (float64(v)+0.5)/float64(h)*math.Pi
+func renderRow(img *image.RGBA, holes []bool, rfs []*renderFrame, grid renderGrid, v int) {
+	lat := math.Pi/2 - (float64(v)+0.5)/float64(grid.h)*math.Pi
+	vs := (float64(v)+0.5)*float64(grid.seamH)/float64(grid.h) - 0.5
 	cands := rowCandidates(rfs, lat)
-	for u := 0; u < w; u++ {
-		lon := (float64(u)+0.5)/float64(w)*2*math.Pi - math.Pi
-		r, g, b, ok := blendPixel(cands, DirFromLonLat(lon, lat))
+	for u := 0; u < grid.w; u++ {
+		lon := (float64(u)+0.5)/float64(grid.w)*2*math.Pi - math.Pi
+		us := (float64(u)+0.5)*float64(grid.seamW)/float64(grid.w) - 0.5
+		r, g, b, ok := blendPixel(cands, DirFromLonLat(lon, lat), us, vs, grid.seamH)
 		if !ok {
-			holes[v*w+u] = true
+			holes[v*grid.w+u] = true
 			continue
 		}
 		i := img.PixOffset(u, v)
-		img.Pix[i], img.Pix[i+1], img.Pix[i+2], img.Pix[i+3] = uint8(r), uint8(g), uint8(b), 255
+		img.Pix[i], img.Pix[i+1], img.Pix[i+2], img.Pix[i+3] = uint8(r+0.5), uint8(g+0.5), uint8(b+0.5), 255
 	}
 }
 
 // rowCandidates keeps only frames whose footprint can reach the given latitude.
-func rowCandidates(rfs []renderFrame, lat float64) []renderFrame {
-	out := make([]renderFrame, 0, len(rfs))
+func rowCandidates(rfs []*renderFrame, lat float64) []*renderFrame {
+	out := make([]*renderFrame, 0, len(rfs))
 	for _, rf := range rfs {
 		if math.Abs(lat-rf.lat) <= rf.radius {
 			out = append(out, rf)
 		}
 	}
 	return out
-}
-
-// blendPixel averages all frames seeing direction d, weighting each by distance from its image border.
-func blendPixel(cands []renderFrame, d Vec3) (r, g, b float64, ok bool) {
-	var sr, sg, sb, sw float64
-	for _, c := range cands {
-		if d.Dot(c.fwd) < c.cosLimit {
-			continue
-		}
-		x, y, in := c.f.full.project(c.f.rot, d)
-		if !in {
-			continue
-		}
-		wt := edgeWeight(c.f.full, x, y)
-		pr, pg, pb := c.f.rgb.sample(x, y)
-		sr += wt * pr * c.gain
-		sg += wt * pg * c.gain
-		sb += wt * pb * c.gain
-		sw += wt
-	}
-	if sw <= 0 {
-		return 0, 0, 0, false
-	}
-	return clamp(sr/sw, 0, 255), clamp(sg/sw, 0, 255), clamp(sb/sw, 0, 255), true
-}
-
-// edgeWeight favors pixels near the image center so seams fall where frames overlap most.
-func edgeWeight(c camera, x, y float64) float64 {
-	wx := math.Min(x, c.w-x) / (c.w / 2)
-	wy := math.Min(y, c.h-y) / (c.h / 2)
-	base := wx * wy
-	return base*base*base + 1e-9
 }
 
 // Downsample2 halves an image's resolution with a 2×2 box filter for lighter mobile delivery.

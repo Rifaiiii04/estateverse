@@ -3,13 +3,11 @@ package services
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
 	"log/slog"
-	"os"
 	"path"
 	"sync"
 	"time"
@@ -21,7 +19,7 @@ import (
 
 const (
 	panoramaJPEGQuality = 85
-	stitchTimeout       = 5 * time.Minute
+	stitchTimeout       = 8 * time.Minute // Hugin needs about 1–3 minutes per room on a 2-core server
 	tourQueueCapacity   = 256
 )
 
@@ -103,7 +101,7 @@ func (q *tourQueue) process(ctx context.Context, roomID int64) {
 	jobCtx, cancel := context.WithTimeout(ctx, stitchTimeout)
 	defer cancel()
 
-	result, err := q.stitchRoom(roomID)
+	result, err := q.stitchRoom(jobCtx, roomID)
 	if err == nil {
 		err = q.savePanorama(jobCtx, roomID, result)
 	}
@@ -114,9 +112,11 @@ func (q *tourQueue) process(ctx context.Context, roomID int64) {
 		return
 	}
 	_ = q.storage.RemoveAll(captureDir(roomID))
-	slog.Info("tour room stitched", "room_id", roomID, "fov", result.FOV, "quality", result.Quality,
-		"coverage", result.Coverage, "duration", time.Since(start).Round(time.Millisecond))
-	q.recordActivity(jobCtx, "tour.stitch.completed", "success", roomID, "Tour panorama processing completed", fmt.Sprintf("quality=%d coverage=%.3f", result.Quality, result.Coverage))
+	slog.Info("tour room stitched", "room_id", roomID, "engine", result.Engine, "fov", result.FOV, "quality", result.Quality,
+		"coverage", result.Coverage, "matches", result.Matches, "match_rms_px", result.MatchRMS,
+		"duration", time.Since(start).Round(time.Millisecond))
+	q.recordActivity(jobCtx, "tour.stitch.completed", "success", roomID, "Tour panorama processing completed",
+		fmt.Sprintf("engine=%s quality=%d coverage=%.3f matches=%d match_rms_px=%.2f", result.Engine, result.Quality, result.Coverage, result.Matches, result.MatchRMS))
 }
 
 // recordActivity stores a background tour event when activity history is configured.
@@ -132,50 +132,6 @@ func (q *tourQueue) recordActivity(ctx context.Context, action, status string, r
 		Message:      message,
 		Details:      details,
 	})
-}
-
-// stitchRoom loads the stored frames and manifest of a room and runs the panorama pipeline.
-func (q *tourQueue) stitchRoom(roomID int64) (*panorama.Result, error) {
-	manifest, err := q.readManifest(roomID)
-	if err != nil {
-		return nil, err
-	}
-	inputs := make([]panorama.FrameInput, 0, len(manifest.Frames))
-	for _, meta := range manifest.Frames {
-		img, err := q.decodeFrame(roomID, meta.Index)
-		if err != nil {
-			return nil, err
-		}
-		inputs = append(inputs, panorama.FrameInput{Image: img, Orientation: meta.Orientation})
-	}
-	return panorama.Stitch(inputs, panorama.DefaultOptions())
-}
-
-// readManifest parses the capture manifest written when the frames were uploaded.
-func (q *tourQueue) readManifest(roomID int64) (*models.CaptureMeta, error) {
-	abs, err := q.storage.GetAbsolutePath(path.Join(captureDir(roomID), captureManifestName))
-	if err != nil {
-		return nil, err
-	}
-	data, err := os.ReadFile(abs)
-	if err != nil {
-		return nil, fmt.Errorf("capture manifest missing: %w", err)
-	}
-	var manifest models.CaptureMeta
-	return &manifest, json.Unmarshal(data, &manifest)
-}
-
-// decodeFrame reads and decodes one stored JPEG frame.
-func (q *tourQueue) decodeFrame(roomID int64, index int) (image.Image, error) {
-	abs, err := q.storage.GetAbsolutePath(path.Join(captureDir(roomID), frameFileName(index)))
-	if err != nil {
-		return nil, err
-	}
-	data, err := os.ReadFile(abs)
-	if err != nil {
-		return nil, err
-	}
-	return jpeg.Decode(bytes.NewReader(data))
 }
 
 // savePanorama encodes full and preview JPEGs, stores them publicly, and marks the room ready.

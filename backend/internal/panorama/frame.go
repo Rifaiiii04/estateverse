@@ -12,27 +12,6 @@ const (
 	minOverlapVar   = 12.0
 )
 
-// camera is a pinhole model with a centered principal point in continuous pixel coordinates.
-type camera struct {
-	w, h, cx, cy, f float64
-}
-
-// project maps a world direction into image coordinates and reports whether it lands inside the image.
-func (c camera) project(rot Mat3, d Vec3) (x, y float64, ok bool) {
-	p := rot.MulTVec(d)
-	if p.Z > -1e-6 {
-		return 0, 0, false
-	}
-	x = c.cx + c.f*p.X/(-p.Z)
-	y = c.cy - c.f*p.Y/(-p.Z)
-	return x, y, x >= 0.5 && y >= 0.5 && x <= c.w-0.5 && y <= c.h-0.5
-}
-
-// unproject maps image coordinates back into a unit world direction.
-func (c camera) unproject(rot Mat3, x, y float64) Vec3 {
-	return rot.MulVec(Vec3{(x - c.cx) / c.f, -(y - c.cy) / c.f, -1}).Norm()
-}
-
 // Frame is one captured photo with its sensor orientation and refined orientation.
 type Frame struct {
 	rgb    rgbImage
@@ -60,15 +39,20 @@ func newFrame(img image.Image, sensor Mat3) *Frame {
 	}
 }
 
-// setFOV sets the focal length of both resolutions from a horizontal field of view in degrees.
+// setFOV sets the focal length of both resolutions from a horizontal field of view in degrees (distortion-free).
 func (f *Frame) setFOV(hfovDeg float64) {
-	f.full.f = (f.full.w / 2) / math.Tan(deg(hfovDeg)/2)
-	f.low.f = f.full.f / f.k
+	f.setLens((f.full.w/2)/math.Tan(deg(hfovDeg)/2), 0)
+}
+
+// setLens applies a full-resolution focal length and radial distortion to both resolutions.
+func (f *Frame) setLens(focal, k1 float64) {
+	f.full = f.full.withLens(focal, k1)
+	f.low = f.low.withLens(focal/f.k, k1)
 }
 
 // halfDiagonal returns the angular radius of the image footprint around the optical axis.
 func (f *Frame) halfDiagonal() float64 {
-	return math.Atan(math.Hypot(f.full.w/2, f.full.h/2) / f.full.f)
+	return f.full.halfAngle()
 }
 
 // overlap summarizes how well two frames agree where their views intersect.

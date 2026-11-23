@@ -33,9 +33,12 @@ type Options struct {
 type Result struct {
 	Panorama  *image.RGBA
 	FOV       float64 // estimated horizontal field of view of the phone camera
-	Alignment float64 // mean overlap correlation after refinement (0..1)
+	Alignment float64 // alignment confidence (0..1): overlap correlation for Go, matched-point agreement for Hugin
 	Coverage  float64 // fraction of the sphere covered by real pixels (0..1)
 	Quality   int     // combined 0..100 score shown to the seller
+	Matches   int     // matched feature points kept by the solver (0 when feature alignment was skipped)
+	MatchRMS  float64 // remaining disagreement of matched points, in full-resolution photo pixels
+	Engine    string  // "hugin" or "go": which pipeline produced the panorama
 }
 
 // DefaultOptions returns settings tuned for portrait phone video frames.
@@ -43,7 +46,8 @@ func DefaultOptions() Options {
 	return Options{OutputWidth: 4096, FallbackFOV: 48, MaxCorrection: 8}
 }
 
-// Stitch calibrates the camera, refines sensor orientations, balances exposure, and renders the panorama.
+// Stitch calibrates the camera, refines orientations (correlation, then matched corners and a bundle adjustment),
+// balances exposure, and renders the panorama with graph-cut seams.
 func Stitch(inputs []FrameInput, opts Options) (*Result, error) {
 	frames, err := buildFrames(inputs)
 	if err != nil {
@@ -51,14 +55,15 @@ func Stitch(inputs []FrameInput, opts Options) (*Result, error) {
 	}
 	nbrs := findNeighbors(frames)
 
-	fov := opts.FallbackFOV
+	var stats alignStats
 	if !opts.SkipRefine {
-		fov = estimateFOV(frames, nbrs, opts.FallbackFOV)
+		fov := estimateFOV(frames, nbrs, opts.FallbackFOV)
 		refineOrientations(frames, nbrs, opts.MaxCorrection)
-		fov = refineFOV(frames, nbrs, fov, 2)
+		refineFOV(frames, nbrs, fov, 2)
 		refineOrientations(frames, nbrs, opts.MaxCorrection)
+		stats = alignFeatures(frames, nbrs)
 	} else {
-		setAllFOV(frames, fov)
+		setAllFOV(frames, opts.FallbackFOV)
 	}
 
 	alignment := math.Max(0, globalScore(frames, nbrs))
@@ -71,10 +76,13 @@ func Stitch(inputs []FrameInput, opts Options) (*Result, error) {
 	}
 	return &Result{
 		Panorama:  pano,
-		FOV:       fov,
+		FOV:       frames[0].full.hfov(),
 		Alignment: alignment,
 		Coverage:  coverage,
 		Quality:   qualityScore(alignment, coverage),
+		Matches:   stats.matches,
+		MatchRMS:  stats.rms,
+		Engine:    "go",
 	}, nil
 }
 

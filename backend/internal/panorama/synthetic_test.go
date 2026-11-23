@@ -50,25 +50,6 @@ func randomRotation(rng *rand.Rand, maxDeg float64) Mat3 {
 	return AxisAngle(axis, deg(maxDeg)*(0.5+0.5*rng.Float64()))
 }
 
-// matToQuat converts a rotation matrix into a (w, x, y, z) quaternion.
-func matToQuat(m Mat3) [4]float64 {
-	tr := m[0] + m[4] + m[8]
-	switch {
-	case tr > 0:
-		s := math.Sqrt(tr+1) * 2
-		return [4]float64{s / 4, (m[7] - m[5]) / s, (m[2] - m[6]) / s, (m[3] - m[1]) / s}
-	case m[0] > m[4] && m[0] > m[8]:
-		s := math.Sqrt(1+m[0]-m[4]-m[8]) * 2
-		return [4]float64{(m[7] - m[5]) / s, s / 4, (m[1] + m[3]) / s, (m[2] + m[6]) / s}
-	case m[4] > m[8]:
-		s := math.Sqrt(1+m[4]-m[0]-m[8]) * 2
-		return [4]float64{(m[2] - m[6]) / s, (m[1] + m[3]) / s, s / 4, (m[5] + m[7]) / s}
-	default:
-		s := math.Sqrt(1+m[8]-m[0]-m[4]) * 2
-		return [4]float64{(m[3] - m[1]) / s, (m[2] + m[6]) / s, (m[5] + m[7]) / s, s / 4}
-	}
-}
-
 // syntheticCapture renders frames at slightly mis-aimed true orientations and reports noisy sensor values.
 func syntheticCapture(seed int64, w, h int, hfov, sensorErrDeg float64) []FrameInput {
 	rng := rand.New(rand.NewSource(seed))
