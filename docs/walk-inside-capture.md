@@ -8,7 +8,7 @@ Backend menyusun foto menjadi **satu jalur berurutan**: putaran setinggi mata ya
 
 Dalam tes proyeksi portrait 9:16, algoritma menghasilkan 26 foto pada sudut horizontal 48° (12 setinggi mata, 7 atas, 7 bawah) dan 20 pada 60°, termasuk tiga foto awal. Lensa 40° membutuhkan 36 foto. Jumlah bergantung pada bidang pandang dan rasio gambar. Bila gambar terlalu polos untuk mengukur lensa, backend memakai perkiraan konservatif sudut sisi pendek 34° yang dapat membutuhkan lebih banyak foto (47 pada 9:16). Batas upload tetap 48 foto. Angka ini hasil sintetis, bukan jaminan semua kamera HP.
 
-Chrome Android harus dibuka melalui HTTPS. Gunakan kamera belakang, pegang HP portrait, dan matikan putar otomatis layar. Arah pertama menjadi acuan heading sesi; tidak perlu menghadap utara. Sistem menunggu HP diam selama total 500 ms dengan kecepatan rotasi rata-rata (jendela 200 ms) maksimal 6°/detik, termasuk gerakan roll. Goyangan singkat hanya mengurangi isi lingkaran, tidak mengulang dari nol, dan setelah mulai menahan ada kelonggaran bidik +2°. Snapshot menunggu frame video baru dan mengambil orientasi tepat sebelum menyalin piksel. Sampel sensor yang kedaluwarsa atau pergerakan saat snapshot menyebabkan foto diulang pada titik yang sama.
+Di browser HP, buka EstateVerse melalui HTTPS. Gunakan kamera belakang dan pegang HP tegak. Arah awal kamera menjadi acuan satu ruangan. Kamera mengambil gambar otomatis selama sapuan pelan (maksimal 15° per detik). Sensor membantu menjaga jalur serta kemiringan kamera. Perekam memeriksa cahaya dan mencocokkan bagian gambar yang bertumpuk sebelum menambahkan foto ke pratinjau. Pada permukaan polos, pelankan putaran agar kamera dapat mengambil foto dengan bantuan orientasi. Server kemudian menyelaraskan foto beresolusi penuh.
 
 **Mesin utama: Hugin.** Bila `hugin-tools` dan `enblend` terpasang (`apt install --no-install-recommends hugin-tools enblend`), backend memanggil Hugin sebagai proses terpisah (`internal/panorama/hugin*.go`). Langkahnya:
 
@@ -31,12 +31,14 @@ Komposisi tidak lagi merata-ratakan semua foto yang bertumpuk karena itu menghas
 1. Nyalakan lampu, hindari orang atau benda bergerak, dan bersihkan lensa.
 2. Berdiri di lokasi yang dapat melihat seluruh ruangan; jangan terlalu dekat dinding atau furnitur.
 3. Pertahankan lokasi lensa saat menoleh dan menunduk. Bergeraklah mengelilingi titik lensa, jangan mengayunkan lensa mengelilingi badan. Kepala tripod panorama membantu menjaga poros ini.
-4. Ikuti satu titik putih (garis putus-putus menunjukkan arah titik sesudahnya). Putar ke kanan, tempatkan titik di lingkaran tengah, lalu tunggu sampai penghitung foto bertambah sebelum bergerak lagi. Saat satu putaran selesai, panduan meminta menengadah atau menunduk untuk putaran berikutnya.
-5. Setelah tiga foto awal, tunggu perhitungan server dan selesaikan semua titik tambahan. Penghitung berubah sesuai rencana hasil pengukuran. Gunakan satu rekaman terpisah untuk setiap ruangan, lalu hubungkan dengan hotspot.
+4. Mulai setinggi mata dan putar perlahan ke kanan. Setelah tiga gambar pertama, tunggu pengukuran lensa. Lanjutkan mengikuti arah di layar dan amati pratinjau saat gambar baru diterima. Jika terlewat, kembali mengikuti panah.
+5. Saat panduan berganti jalur, arahkan lensa ke atas atau ke bawah lalu lanjutkan sapuan. Beri nama ruangan setelah semua jalur selesai. Pada iklan baru, simpan properti untuk mengirim rekaman. Pada halaman edit, pilih unggah di akhir rekaman.
 6. Periksa hasil pada tepi pintu, sudut tembok, plafon, dan pertemuan awal/akhir putaran sebelum mempublikasikan listing.
 
 ## Pemeriksaan hasil dan keterbatasan
 
+- Rencana sapuan menyisakan margin 2,5° di plafon dan lantai agar kedua kutub tetap terekam saat rana terbuka dalam gerakan.
+- Pada jalur Hugin, titik cocok harus menghubungkan semua foto dan hasil render harus sebesar kanvas panorama penuh. Pada jalur Go, foto dengan overlap bertekstur yang dapat dinilai harus cocok dengan setidaknya satu tetangga.
 - Cakupan piksel asli minimal 98,5%; interpolasi tidak dihitung sebagai bukti sudut sudah terfoto.
 - Skor korelasi keseluruhan minimal 0,45; foto yang tidak cocok tidak boleh menjadi ruangan berstatus `ready`.
 - Pesan gagal memberi arahan merekam ulang. Frame rekaman gagal tetap privat untuk diagnosis dan terhapus saat ruangannya dihapus.
@@ -50,7 +52,7 @@ Komposisi tidak lagi merata-ratakan semua foto yang bertumpuk karena itu menghas
 
 ## Mobile dan website memakai satu backend
 
-`shared/capturePolicy.ts` mendefinisikan tiga titik kalibrasi, validasi rencana server, toleransi sudut, waktu diam, dan format manifest untuk kedua klien. `shared/captureMath.ts` mengonversi orientasi ke quaternion `(w,x,y,z)` yang sama. Browser memberi sudut dalam derajat; Expo memberi radian dan diadaptasi sebelum upload. Mobile menunggu aplikasi kembali aktif setelah dialog izin sebelum memulai sensor; hanya transisi ke background saat benar-benar merekam yang membatalkan sesi.
+`shared/capturePolicy.ts` mendefinisikan tiga arah kalibrasi, validasi rencana server, dan format manifest. `shared/captureSweep.ts` serta `shared/sweepImage.ts` memeriksa gerakan dan kesesuaian gambar pada kedua klien. `shared/captureMath.ts` mengonversi orientasi ke quaternion `(w,x,y,z)` yang sama. Browser memberi sudut dalam derajat. Expo memberi radian dan diadaptasi sebelum upload. Mobile menunggu aplikasi kembali aktif setelah dialog izin sebelum memulai sensor.
 
 `POST /api/v1/tours/calibration` menerima manifest `meta` dan tiga JPEG tanpa `property_id`, agar properti baru juga dapat direkam. Endpoint memerlukan autentikasi, dibatasi ukuran dan laju request, serta tidak menyimpan foto kalibrasi. Respons berisi pengukuran lensa, indikator kepercayaan, dan rencana arah 8–48 foto. Koneksi server diperlukan pada tahap ini.
 

@@ -102,13 +102,14 @@ func (q *tourQueue) process(ctx context.Context, roomID int64) {
 	defer cancel()
 
 	result, err := q.stitchRoom(jobCtx, roomID)
+	if jobCtx.Err() != nil {
+		err = jobCtx.Err()
+	}
 	if err == nil {
 		err = q.savePanorama(jobCtx, roomID, result)
 	}
 	if err != nil {
-		slog.Error("tour stitching failed", "room_id", roomID, "error", err)
-		q.recordActivity(jobCtx, "tour.stitch.failed", "error", roomID, "Tour panorama processing failed", err.Error())
-		_ = q.tours.MarkFailed(jobCtx, roomID, stitchFailureMessage(err))
+		q.recordStitchFailure(ctx, roomID, err)
 		return
 	}
 	_ = q.storage.RemoveAll(captureDir(roomID))
@@ -117,6 +118,20 @@ func (q *tourQueue) process(ctx context.Context, roomID int64) {
 		"duration", time.Since(start).Round(time.Millisecond))
 	q.recordActivity(jobCtx, "tour.stitch.completed", "success", roomID, "Tour panorama processing completed",
 		fmt.Sprintf("engine=%s quality=%d coverage=%.3f matches=%d match_rms_px=%.2f", result.Engine, result.Quality, result.Coverage, result.Matches, result.MatchRMS))
+}
+
+// recordStitchFailure persists a terminal result after the job deadline but leaves interrupted jobs for restart.
+func (q *tourQueue) recordStitchFailure(workerCtx context.Context, roomID int64, cause error) {
+	if workerCtx.Err() != nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(workerCtx, 10*time.Second)
+	defer cancel()
+	slog.Error("tour stitching failed", "room_id", roomID, "error", cause)
+	if err := q.tours.MarkFailed(ctx, roomID, stitchFailureMessage(cause)); err != nil {
+		slog.Error("tour stitch failure could not be saved", "room_id", roomID, "error", err)
+	}
+	q.recordActivity(ctx, "tour.stitch.failed", "error", roomID, "Tour panorama processing failed", cause.Error())
 }
 
 // recordActivity stores a background tour event when activity history is configured.
@@ -172,9 +187,11 @@ func stitchFailureMessage(err error) string {
 	case errors.Is(err, panorama.ErrMixedSizes):
 		return "Ukuran foto berubah saat merekam. Rekam ulang tanpa memutar layar ke mode landscape."
 	case errors.Is(err, panorama.ErrIncompleteCoverage):
-		return "Ada sudut ruangan yang belum terfoto. Rekam ulang mengikuti semua titik yang dihitung, jaga posisi lensa, dan tahan HP sampai foto terambil."
+		return "Ada bagian ruangan yang belum terekam. Ulangi sapuan pada ketinggian mata, ke atas, dan ke bawah sampai panduan selesai."
 	case errors.Is(err, panorama.ErrUnreliableAlignment):
-		return "Sambungan foto belum cocok. Nyalakan lampu, tahan HP hingga foto diambil, dan putar pada posisi lensa yang sama tanpa berjalan."
+		return "Sambungan foto belum cocok. Pastikan ruangan cukup terang dan putar HP lebih pelan dengan lensa tetap di satu posisi."
+	case errors.Is(err, context.DeadlineExceeded):
+		return "Pemrosesan panorama melewati batas waktu. Silakan coba lagi."
 	default:
 		return "Panorama gagal diproses. Silakan rekam ulang ruangan ini."
 	}

@@ -4,6 +4,19 @@ import { Euler, Quaternion, Vector3 } from 'three';
 import { orientationToQuaternion } from '../src/lib/capture/orientation.ts';
 import { nativePose } from '../../mobile/src/lib/capture/nativePose.ts';
 import { buildCaptureManifest } from '../../shared/capturePolicy.ts';
+import { isSweepLevel } from '../../shared/captureSweep.ts';
+
+test('sweep alignment keeps portrait frames upright through heading wrap and both poles', () => {
+  for (const yaw of [0, 95, 359]) {
+    for (const pitch of [-90, -55, 0, 55, 90]) {
+      for (const [roll, accepted] of [[0, true], [8, true], [25, false], [180, false]]) {
+        const rad = Math.PI / 180;
+        const q = new Quaternion().setFromEuler(new Euler(pitch * rad, -yaw * rad, roll * rad, 'YXZ'));
+        assert.equal(isSweepLevel([q.w, q.x, q.y, q.z], yaw), accepted);
+      }
+    }
+  }
+});
 
 test('native radians and browser degrees describe the same rear-camera poses', () => {
   const rad = Math.PI/180;

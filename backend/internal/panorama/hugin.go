@@ -76,7 +76,7 @@ func StitchHugin(ctx context.Context, frames []HuginFrame, outputWidth int, init
 			return nil, err
 		}
 	}
-	return h.result()
+	return h.result(outputWidth)
 }
 
 // run executes one Hugin tool in the scratch directory and returns its combined output.
@@ -146,9 +146,11 @@ func (h *huginRun) controlPoints() error {
 	if err != nil {
 		return err
 	}
-	if h.points = countControlPoints(text); h.points < huginMinControlPoints {
-		return fmt.Errorf("%w: only %d matched points", ErrUnreliableAlignment, h.points)
+	points, connected := controlPointNetwork(text, len(h.frames))
+	if points < huginMinControlPoints || !connected {
+		return fmt.Errorf("%w: %d matched points, connected=%t", ErrUnreliableAlignment, points, connected)
 	}
+	h.points = points
 	return nil
 }
 

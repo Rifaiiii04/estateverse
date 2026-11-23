@@ -27,19 +27,21 @@ test("stages count one sweep per tilt level along the sequential path", () => {
 });
 
 // pose wraps a heading into the live pose the hint reads.
-function pose(yaw, pitch, speed = 0, holding = false) {
-  return { quaternion: poseFacing(yaw, pitch), speed, holding };
+function pose(yaw, pitch, speed = 0) {
+  return { quaternion: poseFacing(yaw, pitch), speed };
 }
 
 test("hints point to the next photo instead of asking the user to search", () => {
   assert.match(guideHint(plan, plan[1], pose(0, 0)), /kanan/);
   assert.match(guideHint(plan, plan[1], pose(40, 0)), /kiri/);
-  assert.match(guideHint(plan, plan[1], pose(20, 0)), /Tahan/);
+  assert.match(guideHint(plan, plan[1], pose(20, 0, 10)), /otomatis/);
   assert.match(guideHint(plan, plan[1], pose(20, 0, 20)), /Terlalu cepat/);
 });
 
-test("a hold in progress keeps saying hold even when the aim drifts slightly", () => {
-  assert.match(guideHint(plan, plan[1], pose(25, 0, 0, true)), /Tahan/);
+test("guidance corrects sideways roll even when the optical axis follows the sweep", () => {
+  const tilted = pose(20, 0);
+  tilted.quaternion.multiply(new Quaternion().setFromEuler(new Euler(0, 0, 0.4)));
+  assert.match(guideHint(plan, plan[1], tilted), /Luruskan/);
 });
 
 test("entering a new ring asks for a pure tilt before any turning", () => {

@@ -61,8 +61,12 @@ func TestParseHuginProject(t *testing.T) {
 	if images[1].hasV || images[1].y != 20.2 || images[1].p != 2.53 || images[1].r != 12.14 {
 		t.Fatalf("linked image parsed wrong: %+v", images[1])
 	}
-	if w, ok := parsePanoWidth(pto); !ok || w != 3000 || countControlPoints(pto) != 2 {
-		t.Fatalf("width %d ok %v points %d", w, ok, countControlPoints(pto))
+	points, connected := controlPointNetwork(pto, 2)
+	if w, ok := parsePanoWidth(pto); !ok || w != 3000 || points != 2 || !connected {
+		t.Fatalf("width %d ok %v points %d connected %v", w, ok, points, connected)
+	}
+	if _, connected := controlPointNetwork(pto+"c n2 N3 t0\n", 4); connected {
+		t.Fatal("two disconnected groups of photos should require fallback alignment")
 	}
 	out := "Optimizing...\nAverage (rms) distance between Controlpoints \nafter 27 iteration(s):          0.5624 units\n"
 	if rms, ok := parseHuginRMS(out); !ok || rms != 0.5624 {

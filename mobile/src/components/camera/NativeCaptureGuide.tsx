@@ -1,28 +1,42 @@
 import React from 'react';
-import { View, Text } from 'react-native';
-import { poseAngles } from '../../../../shared/captureMath.ts';
-import { STEADY_SPEED_DEG_S } from '../../../../shared/capturePolicy.ts';
+import { StyleSheet, Text, View } from 'react-native';
+import { sweepGuidance } from '@/lib/capture/sweepGuidance';
 import type { useNativeCapture } from '@/lib/capture/useNativeCapture';
+import { SweepStrip } from './SweepStrip';
 
-// NativeCaptureGuide guides each required pitch and yaw instead of marking unphotographed sectors as covered.
-export function NativeCaptureGuide({ capture }: { capture: ReturnType<typeof useNativeCapture> }) {
-  const target = capture.targets[capture.frames.length];
-  const angles = capture.sample ? poseAngles(capture.sample.quaternion) : { yaw: 0, pitch: 0 };
-  const horizontal = target ? ((target.yaw-angles.yaw+540)%360)-180 : 0;
-  const vertical = target ? target.pitch-angles.pitch : 0;
-  const moving = capture.speed > STEADY_SPEED_DEG_S;
+type Capture = ReturnType<typeof useNativeCapture>;
+
+// NativeCaptureGuide shows the real accepted strip and guides the lens along the next band of the sphere.
+export function NativeCaptureGuide({ capture }: { capture: Capture }) {
+  const index = capture.frames.length;
+  const target = capture.targets[index] ?? capture.targets[capture.targets.length - 1];
+  const { arrow, hint } = sweepGuidance(capture.sample?.quaternion, target, capture.speed, index > 0);
   return (
-    <View pointerEvents="none" style={{ flex: 1, justifyContent: 'space-between', padding: 24, paddingTop: 85 }}>
-      <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>{capture.targets.length === 3 ? 'Kalibrasi kamera · ' : ''}{capture.frames.length}/{capture.targets.length} foto</Text>
-      <View style={{ alignSelf: 'center', alignItems: 'center', gap: 12 }}>
-        <Text style={{ color: '#fff', fontSize: 56 }}>{Math.abs(vertical)>8 ? vertical>0 ? '↑' : '↓' : Math.abs(horizontal)>5 ? horizontal>0 ? '→' : '←' : '◎'}</Text>
-        <Text style={{ color: '#fff', backgroundColor: '#000b', padding: 10 }}>Arah {Math.round(horizontal)}° · Kemiringan {Math.round(vertical)}°</Text>
+    <View pointerEvents="none" style={styles.overlay}>
+      <View style={styles.card}>
+        <SweepStrip frames={capture.frames} targets={capture.targets} index={index} />
       </View>
-      <View style={{ backgroundColor: '#000c', borderRadius: 12, padding: 16, gap: 10 }}>
-        <Text style={{ color: '#fff' }}>{moving ? 'Tahan HP sampai benar-benar diam.' : 'Ikuti panah, lalu tahan sampai penghitung foto bertambah.'}</Text>
-        <Text style={{ color: '#fff' }}>Jaga posisi lensa. Jangan berjalan atau mengayunkan HP.</Text>
-        {!!capture.error && <Text style={{ color: '#ffd38a' }}>{capture.error}</Text>}
+      <View style={styles.guide}>
+        <View style={styles.line} />
+        <View style={styles.aperture}><Text style={styles.arrow}>{arrow}</Text></View>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.hint}>{hint}</Text>
+        {!!capture.error && <Text style={styles.warning}>{capture.error}</Text>}
+        {capture.targets.length > 3 && <Text style={styles.progress}>Seluruh ruangan · {index}/{capture.targets.length} bagian</Text>}
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'space-between', padding: 20, paddingTop: 96, paddingBottom: 38 },
+  card: { backgroundColor: '#101b17db', borderRadius: 12, padding: 14, gap: 7 },
+  guide: { alignItems: 'center', justifyContent: 'center' },
+  line: { position: 'absolute', width: '88%', height: 2, backgroundColor: '#ffffffaa' },
+  aperture: { borderWidth: 2, borderColor: '#fff', borderRadius: 40, width: 56, height: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: '#15241dcc' },
+  arrow: { color: '#fff', fontWeight: '700', fontSize: 28 },
+  hint: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  progress: { color: '#c1d1c9' },
+  warning: { color: '#ffdb9b' },
+});

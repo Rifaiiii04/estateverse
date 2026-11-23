@@ -63,10 +63,13 @@ func (h *huginRun) render(width int) error {
 }
 
 // result reads the blended panorama, fills the few pixels no photo covered, and scores the stitch.
-func (h *huginRun) result() (*Result, error) {
+func (h *huginRun) result(expectedWidth int) (*Result, error) {
 	pano, holes, err := readBlended(filepath.Join(h.dir, "pano.tif"))
 	if err != nil {
 		return nil, err
+	}
+	if pano.Bounds().Size() != image.Pt(expectedWidth, expectedWidth/2) {
+		return nil, fmt.Errorf("%w: blended canvas cropped to %v", ErrIncompleteCoverage, pano.Bounds().Size())
 	}
 	coverage := fillHoles(pano, holes)
 	alignment := clamp(1-h.rmsDeg/huginRMSScaleDeg, 0, 1)

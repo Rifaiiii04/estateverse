@@ -6,10 +6,6 @@ export interface CaptureTarget {
   ring: 'horizon' | 'up' | 'down' | 'ceiling' | 'floor';
 }
 
-export const CAPTURE_TOLERANCE_DEG = 4;
-export const POLE_TOLERANCE_DEG = 7;
-export const STEADY_SPEED_DEG_S = 6;
-export const STEADY_HOLD_MS = 500;
 export const FRAME_LONG_SIDE = 1280;
 export const FRAME_JPEG_QUALITY = 0.85;
 
@@ -54,9 +50,4 @@ export function calibratedTargets(calibration: CaptureCalibration): CaptureTarge
   }
   if (buildCaptureTargets().some((t,i) => targets[i].yaw!==t.yaw || targets[i].pitch!==0)) throw new Error('Foto kalibrasi tidak cocok dengan rencana server.');
   return targets;
-}
-
-// toleranceFor keeps the capture acceptance cone identical on both clients.
-export function toleranceFor(target: CaptureTarget): number {
-  return target.ring === 'ceiling' || target.ring === 'floor' ? POLE_TOLERANCE_DEG : CAPTURE_TOLERANCE_DEG;
 }

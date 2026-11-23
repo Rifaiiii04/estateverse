@@ -1,7 +1,6 @@
 import { Vector3 } from "three";
 import type { CaptureTarget } from "../../../../shared/capturePolicy.ts";
-export { buildCaptureTargets, toleranceFor, CAPTURE_TOLERANCE_DEG, POLE_TOLERANCE_DEG,
-  STEADY_SPEED_DEG_S, STEADY_HOLD_MS } from "../../../../shared/capturePolicy.ts";
+export { buildCaptureTargets } from "../../../../shared/capturePolicy.ts";
 export type { CaptureTarget } from "../../../../shared/capturePolicy.ts";
 
 const DEG = Math.PI / 180;

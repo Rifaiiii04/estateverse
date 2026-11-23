@@ -70,3 +70,24 @@ func TestQueueRejectsUnrelatedFrames(t *testing.T) {
 		t.Fatal("failed capture should keep its private frames for diagnosis")
 	}
 }
+
+// TestStitchFailureRecovery distinguishes a finished job's deadline from an interrupted worker eligible for recovery.
+func TestStitchFailureRecovery(t *testing.T) {
+	_, tours, _, storage := newTourFixture(t)
+	room := &models.TourRoom{PropertyID: 1, Name: "Kamar", Status: models.TourStatusProcessing}
+	if err := tours.CreateRoom(context.Background(), room); err != nil {
+		t.Fatal(err)
+	}
+	q := NewTourQueue(tours, storage).(*tourQueue)
+	shutdown, cancel := context.WithCancel(context.Background())
+	cancel()
+	q.recordStitchFailure(shutdown, room.ID, context.Canceled)
+	if tours.rooms[room.ID].Status != models.TourStatusProcessing {
+		t.Fatal("shutdown should preserve processing status for restart")
+	}
+	q.recordStitchFailure(context.Background(), room.ID, context.DeadlineExceeded)
+	updated := tours.rooms[room.ID]
+	if updated.Status != models.TourStatusFailed || updated.ErrorMessage != stitchFailureMessage(context.DeadlineExceeded) {
+		t.Fatalf("stitch timeout should have a terminal status: %+v", updated)
+	}
+}

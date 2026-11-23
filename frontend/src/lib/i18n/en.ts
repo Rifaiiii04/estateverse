@@ -106,7 +106,7 @@ export const en = {
     blueprintDesc: "Start with three calibration photos; the backend then calculates the fewest reliable views for a 360° panorama, with arrows between rooms.",
     steps: [
       { title: "Seller posts a listing", desc: "Add price, size, and photos. Buyers connect directly with the owner." },
-      { title: "Record each room by phone", desc: "Stand in the middle of the room and rotate the phone around its lens, following the on-screen dots; photos are taken automatically and stitched into a Walk Inside 360° tour." },
+      { title: "Record each room by phone", desc: "Turn slowly from one spot. Follow the guided sweeps at eye level, above and below to create your Walk Inside 360° tour." },
       { title: "Buyers explore from home", desc: "Look around every room and check mortgage affordability before deciding to visit." },
       { title: "Contact the seller directly", desc: "Send a visit request or chat on WhatsApp with the homeowner." },
     ],
@@ -164,7 +164,7 @@ export const en = {
       },
       {
         q: "I'm a seller. How do I create a Walk Inside tour?",
-        a: "Open your listing's edit page on your phone (Chrome or Safari), choose Record Room, and rotate the phone around its lens from the middle of the room, following the on-screen dots. Photos are taken automatically, about 2 minutes per room, and turned into a 360° tour.",
+        a: "Open your listing's edit page on your phone and choose Record Room. Turn slowly to the right from one spot, then follow the guide to capture the upper and lower sweeps. Upload the recording to create your 360° panorama.",
       },
       {
         q: "Do I need a 360° camera or a special app?",

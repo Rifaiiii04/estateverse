@@ -107,7 +107,7 @@ export const id = {
     blueprintDesc: "Rekam foto dengan panduan sudut otomatis untuk membuat panorama 360°, lengkap dengan panah antar-ruangan.",
     steps: [
       { title: "Penjual memasang iklan", desc: "Isi harga, luas, dan foto rumah. Pembeli langsung terhubung ke pemiliknya." },
-      { title: "Rekam tiap ruangan dari HP", desc: "Berdiri di tengah ruangan dan putar HP di titik yang sama mengikuti titik di layar; foto diambil otomatis dan digabung menjadi Walk Inside 360°." },
+      { title: "Rekam tiap ruangan dari HP", desc: "Putar HP perlahan dari satu posisi. Ikuti panduan sapuan setinggi mata, atas, dan bawah untuk membuat Walk Inside 360°." },
       { title: "Pembeli menjelajah dari rumah", desc: "Lihat setiap sudut ruangan dan cek kemampuan bayar KPR sebelum memutuskan survei." },
       { title: "Hubungi penjual langsung", desc: "Kirim permintaan survei atau chat WhatsApp langsung ke pemilik rumah." },
     ],
@@ -168,7 +168,7 @@ export const id = {
       },
       {
         q: "Saya penjual. Bagaimana cara membuat Walk Inside?",
-        a: "Buka halaman edit iklan dari HP (Chrome atau Safari), pilih Rekam Ruangan, lalu berdiri di tengah ruangan dan putar HP di titik yang sama mengikuti titik di layar. Foto diambil otomatis, sekitar 2 menit per ruangan, lalu disusun menjadi tur 360°.",
+        a: "Buka halaman edit iklan dari HP, pilih Rekam Ruangan, lalu putar HP perlahan ke kanan dari satu posisi. Ikuti panduan sapuan atas dan bawah. Unggah rekaman untuk membuat panorama 360°.",
       },
       {
         q: "Apakah perlu kamera 360 atau aplikasi khusus?",

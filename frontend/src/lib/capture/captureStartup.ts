@@ -1,13 +1,12 @@
-import type { RefObject } from "react";
 import type { OrientationSample } from "./orientation";
 
 // waitForSensor resolves once orientation data arrives, or rejects on devices without motion sensors.
-export function waitForSensor(sampleRef: RefObject<OrientationSample | null>): Promise<void> {
+export function waitForSensor(live: { sample: OrientationSample | null }): Promise<void> {
   const started = performance.now();
   return new Promise((resolve, reject) => {
     // poll waits for the first hardware orientation sample within the startup deadline.
     const poll = () => {
-      if (sampleRef.current) return resolve();
+      if (live.sample) return resolve();
       if (performance.now() - started > 2500) {
         return reject(new Error("Sensor gerak tidak terdeteksi. Gunakan HP (bukan laptop) untuk merekam."));
       }

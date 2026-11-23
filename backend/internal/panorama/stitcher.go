@@ -66,7 +66,11 @@ func Stitch(inputs []FrameInput, opts Options) (*Result, error) {
 		setAllFOV(frames, opts.FallbackFOV)
 	}
 
-	alignment := math.Max(0, globalScore(frames, nbrs))
+	alignment, alignmentErr := checkAlignedPhotos(frames, nbrs)
+	alignment = math.Max(0, alignment)
+	if !opts.SkipRefine && (alignmentErr != nil || alignment < minAlignmentScore) {
+		return nil, ErrUnreliableAlignment
+	}
 	gains := compensateGains(frames, nbrs)
 	pano, coverage := render(frames, gains, opts.OutputWidth)
 	if !opts.SkipRefine {

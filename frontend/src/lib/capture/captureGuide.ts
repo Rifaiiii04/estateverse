@@ -1,5 +1,7 @@
 import { Quaternion } from "three";
-import { directionFromAngles, STEADY_SPEED_DEG_S, toleranceFor } from "./captureTargets.ts";
+import { isSweepLevel, SWEEP_AIM_DEG, SWEEP_MAX_SPEED_DEG_S } from "../../../../shared/captureSweep.ts";
+import { directionFromAngles } from "./captureTargets.ts";
+import { toWireQuat } from "./orientation.ts";
 import type { CaptureTarget } from "./captureTargets.ts";
 
 const RAD = 180 / Math.PI;
@@ -37,27 +39,26 @@ export function captureStage(targets: CaptureTarget[], target: CaptureTarget): C
   return { index, total, label: STAGE_LABELS[target.ring] };
 }
 
-/** The live phone pose the hint is computed from; `holding` is true while the aiming ring is filling. */
+/** Orientation and angular speed measured at the current point of the sweep. */
 export interface GuidePose {
   quaternion: Quaternion;
   speed: number;
-  holding: boolean;
 }
 
 // guideHint turns the offset between the live camera and the next target into one short instruction.
 export function guideHint(targets: CaptureTarget[], target: CaptureTarget, pose: GuidePose): string {
-  if (pose.holding) return "Pas! Tahan HP diam sampai lingkaran hijau penuh";
-  if (pose.speed > STEADY_SPEED_DEG_S * 1.5) return "Terlalu cepat — gerakkan HP lebih pelan";
+  if (pose.speed > SWEEP_MAX_SPEED_DEG_S) return "Terlalu cepat. Perlambat putaran HP.";
   const c = directionFromAngles(target.yaw, target.pitch).applyQuaternion(pose.quaternion.clone().invert());
   const off = Math.acos(Math.max(-1, Math.min(1, -c.z))) * RAD;
-  if (off <= toleranceFor(target)) return "Pas! Tahan HP diam sampai lingkaran hijau penuh";
+  if (off < 4 && !isSweepLevel(toWireQuat(pose.quaternion), target.yaw)) return "Luruskan sisi HP mengikuti arah sapuan.";
+  if (off <= SWEEP_AIM_DEG) return "Teruskan sapuan pelan. Gambar diambil otomatis.";
   const index = targets.findIndex((t) => t.id === target.id);
   const previous = index > 0 ? targets[index - 1] : null;
   if (previous && previous.pitch !== target.pitch && off > 15) return STAGE_ENTRY[target.ring];
   const sideways = Math.atan2(c.x, -c.z) * RAD;
   const vertical = Math.atan2(c.y, Math.hypot(c.x, c.z)) * RAD;
   if (Math.abs(vertical) > Math.abs(sideways)) {
-    return vertical > 0 ? "Naikkan arah HP sedikit ke titik putih" : "Turunkan arah HP sedikit ke titik putih";
+    return vertical > 0 ? "Naikkan arah HP sedikit" : "Turunkan arah HP sedikit";
   }
-  return sideways > 0 ? "Putar pelan ke kanan, ikuti titik putih →" : "Kembali sedikit ke kiri ←";
+  return sideways > 0 ? "Sapu pelan ke kanan mengikuti panah" : "Kembali sedikit ke kiri mengikuti panah";
 }

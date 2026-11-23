@@ -60,7 +60,7 @@ export function generateAiAnswer(query: string): OfflineAnswer {
   }
   if (matches(q, ["360", "tur", "rekam", "kamera", "foto ruangan"])) {
     return {
-      text: "Tips merekam tur 360° dari HP: nyalakan semua lampu, berdiri di tengah ruangan, pegang HP tegak setinggi mata, lalu putar HP di titik yang sama (lensa sebagai poros) sambil mengarahkan lingkaran ke titik putih. Foto diambil otomatis — rekam putaran tengah, atas, bawah, lalu plafon dan lantai. Jangan berjalan saat merekam supaya sambungan panorama rapi.",
+      text: "Nyalakan lampu dan pegang HP tegak setinggi mata. Putar perlahan ke kanan dengan lensa tetap di satu posisi. Kamera mengambil gambar otomatis selama sapuan. Ikuti panduan untuk merekam bagian atas dan bawah sampai seluruh ruangan tercakup.",
     };
   }
   if (matches(q, ["jual", "iklan", "penjual", "pasang"])) {

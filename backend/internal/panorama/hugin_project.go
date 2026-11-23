@@ -84,15 +84,61 @@ func (img *huginImage) set(key, raw string) {
 	}
 }
 
-// countControlPoints counts the control-point lines of a Hugin project.
-func countControlPoints(pto string) int {
-	n := 0
+// controlPointNetwork counts matches and checks that every camera is tied into the same solved panorama.
+func controlPointNetwork(pto string, frameCount int) (int, bool) {
+	neighbors := make([][]int, frameCount)
+	count := 0
 	for _, line := range strings.Split(pto, "\n") {
-		if strings.HasPrefix(line, "c ") {
-			n++
+		if !strings.HasPrefix(line, "c ") {
+			continue
+		}
+		a, b := controlPointPair(line)
+		if a < 0 || b < 0 || a >= frameCount || b >= frameCount || a == b {
+			continue
+		}
+		count++
+		neighbors[a] = append(neighbors[a], b)
+		neighbors[b] = append(neighbors[b], a)
+	}
+	if count == 0 {
+		return 0, false
+	}
+	connected := []int{0}
+	seen := make([]bool, frameCount)
+	seen[0] = true
+	for i := 0; i < len(connected); i++ {
+		for _, j := range neighbors[connected[i]] {
+			if !seen[j] {
+				connected = append(connected, j)
+				seen[j] = true
+			}
 		}
 	}
-	return n
+	return count, len(connected) == frameCount
+}
+
+// controlPointPair extracts the two source photo indexes from a normal Hugin point correspondence.
+func controlPointPair(line string) (int, int) {
+	a, b := -1, -1
+	for _, field := range strings.Fields(line) {
+		switch field[0] {
+		case 'n', 'N':
+			index, err := strconv.Atoi(field[1:])
+			if err != nil {
+				return -1, -1
+			}
+			if field[0] == 'n' {
+				a = index
+			} else {
+				b = index
+			}
+		case 't':
+			if field != "t0" {
+				return -1, -1
+			}
+		}
+	}
+	return a, b
 }
 
 // parseHuginRMS extracts autooptimiser's final control-point RMS, which is measured in panorama pixels.

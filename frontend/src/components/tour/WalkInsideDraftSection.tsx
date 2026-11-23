@@ -57,8 +57,8 @@ export function WalkInsideDraftSection({ rooms, onChange }: WalkInsideDraftSecti
       <div className="space-y-1 border-b border-neutral-100 pb-2.5">
         <h2 id="walk-inside-title" className="text-sm font-bold text-neutral-950">Walk Inside 360°</h2>
         <p className="text-xs text-neutral-700">
-          Tekan Rekam Ruangan, kamera HP langsung terbuka. Berdiri di tengah ruangan dan putar HP di titik yang sama — foto diambil otomatis. Ruangan
-          diunggah saat Anda menyimpan properti.
+          Pilih Rekam Ruangan dan putar HP perlahan ke kanan dari satu posisi.
+          Ikuti panduan untuk merekam bagian atas dan bawah. Panorama diunggah saat properti disimpan.
         </p>
       </div>
 

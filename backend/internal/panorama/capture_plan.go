@@ -9,6 +9,7 @@ const (
 	maxPlannedFrames = 48
 	planCoverage     = 0.998 // share of the sphere the planned photos must observe
 	minRingOverlap   = 0.18  // share of each tilted photo that must overlap the rings nearer eye level
+	poleReserve      = 2.5   // extra tilt beyond the pole after the lens footprint's aiming margin
 )
 
 // calibrationYaws are the first three eye-level photos; the horizon ring continues from the last one.
@@ -47,7 +48,13 @@ func PlanCapture(hfov, aspect float64) ([]CaptureTarget, error) {
 
 // bestRingPlan returns the shortest covering ring layout for one sideways overlap, keeping best unless beaten.
 func bestRingPlan(lens lensFootprint, points []sphereSample, overlap float64, best []CaptureTarget) []CaptureTarget {
-	for _, pitches := range ringPitchOptions() {
+	options := ringPitchOptions()
+	// Try the smallest whole-degree tilt that still reaches the pole during a moving shutter.
+	minPolePitch := math.Ceil(90 + poleReserve - lens.halfV)
+	if minPolePitch > 0 && minPolePitch <= 75 {
+		options = append(options, []float64{minPolePitch})
+	}
+	for _, pitches := range options {
 		for _, poles := range []bool{true, false} {
 			plan := ringPlan(lens, pitches, overlap, poles)
 			if len(plan) <= maxPlannedFrames && (best == nil || len(plan) < len(best)) && planCovers(plan, lens, points) {
@@ -121,6 +128,10 @@ func appendRing(plan []CaptureTarget, lens lensFootprint, pitch float64, ring st
 
 // planCovers checks that each tilted photo overlaps the rings nearer eye level and that all photos cover the sphere.
 func planCovers(plan []CaptureTarget, lens lensFootprint, points []sphereSample) bool {
+	// Both hemispheres use the same pitches, and the last photo is on the steepest ring or at the pole.
+	if math.Abs(plan[len(plan)-1].Pitch)+lens.halfV < 90+poleReserve {
+		return false
+	}
 	all := make([]bool, len(points))
 	for _, side := range []float64{1, -1} {
 		inner, current := make([]bool, len(points)), make([]bool, len(points))

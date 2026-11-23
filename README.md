@@ -31,7 +31,7 @@ Semua angka di dashboard dan bagian "Dampak" dihitung dari database (kunjungan, 
 **Penjual**
 - Pasang iklan rumah (foto, harga, luas, keunggulan lokasi, nomor WhatsApp).
 - **Rekam Ruangan 360°** dari HP:
-  - titik target di layar, dan foto diambil otomatis saat HP stabil
+  - sapuan panorama terpandu dari satu posisi dengan pratinjau gambar selama merekam
   - jumlah foto otomatis: tiga foto awal untuk mengukur lensa, lalu backend menghitung sudut tambahan berdasarkan cakupan dan overlap; foto awal dipakai kembali
   - status pemrosesan dan skor kualitas sambungan
 - Unggah foto 360° yang sudah jadi (kamera 360/Photo Sphere) sebagai alternatif.
@@ -54,7 +54,7 @@ HP penjual (browser, HTTPS)                        Server Go
 getUserMedia (kamera belakang)                     POST /api/v1/tours/captures
 DeviceOrientation (giroskop+akselerometer+kompas)    → validasi JPEG & quaternion, simpan privat
   → quaternion kamera tiap foto                      → antrian background (1 worker)
-Titik target dihitung backend dari bidang pandang lensa, auto-capture saat stabil  internal/panorama (Go murni):
+Sapuan otomatis dengan pemeriksaan gambar dan pose   internal/panorama (Go murni):
   → upload JPEG + manifest orientasi                 1. proyeksi kamera ↔ arah 3D (quaternion)
                                                      2. kalibrasi FOV lensa dari area tumpang-tindih
                                                      3. refine orientasi tiap foto (maks. NCC)

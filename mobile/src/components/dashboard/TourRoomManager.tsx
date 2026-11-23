@@ -20,6 +20,7 @@ interface TourRoomManagerProps {
 // Manages real-time camera sweep capture and list of 360 rooms for a property.
 export function TourRoomManager({ rooms, onChange, propertyId, disabled }: TourRoomManagerProps) {
   const [cameraModalVisible, setCameraModalVisible] = useState(false);
+  // Announces when the server has finished stitching a room.
   const handleReady = useCallback((room: DraftTourRoom) => {
     Alert.alert('Panorama selesai', `Panorama ${room.name} sudah selesai diproses oleh server. Setelah semua ruangan siap, properti dapat dipublish.`);
   }, []);
@@ -79,7 +80,7 @@ export function TourRoomManager({ rooms, onChange, propertyId, disabled }: TourR
           </View>
           <Text style={styles.placeholderTitle}>Buka Kamera & Rekam Ruangan 360°</Text>
           <Text style={styles.placeholderText}>
-            Ikuti titik foto yang dihitung otomatis. HP hanya merekam; server menggabungkan foto menjadi panorama setelah properti disimpan.
+            Putar HP perlahan ke kanan dari satu posisi. Ikuti panduan sapuan atas dan bawah, lalu simpan properti untuk memproses panorama.
           </Text>
         </TouchableOpacity>
       )}
