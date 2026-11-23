@@ -41,9 +41,10 @@ export function DashboardHeader() {
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <Button render={<Link href="/dashboard/properties/new" />} aria-label="Tambah properti">
+        {/* Phones use the floating add button (DashboardAddFab) instead. */}
+        <Button className="hidden md:inline-flex" render={<Link href="/dashboard/properties/new" />} aria-label="Tambah properti">
           <Plus />
-          <span className="hidden sm:inline">Tambah Properti</span>
+          <span>Tambah Properti</span>
         </Button>
         <Button
           variant="outline"

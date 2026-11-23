@@ -48,7 +48,8 @@ export function ActiveAdvertisements({ properties, onDelete }: ActiveAdvertiseme
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Phones add listings from the floating button instead. */}
+        <div className="hidden md:flex items-center gap-2">
           <Button render={<Link href="/dashboard/properties/new" />}>
             <Plus />
             <span>Listing Baru</span>
@@ -56,12 +57,12 @@ export function ActiveAdvertisements({ properties, onDelete }: ActiveAdvertiseme
         </div>
       </div>
 
-      {/* Tabs Filter Bar */}
+      {/* Tabs Filter Bar: equal-width tabs across the card on phones */}
       <Tabs value={filterTab} onValueChange={(value) => setFilterTab(value as typeof filterTab)}>
-        <TabsList>
-          <TabsTrigger value="all" className="px-3 py-2">Semua ({properties.length})</TabsTrigger>
-          <TabsTrigger value="house" className="px-3 py-2">Rumah ({houseCount})</TabsTrigger>
-          <TabsTrigger value="villa" className="px-3 py-2">Villa ({villaCount})</TabsTrigger>
+        <TabsList className="w-full md:w-fit">
+          <TabsTrigger value="all" className="flex-1 md:flex-none px-3 py-2">Semua ({properties.length})</TabsTrigger>
+          <TabsTrigger value="house" className="flex-1 md:flex-none px-3 py-2">Rumah ({houseCount})</TabsTrigger>
+          <TabsTrigger value="villa" className="flex-1 md:flex-none px-3 py-2">Villa ({villaCount})</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -101,7 +102,7 @@ export function ActiveAdvertisements({ properties, onDelete }: ActiveAdvertiseme
                   </div>
 
                   <div className="space-y-1 min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2">
                       <span className="text-base sm:text-lg font-extrabold text-neutral-950 tracking-tight truncate">
                         {formatIDR(property.price)}
                       </span>

@@ -1,5 +1,5 @@
 import { Quaternion, Vector3 } from "three";
-import { CaptureTarget, directionFromAngles, STEADY_HOLD_MS } from "@/lib/capture/captureTargets";
+import { CaptureTarget, directionFromAngles } from "@/lib/capture/captureTargets";
 
 /** Approximate horizontal field of view of the full-screen camera preview, used only for drawing guides. */
 const PREVIEW_HFOV_DEG = 50;
@@ -19,8 +19,8 @@ export interface OverlayState {
   targets: CaptureTarget[];
   done: ReadonlySet<number>;
   nearestId: number | null;
-  steadySince: number | null;
-  now: number;
+  /** How full the aiming ring is (0..1), or null when no hold is in progress. */
+  steadyProgress: number | null;
 }
 
 // projectToScreen maps a world direction into canvas pixels for the current phone orientation.
@@ -85,8 +85,8 @@ export function drawReticle(ctx: CanvasRenderingContext2D, s: OverlayState, w: n
   ctx.lineWidth = 3;
   ctx.strokeStyle = COLORS.pending;
   ctx.stroke();
-  if (s.steadySince === null) return;
-  const progress = Math.min(1, (s.now - s.steadySince) / STEADY_HOLD_MS);
+  if (s.steadyProgress === null) return;
+  const progress = s.steadyProgress;
   ctx.beginPath();
   ctx.arc(cx, cy, 26, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
   ctx.lineWidth = 6;

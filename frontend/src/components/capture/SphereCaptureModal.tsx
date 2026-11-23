@@ -63,7 +63,7 @@ export function SphereCaptureModal({ defaultRoomName, onClose, propertyId, onUpl
     <div role="dialog" aria-modal="true" aria-label="Perekam Walk Inside 360°" className="fixed inset-0 z-[100] bg-black">
       <video
         ref={videoRef}
-        className={`absolute inset-0 w-full h-full object-cover ${showCamera ? "" : "invisible"}`}
+        className={`absolute inset-0 w-full h-full object-contain ${showCamera ? "" : "invisible"}`}
         playsInline
         muted
         aria-hidden="true"

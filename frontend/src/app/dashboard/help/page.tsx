@@ -51,8 +51,8 @@ export default function DashboardHelpPage() {
               key={item.title}
               className="bg-white rounded-2xl border border-neutral-200/80 p-5 space-y-3 hover:border-neutral-400 transition-colors"
             >
-              <div className="w-9 h-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center shadow-xs">
-                <IconComp className="w-4 h-4 text-emerald-400" />
+              <div className="w-10 h-10 rounded-xl bg-sage-600 text-white flex items-center justify-center" aria-hidden="true">
+                <IconComp className="w-5 h-5" />
               </div>
               <h3 className="text-sm font-bold text-neutral-950">{item.title}</h3>
               <p className="text-xs text-neutral-500 leading-relaxed font-normal">
@@ -64,21 +64,23 @@ export default function DashboardHelpPage() {
       </div>
 
       {/* AI Assistant Help Banner */}
-      <div className="bg-neutral-950 text-white rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-xl">
-        <div className="space-y-2 max-w-lg">
-          <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400">
-            <Bot className="w-3.5 h-3.5" />
-            <span>Asisten AI EstateVerse</span>
+      <div className="bg-sage-50 border border-sage-200 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="flex items-start gap-4 max-w-xl">
+          <div className="w-11 h-11 rounded-xl bg-sage-600 text-white flex items-center justify-center shrink-0" aria-hidden="true">
+            <Bot className="w-5 h-5" />
           </div>
-          <h2 className="text-lg sm:text-xl font-bold">
-            Butuh Bantuan Seputar Iklan atau Tampilan 3D?
-          </h2>
-          <p className="text-xs text-neutral-500 leading-relaxed">
-            Asisten pintar kami siap menjawab pertanyaan seputar cara memasang iklan, perkiraan harga rumah, atau panduan jual beli.
-          </p>
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-semibold text-sage-700">Asisten AI EstateVerse</span>
+            <h2 className="text-lg sm:text-xl font-bold text-neutral-950">
+              Butuh Bantuan Seputar Iklan atau Tampilan 3D?
+            </h2>
+            <p className="text-xs text-neutral-700 leading-relaxed">
+              Asisten pintar kami siap menjawab pertanyaan seputar cara memasang iklan, perkiraan harga rumah, atau panduan jual beli.
+            </p>
+          </div>
         </div>
 
-        <Button variant="outline" size="lg" className="shrink-0" render={<Link href="/ai-consultant" />}>
+        <Button size="lg" className="shrink-0 w-full sm:w-auto" render={<Link href="/ai-consultant" />}>
           <span>Konsultasi dengan AI</span>
           <ArrowRight />
         </Button>

@@ -103,17 +103,18 @@ export function TourRoomsManager({ propertyId }: { propertyId: number }) {
   const recordBlocked = captureIssue ?? (isDesktop ? "Perekaman memakai kamera dan sensor gerak HP. Buka halaman ini di HP Anda." : null);
 
   return (
-    <section aria-labelledby="tour-manager-title" className="bg-white border border-sage-200 rounded-2xl p-5 shadow-2xs space-y-4">
+    // On phones the section sits directly on the page so each room card is not a card inside a card.
+    <section aria-labelledby="tour-manager-title" className="space-y-4 md:bg-white md:border md:border-sage-200 md:rounded-2xl md:p-5 md:shadow-2xs">
       <div className="space-y-3">
-        <div className="space-y-1 border-b border-neutral-100 pb-2.5">
+        <div className="space-y-1 border-b border-neutral-200 md:border-neutral-100 pb-2.5">
           <h2 id="tour-manager-title" className="text-sm font-bold text-neutral-950">Walk Inside 360°</h2>
           <p className="text-xs text-neutral-700">Tekan Rekam Ruangan, kamera HP terbuka, lalu berdiri di tengah ruangan dan putar HP di titik yang sama — sistem memotret otomatis dan menyusunnya menjadi panorama 360°.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => setIsRecording(true)} disabled={Boolean(recordBlocked)}>
+        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap">
+          <Button type="button" className="w-full md:w-auto" onClick={() => setIsRecording(true)} disabled={Boolean(recordBlocked)}>
             <Camera aria-hidden="true" /> Rekam Ruangan
           </Button>
-          <label className={cn(buttonVariants({ variant: "outline" }), "focus-within:ring-3 focus-within:ring-ring/50")}>
+          <label className={cn(buttonVariants({ variant: "outline" }), "w-full md:w-auto focus-within:ring-3 focus-within:ring-ring/50")}>
             <ImageUp aria-hidden="true" />
             {isImporting ? "Mengunggah…" : "Unggah Foto 360"}
             <input type="file" accept="image/jpeg,image/png" className="sr-only" disabled={isImporting} onChange={(e) => handleImport(e.target.files?.[0])} />

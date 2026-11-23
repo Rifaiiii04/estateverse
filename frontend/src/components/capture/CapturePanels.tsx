@@ -22,7 +22,7 @@ export function CaptureIntroPanel({ onStart, isStarting, error }: CaptureIntroPr
     onStart(heightCm);
   };
   const tips = [
-    "Berdiri di tengah ruangan dan nyalakan lampu.",
+    "Berdiri di tengah ruangan, sejauh mungkin dari dinding dan perabot, lalu nyalakan lampu. Makin dekat ke dinding, makin mudah sambungan bergeser.",
     "Matikan putar otomatis layar. Pegang HP tegak (portrait) setinggi mata.",
     "Putar HP di titik yang sama — bayangkan lensa kamera sebagai poros. Jangan berjalan atau mengayunkan HP melingkar, karena sambungan panorama bisa bergeser.",
     "Ikuti satu titik putih saja. Putar badan pelan ke kanan sampai satu putaran penuh setinggi mata, lalu panduan meminta Anda menengadah dan menunduk untuk putaran berikutnya — tetap ke kanan.",

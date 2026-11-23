@@ -35,7 +35,7 @@ export function ListingEfficiency({ summary, properties }: ListingEfficiencyProp
             Semakin lengkap informasi iklan, semakin cepat menarik minat pembeli.
           </p>
         </div>
-        <span className="text-xs font-bold px-2.5 py-1 bg-neutral-100 text-neutral-800 rounded-lg">
+        <span className="text-xs font-bold px-2.5 py-1 bg-neutral-100 text-neutral-800 rounded-lg whitespace-nowrap shrink-0">
           % Lengkap
         </span>
       </div>
@@ -85,8 +85,8 @@ export function ListingEfficiency({ summary, properties }: ListingEfficiencyProp
         </div>
       </div>
 
-      {/* Decision-Making Recommendations Card */}
-      <div className="bg-neutral-50/80 rounded-xl p-4 border border-neutral-200/80 space-y-3">
+      {/* Recommendations: a divided section on phones, an inset panel on wider screens (no card inside a card on mobile) */}
+      <div className="space-y-3 border-t border-neutral-100 pt-5 md:pt-4 md:bg-neutral-50/80 md:rounded-xl md:p-4 md:border md:border-neutral-200/80">
         <div className="flex items-center gap-2 text-xs font-bold text-neutral-950">
           <Sparkles className="w-4 h-4 text-neutral-900" />
           <span>Saran untuk Iklan Anda</span>

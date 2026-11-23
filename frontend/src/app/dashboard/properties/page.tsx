@@ -95,7 +95,7 @@ function DashboardPropertiesContent() {
           </div>
         </div>
 
-        <Button className="self-start sm:self-center" render={<Link href="/dashboard/properties/new" />}>
+        <Button className="hidden md:inline-flex self-center" render={<Link href="/dashboard/properties/new" />}>
           <Plus />
           <span>Tambah Listing</span>
         </Button>

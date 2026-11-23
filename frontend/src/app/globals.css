@@ -16,6 +16,18 @@
   --color-sage-700: #295246;
   --color-sage-800: #214138;
   --color-sage-900: #1b352e;
+
+  /* Slow look-around pan used by the landing's Walk Inside illustration. */
+  --animate-pan-view: pan-view 18s ease-in-out infinite alternate;
+
+  @keyframes pan-view {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
 }
 
 :root {

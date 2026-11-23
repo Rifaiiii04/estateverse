@@ -28,37 +28,32 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-// ToastItemView renders an individual animated notification card with type-specific icon and style.
+/** Solid colour per toast type so the meaning reads at a glance: green success, red error, amber warning, blue info. */
+const TOAST_STYLES: Record<ToastType, { surface: string; icon: React.ReactNode }> = {
+  success: { surface: "bg-sage-600 text-white shadow-sage-900/25", icon: <CheckCircle2 aria-hidden="true" /> },
+  error: { surface: "bg-rose-600 text-white shadow-rose-900/25", icon: <AlertCircle aria-hidden="true" /> },
+  warning: { surface: "bg-amber-400 text-neutral-950 shadow-amber-900/20", icon: <AlertTriangle aria-hidden="true" /> },
+  info: { surface: "bg-sky-700 text-white shadow-sky-900/25", icon: <Info aria-hidden="true" /> },
+};
+
+// ToastItemView renders one coloured notification; full width on phones, a fixed-width card on wider screens.
 function ToastItemView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) => void }) {
-  const icons = {
-    success: <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />,
-    error: <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />,
-    warning: <AlertTriangle className="w-5 h-5 text-neutral-800 shrink-0 mt-0.5" />,
-    info: <Info className="w-5 h-5 text-neutral-800 shrink-0 mt-0.5" />,
-  };
-
-  const borders = {
-    success: "border-emerald-200 bg-white/95 text-slate-800 shadow-emerald-500/10",
-    error: "border-rose-200 bg-white/95 text-slate-800 shadow-rose-500/10",
-    warning: "border-neutral-300 bg-white/95 text-neutral-900 shadow-neutral-500/10",
-    info: "border-neutral-200 bg-white/95 text-neutral-900 shadow-neutral-500/10",
-  };
-
+  const style = TOAST_STYLES[item.type];
   return (
     <div
-      role="status"
-      className={`pointer-events-auto flex items-start gap-3 w-80 sm:w-96 p-4 rounded-xl border shadow-xl backdrop-blur-md transition-all duration-300 ease-out transform translate-y-0 ${borders[item.type]}`}
+      role={item.type === "error" ? "alert" : "status"}
+      className={`pointer-events-auto flex items-start gap-3 w-full md:w-96 p-4 rounded-xl shadow-xl transition-all duration-300 ease-out ${style.surface}`}
     >
-      {icons[item.type]}
-      <div className="flex-1 space-y-0.5 text-xs">
-        {item.title && <h4 className="font-bold text-slate-900 text-sm">{item.title}</h4>}
-        <p className="text-slate-600 leading-relaxed font-normal">{item.message}</p>
+      <span className="shrink-0 mt-0.5 [&_svg]:size-5">{style.icon}</span>
+      <div className="flex-1 min-w-0 space-y-0.5 text-[13px] md:text-xs">
+        {item.title && <h4 className="font-bold text-sm">{item.title}</h4>}
+        <p className="leading-relaxed font-medium opacity-95">{item.message}</p>
       </div>
       <Button
         variant="ghost"
         size="icon-xs"
         onClick={() => onDismiss(item.id)}
-        className="text-muted-foreground"
+        className="text-current opacity-80 hover:opacity-100 hover:bg-black/10 hover:text-current"
         aria-label="Tutup notifikasi"
       >
         <X />
@@ -67,14 +62,14 @@ function ToastItemView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: s
   );
 }
 
-// ToastContainer renders the fixed floating stack for active toast notifications.
+// ToastContainer renders the notification stack: edge to edge above the bottom of phones, bottom-right on wider screens.
 function ToastContainer({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id: string) => void }) {
   if (toasts.length === 0) return null;
 
   return (
     <div
       aria-live="polite"
-      className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none max-w-full px-4 sm:px-0"
+      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 flex flex-col gap-2 pointer-events-none md:inset-x-auto md:right-5 md:bottom-5 md:gap-2.5"
     >
       {toasts.map((item) => (
         <ToastItemView key={item.id} item={item} onDismiss={onDismiss} />

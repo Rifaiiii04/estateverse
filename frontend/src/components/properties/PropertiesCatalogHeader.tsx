@@ -93,7 +93,7 @@ function DesktopToolbar({ filters, stats, isEn }: { filters: CatalogFilters; sta
     <div className="hidden flex-col gap-3 pt-1 md:flex xl:flex-row xl:items-center xl:justify-between">
       <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-2">
         <TypeTabs filters={filters} stats={stats} isEn={isEn} />
-        <WalkInsideToggle filters={filters} count={stats.count3D} isEn={isEn} />
+        <WalkInsideToggle filters={filters} count={stats.count3D} />
         <div className="hidden h-5 w-px bg-neutral-300/80 xl:block" />
         <CustomSelect
           variant="pill"

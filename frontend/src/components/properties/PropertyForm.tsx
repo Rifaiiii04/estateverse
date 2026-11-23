@@ -7,7 +7,7 @@ import { useToast } from "@/context/ToastContext";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Alert } from "@/components/ui/Alert";
-import { PropertyFormHeader } from "./PropertyFormHeader";
+import { PropertyFormHeader, PropertySaveButton } from "./PropertyFormHeader";
 import { GeoPin, MapPinField } from "./MapPinField";
 import { LocationSelector } from "./LocationSelector";
 import { DimensionsInputGrid, preventNonNumericKey } from "./DimensionsInputGrid";
@@ -200,6 +200,9 @@ export function PropertyForm({
             </div>
           </div>
         </div>
+
+        {/* Phones save from the very bottom, after every section has been reviewed. */}
+        <PropertySaveButton editing={Boolean(initialData)} isSubmitting={isSubmitting} className="w-full md:hidden" />
       </form>
     </FadeIn>
   );

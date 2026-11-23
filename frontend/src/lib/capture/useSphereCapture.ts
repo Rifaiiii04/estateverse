@@ -15,15 +15,14 @@ import {
   toleranceFor,
 } from "./captureTargets";
 import { grabFrame, startRearCamera, stopStream } from "./frameGrabber";
-import { angularSpeed, OrientationSample, requestMotionPermission, screenAngle, subscribeOrientation, toWireQuat } from "./orientation";
+import { OrientationSample, requestMotionPermission, screenAngle, subscribeOrientation, toWireQuat } from "./orientation";
+import { advanceSteady, createSpeedTracker, SteadyState } from "./steadiness";
 import { useCaptureExtras } from "./useCaptureExtras";
 
 export type CapturePhase = "intro" | "starting" | "capturing" | "calibrating" | "review" | "uploading" | "done" | "error";
 
-export interface SteadyState {
-  targetId: number;
-  since: number;
-}
+/** Largest pose change allowed between the steady moment and the camera frame that is kept. */
+const SNAPSHOT_DRIFT_DEG = 3;
 
 // useSphereCapture runs the guided 360° recording: camera, motion sensors, automatic shots, and upload.
 export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
@@ -39,6 +38,7 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
   const framesRef = useRef(new Map<number, CapturedFrame>());
   const sampleRef = useRef<OrientationSample | null>(null);
   const speedRef = useRef(0);
+  const speedTrackerRef = useRef(createSpeedTracker());
   const steadyRef = useRef<SteadyState | null>(null);
   const grabbingRef = useRef(false);
   const frameSizeRef = useRef<{ w: number; h: number } | null>(null);
@@ -96,8 +96,8 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
         const blob = await grabFrame(video, () => {
           const latest = sampleRef.current;
           if (session !== sessionRef.current || !latest || performance.now() - latest.timestamp > 250 ||
-            speedRef.current > STEADY_SPEED_DEG_S || screenAngle() !== screenRef.current ||
-            latest.quaternion.angleTo(sample.quaternion) * 180 / Math.PI > 2) {
+            speedRef.current > STEADY_SPEED_DEG_S * 1.5 || screenAngle() !== screenRef.current ||
+            latest.quaternion.angleTo(sample.quaternion) * 180 / Math.PI > SNAPSHOT_DRIFT_DEG) {
             throw new Error("HP bergerak saat foto diambil. Tahan pada titik yang sama lalu coba lagi.");
           }
           pose = latest.quaternion.clone();
@@ -125,12 +125,11 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
     [goTo, stopDevices, planCapture, videoRef]
   );
 
-  // Evaluates each sensor sample: tracks rotation speed and fires a shot after holding steady on a target.
+  // Evaluates each sensor sample: tracks windowed rotation speed and fires a shot once the hold on the target fills up.
   const handleSample = useCallback(
     (sample: OrientationSample) => {
-      const prev = sampleRef.current;
       sampleRef.current = sample;
-      if (prev) speedRef.current = Math.max(angularSpeed(prev, sample), speedRef.current * 0.7);
+      speedRef.current = speedTrackerRef.current(sample);
       if (phaseRef.current !== "capturing" || grabbingRef.current) return;
       if (screenAngle() !== screenRef.current) {
         stopDevices();
@@ -138,20 +137,20 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
         goTo("error");
         return;
       }
-      if (prev && sample.timestamp - prev.timestamp > 250) steadyRef.current = null;
-
       const forward = new Vector3(0, 0, -1).applyQuaternion(sample.quaternion);
       const nearest = nextPending(targetPlan.current, new Set(framesRef.current.keys()), forward);
-      const aimed = nearest && nearest.distance <= toleranceFor(nearest.target);
-      if (!nearest || !aimed || speedRef.current > STEADY_SPEED_DEG_S) {
+      if (!nearest) {
         steadyRef.current = null;
         return;
       }
-      if (steadyRef.current?.targetId !== nearest.target.id) {
-        steadyRef.current = { targetId: nearest.target.id, since: sample.timestamp };
-      } else if (sample.timestamp - steadyRef.current.since >= STEADY_HOLD_MS) {
-        void takeShot(nearest.target, sample);
-      }
+      steadyRef.current = advanceSteady(steadyRef.current, {
+        targetId: nearest.target.id,
+        distance: nearest.distance,
+        tolerance: toleranceFor(nearest.target),
+        speed: speedRef.current,
+        now: sample.timestamp,
+      });
+      if (steadyRef.current && steadyRef.current.heldMs >= STEADY_HOLD_MS) void takeShot(nearest.target, sample);
     },
     [goTo, stopDevices, takeShot]
   );
@@ -171,6 +170,7 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
     setError("");
     sampleRef.current = null;
     speedRef.current = 0;
+    speedTrackerRef.current = createSpeedTracker();
     steadyRef.current = null;
     screenRef.current = screenAngle();
     goTo("starting");

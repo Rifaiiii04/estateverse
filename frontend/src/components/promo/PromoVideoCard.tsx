@@ -71,7 +71,7 @@ export function PromoVideoCard({ property }: { property: Property }) {
           Browser ini belum bisa membuat video. Gunakan Chrome atau Safari versi terbaru.
         </p>
       )}
-      <Button type="button" onClick={generate} isLoading={phase === "rendering"} disabled={!supported}>
+      <Button type="button" className="w-full md:w-auto" onClick={generate} isLoading={phase === "rendering"} disabled={!supported}>
         <Clapperboard aria-hidden="true" /> {video ? "Buat Ulang Video" : "Buat Video Promosi"}
       </Button>
       {phase === "rendering" && (

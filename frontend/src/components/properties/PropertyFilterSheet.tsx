@@ -63,7 +63,7 @@ function FilterFields({ filters, stats, isEn }: Omit<PropertyFilterSheetProps, "
         <p className="text-xs font-semibold text-muted-foreground">{isEn ? "Property type" : "Tipe properti"}</p>
         <TypeChips filters={filters} stats={stats} isEn={isEn} />
       </section>
-      <WalkInsideToggle filters={filters} count={stats.count3D} isEn={isEn} />
+      <WalkInsideToggle filters={filters} count={stats.count3D} />
       <CustomSelect
         label={isEn ? "Price range" : "Kisaran harga"}
         options={priceOptions(isEn)}

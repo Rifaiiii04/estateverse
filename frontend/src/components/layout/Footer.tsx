@@ -14,7 +14,7 @@ const FOOTER_LINKS = [
   { href: "/properties", label: "Daftar Rumah" },
   { href: "/register", label: "Jual Rumah Saya" },
   { href: "/ai-consultant", label: "Asisten Pintar" },
-  { href: "/#impact", label: "Kenapa EstateVerse" },
+  { href: "/#why", label: "Kenapa EstateVerse" },
 ];
 
 const linkClass = "inline-block py-2 opacity-90 hover:underline hover:opacity-100";

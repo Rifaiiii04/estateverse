@@ -8,8 +8,8 @@ export interface CaptureTarget {
 
 export const CAPTURE_TOLERANCE_DEG = 4;
 export const POLE_TOLERANCE_DEG = 7;
-export const STEADY_SPEED_DEG_S = 4;
-export const STEADY_HOLD_MS = 650;
+export const STEADY_SPEED_DEG_S = 6;
+export const STEADY_HOLD_MS = 500;
 export const FRAME_LONG_SIDE = 1280;
 export const FRAME_JPEG_QUALITY = 0.85;
 

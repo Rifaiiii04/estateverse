@@ -18,7 +18,7 @@ function GaugeChart({ score }: { score: number }) {
   const needleY = 40 - 24 * Math.sin(rad);
 
   return (
-    <div className="relative w-20 h-12 flex items-end justify-center overflow-hidden">
+    <div className="relative w-12 h-8 md:w-20 md:h-12 shrink-0 flex items-end justify-center overflow-hidden">
       <svg viewBox="0 0 80 45" className="w-full h-full">
         {/* Background Arc */}
         <path
@@ -58,15 +58,15 @@ interface MetricCardProps {
 // MetricCard renders one dashboard figure with an honest explanatory note and a link to details.
 function MetricCard({ label, value, note, href, linkLabel, visual }: MetricCardProps) {
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-2xs flex flex-col justify-between space-y-4">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
+    <div className="bg-white rounded-2xl border border-neutral-200/80 p-4 md:p-5 shadow-2xs flex flex-col justify-between gap-3 md:gap-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-1 min-w-0">
           <span className="text-xs font-semibold text-neutral-600 block">{label}</span>
-          <div className="text-3xl font-extrabold text-neutral-950 tracking-tight">{value}</div>
+          <div className="text-2xl md:text-3xl font-extrabold text-neutral-950 tracking-tight">{value}</div>
         </div>
         {visual}
       </div>
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-100 text-[11px]">
+      <div className="flex flex-col items-start gap-1 md:flex-row md:items-center md:justify-between md:gap-2 pt-2 border-t border-neutral-100 text-[11px]">
         <span className="text-neutral-600">{note}</span>
         <Link href={href} className="text-sage-700 hover:text-sage-900 font-semibold shrink-0">
           {linkLabel} &rarr;
@@ -87,7 +87,7 @@ export function DashboardMetricCards({ summary }: DashboardMetricCardsProps) {
   const views = summary?.total_views ?? 0;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
       <MetricCard
         label="Skor Kelengkapan Iklan"
         value={<>{summary?.smart_score ?? 0}<span className="text-xs text-neutral-500 font-medium">/100</span></>}

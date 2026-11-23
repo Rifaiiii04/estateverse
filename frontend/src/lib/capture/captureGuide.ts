@@ -37,10 +37,18 @@ export function captureStage(targets: CaptureTarget[], target: CaptureTarget): C
   return { index, total, label: STAGE_LABELS[target.ring] };
 }
 
+/** The live phone pose the hint is computed from; `holding` is true while the aiming ring is filling. */
+export interface GuidePose {
+  quaternion: Quaternion;
+  speed: number;
+  holding: boolean;
+}
+
 // guideHint turns the offset between the live camera and the next target into one short instruction.
-export function guideHint(targets: CaptureTarget[], target: CaptureTarget, pose: Quaternion, speed: number): string {
-  if (speed > STEADY_SPEED_DEG_S * 1.5) return "Terlalu cepat — gerakkan HP lebih pelan";
-  const c = directionFromAngles(target.yaw, target.pitch).applyQuaternion(pose.clone().invert());
+export function guideHint(targets: CaptureTarget[], target: CaptureTarget, pose: GuidePose): string {
+  if (pose.holding) return "Pas! Tahan HP diam sampai lingkaran hijau penuh";
+  if (pose.speed > STEADY_SPEED_DEG_S * 1.5) return "Terlalu cepat — gerakkan HP lebih pelan";
+  const c = directionFromAngles(target.yaw, target.pitch).applyQuaternion(pose.quaternion.clone().invert());
   const off = Math.acos(Math.max(-1, Math.min(1, -c.z))) * RAD;
   if (off <= toleranceFor(target)) return "Pas! Tahan HP diam sampai lingkaran hijau penuh";
   const index = targets.findIndex((t) => t.id === target.id);

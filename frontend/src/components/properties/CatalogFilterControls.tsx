@@ -88,11 +88,11 @@ export function TypeTabs({ filters, stats, isEn }: { filters: CatalogFilters; st
 }
 
 // WalkInsideToggle is the checkbox that keeps only listings with a Walk Inside 360° tour.
-export function WalkInsideToggle({ filters, count, isEn }: { filters: CatalogFilters; count: number; isEn: boolean }) {
+export function WalkInsideToggle({ filters, count }: { filters: CatalogFilters; count: number }) {
   return (
     <label className="flex shrink-0 cursor-pointer items-center gap-2 text-sm font-medium text-neutral-800">
       <Checkbox checked={filters.walkInside} onCheckedChange={filters.setWalkInside} />
-      <span>{isEn ? "Has Walk Inside 360°" : "Ada Walk Inside 360°"}</span>
+      <span>Walk Inside 360°</span>
       <Badge variant="secondary">{count}</Badge>
     </label>
   );

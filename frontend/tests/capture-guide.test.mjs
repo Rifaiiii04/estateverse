@@ -26,15 +26,24 @@ test("stages count one sweep per tilt level along the sequential path", () => {
   assert.deepEqual(captureStage(plan, plan[6]), { index: 2, total: 3, label: "Bawah" });
 });
 
+// pose wraps a heading into the live pose the hint reads.
+function pose(yaw, pitch, speed = 0, holding = false) {
+  return { quaternion: poseFacing(yaw, pitch), speed, holding };
+}
+
 test("hints point to the next photo instead of asking the user to search", () => {
-  assert.match(guideHint(plan, plan[1], poseFacing(0, 0), 0), /kanan/);
-  assert.match(guideHint(plan, plan[1], poseFacing(40, 0), 0), /kiri/);
-  assert.match(guideHint(plan, plan[1], poseFacing(20, 0), 0), /Tahan/);
-  assert.match(guideHint(plan, plan[1], poseFacing(20, 0), 20), /Terlalu cepat/);
+  assert.match(guideHint(plan, plan[1], pose(0, 0)), /kanan/);
+  assert.match(guideHint(plan, plan[1], pose(40, 0)), /kiri/);
+  assert.match(guideHint(plan, plan[1], pose(20, 0)), /Tahan/);
+  assert.match(guideHint(plan, plan[1], pose(20, 0, 20)), /Terlalu cepat/);
+});
+
+test("a hold in progress keeps saying hold even when the aim drifts slightly", () => {
+  assert.match(guideHint(plan, plan[1], pose(25, 0, 0, true)), /Tahan/);
 });
 
 test("entering a new ring asks for a pure tilt before any turning", () => {
-  assert.match(guideHint(plan, plan[4], poseFacing(80, 0), 0), /Dongakkan HP ke atas tanpa memutar badan/);
-  assert.match(guideHint(plan, plan[6], poseFacing(140, 55), 0), /tundukkan HP ke bawah/);
-  assert.match(guideHint(plan, plan[4], poseFacing(80, 50), 0), /Naikkan/);
+  assert.match(guideHint(plan, plan[4], pose(80, 0)), /Dongakkan HP ke atas tanpa memutar badan/);
+  assert.match(guideHint(plan, plan[6], pose(140, 55)), /tundukkan HP ke bawah/);
+  assert.match(guideHint(plan, plan[4], pose(80, 50)), /Naikkan/);
 });
