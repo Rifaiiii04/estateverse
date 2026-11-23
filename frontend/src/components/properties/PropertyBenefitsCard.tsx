@@ -17,10 +17,11 @@ export function PropertyBenefitsCard({ benefits }: PropertyBenefitsCardProps) {
     <div className="bg-white p-5 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-3.5">
       <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
         <h3 className="text-sm sm:text-base font-bold text-neutral-950 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-sage-600" />
+          {/* The icon and count badge are hidden on phones to keep the heading on one clean line. */}
+          <Sparkles className="hidden sm:block w-4 h-4 text-sage-600" />
           <span>Keunggulan Lokasi &amp; Benefit Rumah</span>
         </h3>
-        <span className="text-[11px] font-semibold text-sage-700 bg-sage-50 border border-sage-200 px-2.5 py-0.5 rounded-lg">
+        <span className="hidden sm:inline-block text-[11px] font-semibold text-sage-700 bg-sage-50 border border-sage-200 px-2.5 py-0.5 rounded-lg">
           {displayBenefits.length} Keunggulan
         </span>
       </div>

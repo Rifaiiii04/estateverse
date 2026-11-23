@@ -14,11 +14,11 @@ export const en = {
     postProperty: "Sell My Home",
   },
   hero: {
-    badge: "Walk Inside 360° straight from your phone — no expensive photographers",
-    titleLine1: "Sell & find homes",
-    titleLine2: "without costly middlemen",
+    badge: "For first-time buyers and independent sellers",
+    titleLine1: "Buy without wasted viewings,",
+    titleLine2: "sell without commission",
     description:
-      "Sellers simply record each room with their phone and EstateVerse turns it into a Walk Inside 360° tour buyers can explore from anywhere. First-time buyers see inside before visiting and contact the seller directly on WhatsApp.",
+      "Many homes turn out to look nothing like their photos, and small sellers struggle to compete with big agencies. On EstateVerse, buyers see every room and check the installment before travelling to a viewing. Sellers list their own home and buyers contact them directly on WhatsApp.",
     ctaPrimary: "Browse Homes",
     ctaSecondary: "Sell My Home",
   },
@@ -26,10 +26,7 @@ export const en = {
     titleLine1: "Find a Home That Fits",
     titleLine2: "Your Budget",
     description: "Filter by city, type, and price — from affordable first homes upward, with Walk Inside 360° tours recorded by their sellers.",
-    tabBuy: "Buy",
-    tabRent: "Rent",
-    tabNew: "Has Walk Inside 360°",
-    tabCommercial: "Shophouse & Other",
+    walkInside: "Walk Inside 360°",
     locLabel: "Region / City",
     locPlaceholder: "All Cities in Indonesia",
     typeLabel: "Property Type",
@@ -41,6 +38,61 @@ export const en = {
     moreFilters: "+ More Filters",
     reset: "Reset",
     submit: "Search Homes",
+  },
+  problems: {
+    badge: "Common frustrations",
+    titleLine1: "Finding and selling a home",
+    titleLine2: "shouldn't be this hard",
+    subtitle: "We keep hearing the same complaints from first-time buyers and independent sellers. This is what EstateVerse helps fix.",
+    problemLabel: "The problem",
+    solutionLabel: "How we help",
+    groups: [
+      {
+        audience: "For buyers",
+        items: [
+          { problem: "The listing photos look great, the real home doesn't", solution: "See every room from every angle in a Walk Inside tour recorded at the home itself, not just a few hand-picked, edited photos." },
+          { problem: "A long trip to a viewing that wasn't a fit", solution: "Shortlist from home first: look inside and check the room sizes, then visit only the homes that really fit." },
+          { problem: "Unsure whether the mortgage is affordable", solution: "Every listing has an affordability calculator, and the smart assistant explains the documents and costs of buying." },
+        ],
+      },
+      {
+        audience: "For sellers",
+        items: [
+          { problem: "Agent commission eats into the sale", solution: "List your home yourself with no commission. Buyers contact you directly on WhatsApp." },
+          { problem: "360° photographers and promo videos are expensive", solution: "Just record with the phone you already own. Room tours and promo videos for WhatsApp Status or Reels are made automatically." },
+          { problem: "Tired of showing the home to casual browsers", solution: "Buyers have already seen inside before they come, so more of your time goes to serious buyers." },
+        ],
+      },
+    ],
+  },
+  walkInside: {
+    badge: "What is Walk Inside 360°?",
+    title: "Like visiting in person, but from your phone",
+    desc: "Walk Inside is a 360° tour inside the home. You can look in every direction, from walls and floor to the ceiling, then move to the next room with on-screen arrows. Sellers record it themselves with a phone, right inside the home.",
+    compareTitle: "The same home, two ways to advertise",
+    illustration: "Illustration",
+    rooms: ["Living room", "Kitchen", "Bedroom"],
+    without: {
+      label: "Regular listing",
+      caption: "1 of 8 photos chosen by the seller",
+      points: [
+        "Only the angles the seller picked; the rest of the room stays hidden",
+        "Room sizes can only be guessed from photos",
+        "Photos may be edited or taken somewhere else",
+        "The real condition only shows up at the viewing",
+      ],
+    },
+    with: {
+      label: "With Walk Inside",
+      caption: "The view turns in every direction",
+      points: [
+        "Look everywhere: walls, floor, and ceiling",
+        "Move between rooms as if walking through the home",
+        "Sellers can mark the approximate size of each room",
+        "A badge shows when the tour was recorded at the property",
+      ],
+    },
+    cta: "See homes with Walk Inside",
   },
   features: {
     titleLine1: "How",
@@ -60,20 +112,6 @@ export const en = {
     ],
   },
   impact: {
-    badge: "Why EstateVerse?",
-    titleLine1: "Selling made easier,",
-    titleLine2: "buying with confidence",
-    problemTitle: "The problem",
-    problem:
-      "Individual sellers and small developers struggle to compete: professional 360°/3D photography is expensive, agent commissions cut into proceeds, and buyers make repeated site visits to homes that turn out to be unsuitable.",
-    solutionTitle: "The EstateVerse solution",
-    solution:
-      "Walk Inside 360° is recorded with the phone sellers already own and processed automatically. Buyers look inside first, check affordability, then contact the seller directly.",
-    benefits: [
-      { title: "Sell without big costs", text: "No 360° photographer or agent commission needed. Your phone is enough to create a Walk Inside 360°." },
-      { title: "Record once, viewed anytime", text: "Buyers from any city can explore your home whenever they like, without you having to be there." },
-      { title: "Better-targeted visits", text: "Buyers have already seen inside and checked affordability before visiting, so nobody wastes time or travel money." },
-    ],
     statsTitle: "EstateVerse in numbers",
     statsNote: "Figures are computed from the EstateVerse database when this page loads — not estimates.",
     stats: {
@@ -106,37 +144,41 @@ export const en = {
   faq: {
     titleLine1: "Frequently",
     titleLine2: "Asked Questions",
-    subtitle: "About recording Walk Inside 360° tours, contacting sellers, and listing a home on EstateVerse.",
+    subtitle: "About seeing a home before visiting, contacting sellers, installments, and listing on EstateVerse.",
     askAiLabel: "Still have questions?",
     askAiDesc: "The Smart Assistant can help with mortgages, documents, costs, and selling tips.",
     askAiBtn: "Ask the Assistant",
     items: [
       {
-        q: "How do I record a Walk Inside 360° tour of my home?",
-        a: "Open your listing's edit page on your phone (Chrome or Safari), choose Record Room, and rotate the phone around its lens from the middle of the room, following the on-screen dots. Photos are taken automatically — about 2 minutes per room — and stitched into a 360° panorama.",
+        q: "How is Walk Inside 360° different from regular photos?",
+        a: "Photos only show the angles a seller chose. In Walk Inside you can look in every direction in each room and move between rooms, so you see the home's condition before travelling to a viewing.",
+      },
+      { q: "Does EstateVerse take a commission?", a: "No. Buyers contact sellers directly via WhatsApp or the visit-request form." },
+      {
+        q: "How do I know whether the installment is affordable?",
+        a: "Every listing has an affordability calculator: enter salary, down payment, and tenor to see whether the installment stays under 30% of income. The Smart Assistant can help too.",
+      },
+      {
+        q: "Can I trust the listing data?",
+        a: "Sellers enter the data themselves. Walk Inside helps you check the rooms before visiting, and a badge shows when a tour was recorded at the property. Still check original documents (title certificate and land tax) when meeting the seller.",
+      },
+      {
+        q: "I'm a seller. How do I create a Walk Inside tour?",
+        a: "Open your listing's edit page on your phone (Chrome or Safari), choose Record Room, and rotate the phone around its lens from the middle of the room, following the on-screen dots. Photos are taken automatically, about 2 minutes per room, and turned into a 360° tour.",
       },
       {
         q: "Do I need a 360° camera or a special app?",
         a: "No. Any phone with a camera and motion sensors works, right in the browser. If you already have 360° photos from a dedicated camera, you can upload them too.",
       },
-      { q: "Does EstateVerse take a commission?", a: "No. Buyers contact sellers directly via WhatsApp or the visit-request form." },
-      {
-        q: "How can buyers tell if the installment is affordable?",
-        a: "Every listing has an affordability calculator: enter salary, down payment, and tenor to see whether the installment stays under 30% of income. The Smart Assistant can help too.",
-      },
-      {
-        q: "Can I trust the listing data?",
-        a: "Sellers enter the data themselves. The Walk Inside 360° tour helps you verify the rooms before visiting — still check original documents (title certificate and land tax) when meeting the seller.",
-      },
     ],
   },
   footer: {
-    bannerTitleLine1: "Record your home by phone,",
-    bannerTitleLine2: "let buyers explore",
-    bannerDesc: "EstateVerse helps individual sellers and small developers market homes with Walk Inside 360° tours — directly to buyers, without costly middlemen.",
+    bannerTitleLine1: "Sell without commission,",
+    bannerTitleLine2: "buy without wasted viewings",
+    bannerDesc: "EstateVerse connects individual sellers and small developers directly with serious buyers, and helps first-time buyers decide with confidence.",
     exploreBtn: "Browse Homes",
     consultBtn: "Ask the Assistant",
-    statement: "Technology so small sellers can compete and first-time buyers can decide with confidence.",
+    statement: "So small sellers can compete and first-time buyers can decide with confidence.",
     rights: "All rights reserved.",
     privacy: "Privacy Policy",
   },

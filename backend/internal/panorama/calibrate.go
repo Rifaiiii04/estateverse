@@ -14,6 +14,16 @@ type Calibration struct {
 	Targets       []CaptureTarget `json:"targets"`
 }
 
+// EstimateFOV measures a capture's horizontal field of view from its overlaps, returning fallback when it cannot.
+// It is the starting lens guess handed to Hugin, which then refines it from matched features.
+func EstimateFOV(inputs []FrameInput, fallback float64) float64 {
+	frames, err := buildFrames(inputs)
+	if err != nil {
+		return fallback
+	}
+	return estimateFOV(frames, findNeighbors(frames), fallback)
+}
+
 // Calibrate estimates the lens from three overlapping raw views without producing or storing a panorama.
 func Calibrate(inputs []FrameInput) (*Calibration, error) {
 	if len(inputs) != 3 {

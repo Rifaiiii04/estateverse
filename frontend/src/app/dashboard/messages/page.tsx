@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageSquare, Copy, ExternalLink, Check, Sparkles } from "lucide-react";
+import { Copy, ExternalLink, Check, Sparkles } from "lucide-react";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { useToast } from "@/context/ToastContext";
+import { Button, buttonVariants } from "@/components/ui/Button";
+import { cn } from "@/lib/utils/cn";
 
 interface Template {
   id: string;
@@ -43,8 +46,14 @@ export default function DashboardMessagesPage() {
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const copyTemplate = (tpl: Template) => {
-    navigator.clipboard.writeText(tpl.body);
+  // Copies a template and only reports success once the browser has actually written it to the clipboard.
+  const copyTemplate = async (tpl: Template) => {
+    try {
+      await navigator.clipboard.writeText(tpl.body);
+    } catch {
+      toast.error("Browser menolak akses clipboard. Tekan lama teks template untuk menyalin manual.", "Gagal Menyalin");
+      return;
+    }
     setCopiedId(tpl.id);
     toast.success(`Template "${tpl.title}" berhasil disalin.`);
     setTimeout(() => setCopiedId(null), 2000);
@@ -67,11 +76,11 @@ export default function DashboardMessagesPage() {
           href="https://web.whatsapp.com"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 bg-neutral-950 text-white hover:bg-neutral-800 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+          className={cn(buttonVariants({ size: "lg" }), "px-4 w-full sm:w-auto")}
         >
-          <MessageSquare className="w-4 h-4 text-emerald-400" />
+          <WhatsAppIcon className="w-4 h-4" />
           <span>Buka WhatsApp Web</span>
-          <ExternalLink className="w-3.5 h-3.5 text-neutral-500" />
+          <ExternalLink className="w-3.5 h-3.5 opacity-80" />
         </a>
       </div>
 
@@ -99,23 +108,19 @@ export default function DashboardMessagesPage() {
             </div>
 
             <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => copyTemplate(tpl)}
-                className="w-full inline-flex items-center justify-center gap-2 border border-neutral-200 hover:border-neutral-950 text-neutral-800 text-xs font-semibold px-4 py-2 rounded-xl transition-all hover:bg-neutral-50 cursor-pointer"
-              >
+              <Button variant="outline" onClick={() => copyTemplate(tpl)} className="w-full">
                 {copiedId === tpl.id ? (
                   <>
-                    <Check className="w-4 h-4 text-emerald-600" />
+                    <Check className="text-emerald-600" />
                     <span>Tersalin ke Clipboard!</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4 text-neutral-500" />
+                    <Copy className="text-muted-foreground" />
                     <span>Salin Pesan Template</span>
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         ))}

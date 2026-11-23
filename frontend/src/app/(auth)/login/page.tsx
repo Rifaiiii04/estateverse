@@ -74,7 +74,6 @@ export default function LoginPage() {
             />
             <Button
               type="submit"
-              variant="primary"
               size="lg"
               className="w-full mt-2"
               isLoading={isLoading}

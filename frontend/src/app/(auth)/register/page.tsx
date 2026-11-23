@@ -107,7 +107,6 @@ export default function RegisterPage() {
             />
             <Button
               type="submit"
-              variant="primary"
               size="lg"
               className="w-full mt-2"
               isLoading={isLoading}

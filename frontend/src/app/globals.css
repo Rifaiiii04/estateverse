@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "./ui-theme.css";
 @source "../**/*.{js,ts,jsx,tsx}";
 
 @theme {
@@ -14,6 +16,18 @@
   --color-sage-700: #295246;
   --color-sage-800: #214138;
   --color-sage-900: #1b352e;
+
+  /* Slow look-around pan used by the landing's Walk Inside illustration. */
+  --animate-pan-view: pan-view 18s ease-in-out infinite alternate;
+
+  @keyframes pan-view {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
 }
 
 :root {
@@ -32,6 +46,12 @@
   --accent-soft: #e3ede9;
 }
 
+/* Clip (not hide) sideways overflow on both roots: phones can no longer pan right, and sticky headers keep working. */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
@@ -42,7 +62,6 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
 /* Harmonized form controls and interactive triggers */

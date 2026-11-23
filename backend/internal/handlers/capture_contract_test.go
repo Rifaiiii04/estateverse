@@ -27,7 +27,8 @@ type captureRecorder struct {
 }
 
 // StartCapture records exactly the bytes and poses handed to the common backend stitching service.
-func (s *captureRecorder) StartCapture(_ context.Context, owner, property int64, name string, frames []services.CaptureFrame) (*models.TourRoom, error) {
+func (s *captureRecorder) StartCapture(_ context.Context, owner, property int64, name string, frames []services.CaptureFrame,
+	_ services.CaptureExtras) (*models.TourRoom, error) {
 	s.calls = append(s.calls, captureCall{owner, property, name, frames})
 	return &models.TourRoom{ID: 19, PropertyID: property, Name: name, Status: models.TourStatusProcessing}, nil
 }

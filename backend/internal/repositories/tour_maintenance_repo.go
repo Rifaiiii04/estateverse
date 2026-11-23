@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"strings"
 
 	"projectfai/backend/internal/models"
 )
@@ -18,6 +19,15 @@ func (r *mysqlTourRepo) DeleteOrphanRooms(ctx context.Context) ([]models.TourRoo
 	return rooms, err
 }
 
-// prefixedRoomColumns qualifies room columns with the "t" alias for join queries.
-const prefixedRoomColumns = `t.id, t.property_id, t.name, t.note, t.status, t.panorama_path, t.preview_path,
-	t.quality_score, t.error_message, t.sort_order, t.created_at`
+// prefixedRoomColumns qualifies every room column with the "t" alias for join queries. It is derived from
+// tourRoomColumns so join queries always return exactly the columns scanTourRoom reads.
+var prefixedRoomColumns = prefixColumns(tourRoomColumns, "t")
+
+// prefixColumns prepends a table alias to each name of a comma-separated column list.
+func prefixColumns(columns, alias string) string {
+	parts := strings.Split(columns, ",")
+	for i, part := range parts {
+		parts[i] = alias + "." + strings.TrimSpace(part)
+	}
+	return strings.Join(parts, ", ")
+}

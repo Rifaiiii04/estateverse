@@ -10,13 +10,17 @@ import { SearchFilterBar } from "@/components/home/SearchFilterBar";
 import { FeatureShowcase } from "@/components/home/FeatureShowcase";
 import { AiConsultantSection } from "@/components/home/AiConsultantSection";
 import { ImpactSection } from "@/components/home/ImpactSection";
+import { ProblemSolutionSection } from "@/components/home/ProblemSolutionSection";
+import { WalkInsideExplainer } from "@/components/home/WalkInsideExplainer";
 import { AudienceSection } from "@/components/home/AudienceSection";
 import { FaqSection } from "@/components/home/FaqSection";
 import { PropertyCard } from "@/components/properties/PropertyCard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useLanguage } from "@/context/LanguageContext";
+import { cn } from "@/lib/utils/cn";
+import { PAGE_CONTAINER } from "@/lib/utils/layout";
 
-// HomePage presents EstateVerse: Walk Inside 360° recorded by phone, for small sellers and first-time buyers.
+// HomePage presents EstateVerse from the user's side: the problems of first-time buyers and small sellers, then how we help.
 export default function HomePage() {
   const { t } = useLanguage();
   const [dbProperties, setDbProperties] = useState<Property[]>([]);
@@ -51,9 +55,14 @@ export default function HomePage() {
 
         <SearchFilterBar />
 
-        {/* Featured Properties Section — Full-bleed wide showcase (1840px, 4-col on XL) */}
+        {/* User-first story: the buyer's and seller's problems, then what Walk Inside is, then real listings. */}
+        <ProblemSolutionSection />
+
+        <WalkInsideExplainer />
+
+        {/* Featured Properties Section — shared 1440px container, 4-col on XL */}
         <section id="properties" className="py-12 sm:py-16 bg-neutral-50/50 border-y border-neutral-100">
-          <div className="w-full max-w-[1840px] mx-auto px-4 sm:px-8 lg:px-14 space-y-8">
+          <div className={cn(PAGE_CONTAINER, "space-y-8")}>
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-neutral-200/70 pb-4">
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-950">
                 {t.catalog.title}
@@ -77,11 +86,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        <ImpactSection />
+        <FeatureShowcase />
 
         <AudienceSection />
 
-        <FeatureShowcase />
+        <ImpactSection />
 
         <AiConsultantSection />
 

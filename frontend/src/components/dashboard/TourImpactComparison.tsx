@@ -35,7 +35,7 @@ export function TourImpactComparison({ comparison }: { comparison?: TourComparis
   return (
     <section aria-labelledby="tour-impact-title" className="bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 space-y-4">
       <div className="flex items-center gap-2">
-        <Scale className="w-5 h-5 text-neutral-900" aria-hidden="true" />
+        <Scale className="w-5 h-5 text-sage-600" aria-hidden="true" />
         <h2 id="tour-impact-title" className="text-base font-bold text-neutral-950">Dampak Walk Inside di Iklan Anda</h2>
       </div>
       <p className="text-xs text-neutral-700">Persentase kunjungan halaman iklan yang berlanjut menjadi permintaan survei (leads).</p>

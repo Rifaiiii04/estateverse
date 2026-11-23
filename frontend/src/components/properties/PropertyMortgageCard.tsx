@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { Calculator } from "lucide-react";
 import { formatIDR, formatRupiahInput, parseRupiahInput } from "@/lib/utils/formatters";
 import { assessAffordability, AffordabilityLevel, minimumIncomeFor, monthlyInstallment, residualIncome } from "@/lib/utils/mortgage";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 interface PropertyMortgageCardProps {
   price: number;
@@ -42,20 +44,18 @@ export function PropertyMortgageCard({ price }: PropertyMortgageCardProps) {
       <ChoiceGroup label="Tenor" options={TENOR_OPTIONS} value={years} suffix=" thn" onChange={setYears} />
 
       <div className="grid grid-cols-2 gap-3">
-        <label className="text-xs font-semibold text-neutral-700 space-y-1">
-          <span className="block">Bunga per tahun (%)</span>
-          <input inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-sm" />
-        </label>
-        <label className="text-xs font-semibold text-neutral-700 space-y-1">
-          <span className="block">Gaji bulanan (opsional)</span>
-          <input inputMode="numeric" value={incomeRaw} placeholder="Rp 6.000.000" onChange={(e) => setIncomeRaw(formatRupiahInput(e.target.value))} className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-sm" />
-        </label>
+        <Input id="mortgage-rate" label="Bunga per tahun (%)" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
+        <Input id="mortgage-income" label="Gaji bulanan (opsional)" inputMode="numeric" value={incomeRaw} placeholder="Rp 6.000.000" onChange={(e) => setIncomeRaw(formatRupiahInput(e.target.value))} />
       </div>
       {income > 0 && (
-        <label className="block text-xs font-semibold text-neutral-700 space-y-1">
-          <span className="block">Pengeluaran rutin lain per bulan (makan, transport, cicilan lain)</span>
-          <input inputMode="numeric" value={expensesRaw} placeholder="Rp 3.000.000" onChange={(e) => setExpensesRaw(formatRupiahInput(e.target.value))} className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-sm" />
-        </label>
+        <Input
+          id="mortgage-expenses"
+          label="Pengeluaran rutin lain per bulan (makan, transport, cicilan lain)"
+          inputMode="numeric"
+          value={expensesRaw}
+          placeholder="Rp 3.000.000"
+          onChange={(e) => setExpensesRaw(formatRupiahInput(e.target.value))}
+        />
       )}
 
       <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200/70 space-y-1" aria-live="polite">
@@ -98,18 +98,16 @@ function ChoiceGroup({ label, options, value, suffix, onChange }: {
       <legend className="text-xs font-semibold text-neutral-700">{label}</legend>
       <div className="flex gap-2">
         {options.map((opt) => (
-          <button
+          <Button
             key={opt}
-            type="button"
+            variant={value === opt ? "default" : "outline"}
             aria-pressed={value === opt}
             onClick={() => onChange(opt)}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border cursor-pointer ${
-              value === opt ? "bg-sage-600 text-white border-sage-600" : "border-neutral-300 text-neutral-700 hover:border-sage-500"
-            }`}
+            className="flex-1"
           >
             {opt}
             {suffix}
-          </button>
+          </Button>
         ))}
       </div>
     </fieldset>

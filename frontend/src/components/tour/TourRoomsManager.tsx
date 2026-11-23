@@ -6,10 +6,12 @@ import type { TourRoom } from "@/types/tour";
 import { deleteTourRoom, getOwnerTourRooms, importTourPanorama, updateTourRoom } from "@/lib/api/tours";
 import { captureSupportIssue, isLikelyDesktop } from "@/lib/capture/frameGrabber";
 import { useToast } from "@/context/ToastContext";
-import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils/cn";
+import { Button, buttonVariants } from "@/components/ui/Button";
 import { SphereCaptureModal } from "@/components/capture/SphereCaptureModal";
 import { TourRoomCard } from "./TourRoomCard";
 import { HotspotEditor } from "./HotspotEditor";
+import { RoomLayoutEditor } from "./layout/RoomLayoutEditor";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -20,11 +22,13 @@ export function TourRoomsManager({ propertyId }: { propertyId: number }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [layoutId, setLayoutId] = useState<number | null>(null);
   // Rendered only after the property loads on the client, so browser checks are safe in initializers.
   const [captureIssue] = useState<string | null>(() => captureSupportIssue());
   const [isDesktop] = useState(() => isLikelyDesktop());
   const previousStatuses = useRef<Map<number, TourRoom["status"]> | null>(null);
   const editingRoom = useMemo(() => rooms.find((r) => r.id === editingId) ?? null, [rooms, editingId]);
+  const layoutRoom = useMemo(() => rooms.find((r) => r.id === layoutId) ?? null, [rooms, layoutId]);
 
   // applyRooms updates the list and announces when background stitching reaches a terminal state.
   const applyRooms = useCallback((next: TourRoom[]) => {
@@ -99,18 +103,19 @@ export function TourRoomsManager({ propertyId }: { propertyId: number }) {
   const recordBlocked = captureIssue ?? (isDesktop ? "Perekaman memakai kamera dan sensor gerak HP. Buka halaman ini di HP Anda." : null);
 
   return (
-    <section aria-labelledby="tour-manager-title" className="bg-white border border-sage-200 rounded-2xl p-5 shadow-2xs space-y-4">
+    // On phones the section sits directly on the page so each room card is not a card inside a card.
+    <section aria-labelledby="tour-manager-title" className="space-y-4 md:bg-white md:border md:border-sage-200 md:rounded-2xl md:p-5 md:shadow-2xs">
       <div className="space-y-3">
-        <div className="space-y-1 border-b border-neutral-100 pb-2.5">
+        <div className="space-y-1 border-b border-neutral-200 md:border-neutral-100 pb-2.5">
           <h2 id="tour-manager-title" className="text-sm font-bold text-neutral-950">Walk Inside 360°</h2>
           <p className="text-xs text-neutral-700">Tekan Rekam Ruangan, kamera HP terbuka, lalu berdiri di tengah ruangan dan putar HP di titik yang sama — sistem memotret otomatis dan menyusunnya menjadi panorama 360°.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => setIsRecording(true)} disabled={Boolean(recordBlocked)}>
-            <Camera className="w-4 h-4" aria-hidden="true" /> Rekam Ruangan
+        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap">
+          <Button type="button" className="w-full md:w-auto" onClick={() => setIsRecording(true)} disabled={Boolean(recordBlocked)}>
+            <Camera aria-hidden="true" /> Rekam Ruangan
           </Button>
-          <label className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-neutral-200 text-xs sm:text-sm font-semibold cursor-pointer hover:border-sage-600 focus-within:ring-2 focus-within:ring-sage-600/30">
-            <ImageUp className="w-4 h-4" aria-hidden="true" />
+          <label className={cn(buttonVariants({ variant: "outline" }), "w-full md:w-auto focus-within:ring-3 focus-within:ring-ring/50")}>
+            <ImageUp aria-hidden="true" />
             {isImporting ? "Mengunggah…" : "Unggah Foto 360"}
             <input type="file" accept="image/jpeg,image/png" className="sr-only" disabled={isImporting} onChange={(e) => handleImport(e.target.files?.[0])} />
           </label>
@@ -128,7 +133,7 @@ export function TourRoomsManager({ propertyId }: { propertyId: number }) {
       ) : (
         <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
           {rooms.map((room) => (
-            <TourRoomCard key={room.id} room={room} onUpdate={handleUpdate} onDelete={handleDelete} onEditHotspots={(r) => setEditingId(r.id)} />
+            <TourRoomCard key={room.id} room={room} onUpdate={handleUpdate} onDelete={handleDelete} onEditHotspots={(r) => setEditingId(r.id)} onEditLayout={(r) => setLayoutId(r.id)} />
           ))}
         </ul>
       )}
@@ -142,6 +147,7 @@ export function TourRoomsManager({ propertyId }: { propertyId: number }) {
         />
       )}
       {editingRoom && <HotspotEditor room={editingRoom} rooms={rooms} onClose={() => setEditingId(null)} onChanged={load} />}
+      {layoutRoom && <RoomLayoutEditor room={layoutRoom} onClose={() => setLayoutId(null)} onSaved={load} />}
     </section>
   );
 }

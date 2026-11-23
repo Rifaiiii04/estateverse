@@ -3,6 +3,9 @@
 import React, { useState } from "react";
 import { Flag, ShieldAlert } from "lucide-react";
 import { reportListing, ReportReason } from "@/lib/api/engagement";
+import { Button } from "@/components/ui/Button";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { Textarea } from "@/components/ui/Textarea";
 
 const REASONS: { value: ReportReason; label: string }[] = [
   { value: "scam", label: "Dugaan penipuan (minta transfer dulu, dll.)" },
@@ -10,6 +13,10 @@ const REASONS: { value: ReportReason; label: string }[] = [
   { value: "sold", label: "Rumah sudah terjual" },
   { value: "other", label: "Lainnya" },
 ];
+
+// On phones the report link becomes a full-width red button so it is easy to find and tap.
+const REPORT_BUTTON_MOBILE =
+  "max-sm:h-8 max-sm:w-full max-sm:px-2.5 max-sm:bg-destructive max-sm:text-destructive-foreground max-sm:hover:bg-destructive/90 max-sm:hover:no-underline";
 
 // SafetyNotice gives buyers anti-scam guidance and lets them report a suspicious listing.
 export function SafetyNotice({ propertyId }: { propertyId: number }) {
@@ -43,21 +50,31 @@ export function SafetyNotice({ propertyId }: { propertyId: number }) {
       {status === "sent" ? (
         <p role="status" className="text-xs font-semibold text-sage-800">Terima kasih, laporan Anda sudah kami terima.</p>
       ) : !isOpen ? (
-        <button type="button" onClick={() => setIsOpen(true)} className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 hover:underline cursor-pointer min-h-6">
-          <Flag className="w-3.5 h-3.5" aria-hidden="true" /> Laporkan iklan ini
-        </button>
+        <Button variant="link" size="sm" className={`px-0 text-amber-800 ${REPORT_BUTTON_MOBILE}`} onClick={() => setIsOpen(true)}>
+          <Flag aria-hidden="true" /> Laporkan iklan ini
+        </Button>
       ) : (
-        <div className="space-y-2">
-          <label htmlFor="report-reason" className="block text-xs font-semibold text-neutral-800">Alasan</label>
-          <select id="report-reason" value={reason} onChange={(e) => setReason(e.target.value as ReportReason)} className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-sm bg-white">
-            {REASONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-          </select>
-          <label htmlFor="report-note" className="block text-xs font-semibold text-neutral-800">Keterangan (opsional)</label>
-          <textarea id="report-note" rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-neutral-300 text-sm bg-white resize-none" />
-          {status === "error" && <p role="alert" className="text-xs text-rose-700">Laporan gagal dikirim. Coba lagi.</p>}
-          <button type="button" onClick={submit} disabled={status === "sending"} className="h-10 px-4 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold cursor-pointer disabled:opacity-60">
+        <div className="space-y-3">
+          <CustomSelect
+            label="Alasan"
+            options={REASONS}
+            value={reason}
+            onChange={(value) => setReason(value as ReportReason)}
+            className="[&_[data-slot=select-trigger]]:bg-background"
+          />
+          <Textarea
+            id="report-note"
+            label="Keterangan (opsional)"
+            rows={2}
+            maxLength={500}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className="resize-none bg-background"
+          />
+          {status === "error" && <p role="alert" className="text-sm text-destructive">Laporan gagal dikirim. Coba lagi.</p>}
+          <Button onClick={submit} isLoading={status === "sending"} className="bg-amber-700 text-white hover:bg-amber-800">
             {status === "sending" ? "Mengirim…" : "Kirim Laporan"}
-          </button>
+          </Button>
         </div>
       )}
     </section>

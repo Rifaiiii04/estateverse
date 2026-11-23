@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import { Check, Plus, X, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 const TEMPLATE_BENEFITS = [
   "Dekat sekolah & kampus",
@@ -79,41 +82,36 @@ export function PropertyBenefitsInput({
         {TEMPLATE_BENEFITS.map((tpl) => {
           const isSelected = benefits.some((b) => b.toLowerCase() === tpl.toLowerCase());
           return (
-            <button
+            <Button
               key={tpl}
-              type="button"
+              variant={isSelected ? "default" : "outline"}
+              size="sm"
+              aria-pressed={isSelected}
               onClick={() => toggleTemplate(tpl)}
-              className={`h-8 px-3 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 border cursor-pointer ${
-                isSelected
-                  ? "bg-sage-600 text-white border-sage-600 shadow-2xs"
-                  : "bg-neutral-50 hover:bg-white text-neutral-700 border-neutral-200 hover:border-sage-400"
-              }`}
             >
-              {isSelected ? <Check className="w-3.5 h-3.5 text-white" /> : <Plus className="w-3 h-3 text-neutral-500" />}
+              {isSelected ? <Check /> : <Plus />}
               <span>{tpl}</span>
-            </button>
+            </Button>
           );
         })}
 
         {/* Toggle "Other / Custom" Input Button */}
-        <button
-          type="button"
+        <Button
+          variant={showCustomInput ? "secondary" : "outline"}
+          size="sm"
+          aria-pressed={showCustomInput}
+          className={showCustomInput ? undefined : "border-dashed text-primary"}
           onClick={() => setShowCustomInput((prev) => !prev)}
-          className={`h-8 px-3 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 border cursor-pointer ${
-            showCustomInput
-              ? "bg-neutral-950 text-white border-neutral-950"
-              : "bg-white text-sage-700 border-dashed border-sage-400 hover:bg-sage-50"
-          }`}
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus />
           <span>Lainnya (Ketik Sendiri)</span>
-        </button>
+        </Button>
       </div>
 
       {/* Custom Benefit Input Row when "Other" is active */}
       {showCustomInput && (
-        <div className="flex items-center gap-2 bg-neutral-50 p-2 rounded-xl border border-neutral-200">
-          <input
+        <div className="flex items-center gap-2 rounded-lg bg-muted p-2">
+          <Input
             type="text"
             value={customText}
             onChange={(e) => setCustomText(e.target.value)}
@@ -123,17 +121,14 @@ export function PropertyBenefitsInput({
                 handleAddCustom();
               }
             }}
+            aria-label="Benefit lainnya"
             placeholder="Contoh: 5 menit ke Alun-alun, dekat SD negeri, air PDAM lancar..."
-            className="flex-1 h-9 bg-white border border-neutral-200 rounded-lg px-3 text-xs text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:border-sage-600"
+            className="flex-1 bg-background"
           />
-          <button
-            type="button"
-            onClick={handleAddCustom}
-            className="h-9 px-3.5 rounded-lg bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer shrink-0"
-          >
-            <Plus className="w-3.5 h-3.5" />
+          <Button onClick={handleAddCustom} className="shrink-0">
+            <Plus />
             <span>Tambah</span>
-          </button>
+          </Button>
         </div>
       )}
 
@@ -142,20 +137,19 @@ export function PropertyBenefitsInput({
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
           <span className="text-[11px] font-semibold text-neutral-500 mr-1">Benefit Kustom:</span>
           {customAddedBenefits.map((customItem) => (
-            <span
-              key={customItem}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sage-50 border border-sage-200 text-sage-800 text-xs font-semibold"
-            >
+            <Badge key={customItem} variant="secondary" className="h-6 pr-0.5">
               <span>{customItem}</span>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="size-5 hover:text-destructive"
                 onClick={() => removeBenefit(customItem)}
-                className="text-sage-600 hover:text-rose-600 cursor-pointer"
+                aria-label={`Hapus benefit ${customItem}`}
                 title="Hapus benefit ini"
               >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
+                <X />
+              </Button>
+            </Badge>
           ))}
         </div>
       )}

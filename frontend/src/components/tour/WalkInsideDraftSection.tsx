@@ -3,9 +3,10 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { useEffect, useRef, useState } from "react";
 import { Camera, ImageUp, Smartphone, Trash2 } from "lucide-react";
-import type { CapturedFrame, DraftTourRoom } from "@/types/tour";
+import type { CaptureResult, DraftTourRoom } from "@/types/tour";
 import { captureSupportIssue, isLikelyDesktop } from "@/lib/capture/frameGrabber";
-import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils/cn";
+import { Button, buttonVariants } from "@/components/ui/Button";
 import { SphereCaptureModal } from "@/components/capture/SphereCaptureModal";
 
 /** Recorded rooms stay in the phone's memory until saving (~8 MB each), so the draft is capped. */
@@ -30,10 +31,10 @@ export function WalkInsideDraftSection({ rooms, onChange }: WalkInsideDraftSecti
   }, [rooms]);
   useEffect(() => () => roomsRef.current.forEach((r) => URL.revokeObjectURL(r.thumbUrl)), []);
 
-  // Adds a freshly recorded room to the draft list.
-  const addCapture = (name: string, frames: CapturedFrame[]) => {
+  // Adds a freshly recorded room (frames plus phone height and GPS fix) to the draft list.
+  const addCapture = (name: string, { frames, extras }: CaptureResult) => {
     if (frames.length === 0 || roomsRef.current.length >= MAX_DRAFT_ROOMS) return;
-    const room: DraftTourRoom = { key: `c-${Date.now()}`, name, kind: "capture", frames, thumbUrl: URL.createObjectURL(frames[0].blob) };
+    const room: DraftTourRoom = { key: `c-${Date.now()}`, name, kind: "capture", frames, extras, thumbUrl: URL.createObjectURL(frames[0].blob) };
     onChange([...roomsRef.current, room]);
   };
 
@@ -63,10 +64,10 @@ export function WalkInsideDraftSection({ rooms, onChange }: WalkInsideDraftSecti
 
       <div className="flex flex-wrap gap-2">
         <Button type="button" onClick={() => setIsRecording(true)} disabled={Boolean(recordBlocked) || isFull}>
-          <Camera className="w-4 h-4" aria-hidden="true" /> Rekam Ruangan
+          <Camera aria-hidden="true" /> Rekam Ruangan
         </Button>
-        <label className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-neutral-200 text-xs sm:text-sm font-semibold cursor-pointer hover:border-sage-600 focus-within:ring-2 focus-within:ring-sage-600/30">
-          <ImageUp className="w-4 h-4" aria-hidden="true" /> Unggah Foto 360
+        <label className={cn(buttonVariants({ variant: "outline" }), "focus-within:ring-3 focus-within:ring-ring/50")}>
+          <ImageUp aria-hidden="true" /> Unggah Foto 360
           <input type="file" accept="image/jpeg,image/png" className="sr-only" disabled={isFull} onChange={(e) => addImport(e.target.files?.[0])} />
         </label>
       </div>
@@ -84,9 +85,9 @@ export function WalkInsideDraftSection({ rooms, onChange }: WalkInsideDraftSecti
               <img src={room.thumbUrl} alt={`Ruangan ${room.name}`} className="w-full aspect-video object-cover bg-neutral-100" />
               <div className="flex items-center justify-between gap-1 px-2 py-1.5">
                 <span className="text-xs font-semibold text-neutral-900 truncate">{room.name}</span>
-                <button type="button" onClick={() => remove(room.key)} aria-label={`Hapus ${room.name}`} className="w-8 h-8 rounded-lg text-rose-700 hover:bg-rose-50 inline-flex items-center justify-center cursor-pointer">
-                  <Trash2 className="w-4 h-4" aria-hidden="true" />
-                </button>
+                <Button variant="destructive" size="icon-sm" onClick={() => remove(room.key)} aria-label={`Hapus ${room.name}`}>
+                  <Trash2 aria-hidden="true" />
+                </Button>
               </div>
             </li>
           ))}

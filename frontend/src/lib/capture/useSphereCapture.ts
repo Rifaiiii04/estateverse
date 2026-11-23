@@ -2,7 +2,7 @@
 
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { Vector3 } from "three";
-import type { CapturedFrame, TourRoom } from "@/types/tour";
+import type { CapturedFrame, CaptureResult, TourRoom } from "@/types/tour";
 import { calibrateTourCapture, uploadTourCapture } from "@/lib/api/tours";
 import { calibratedTargets } from "../../../../shared/capturePolicy.ts";
 import { describeStartError, waitForSensor } from "./captureStartup";
@@ -15,14 +15,14 @@ import {
   toleranceFor,
 } from "./captureTargets";
 import { grabFrame, startRearCamera, stopStream } from "./frameGrabber";
-import { angularSpeed, OrientationSample, requestMotionPermission, screenAngle, subscribeOrientation, toWireQuat } from "./orientation";
+import { OrientationSample, requestMotionPermission, screenAngle, subscribeOrientation, toWireQuat } from "./orientation";
+import { advanceSteady, createSpeedTracker, SteadyState } from "./steadiness";
+import { useCaptureExtras } from "./useCaptureExtras";
 
 export type CapturePhase = "intro" | "starting" | "capturing" | "calibrating" | "review" | "uploading" | "done" | "error";
 
-export interface SteadyState {
-  targetId: number;
-  since: number;
-}
+/** Largest pose change allowed between the steady moment and the camera frame that is kept. */
+const SNAPSHOT_DRIFT_DEG = 3;
 
 // useSphereCapture runs the guided 360° recording: camera, motion sensors, automatic shots, and upload.
 export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
@@ -38,6 +38,7 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
   const framesRef = useRef(new Map<number, CapturedFrame>());
   const sampleRef = useRef<OrientationSample | null>(null);
   const speedRef = useRef(0);
+  const speedTrackerRef = useRef(createSpeedTracker());
   const steadyRef = useRef<SteadyState | null>(null);
   const grabbingRef = useRef(false);
   const frameSizeRef = useRef<{ w: number; h: number } | null>(null);
@@ -45,6 +46,7 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const sessionRef = useRef(0);
   const screenRef = useRef(0);
+  const { begin: beginExtras, stop: stopExtras, snapshot: snapshotExtras } = useCaptureExtras();
 
   // Switches phase in both state (for rendering) and ref (for sensor callbacks).
   const goTo = useCallback((next: CapturePhase) => {
@@ -52,14 +54,15 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
     setPhase(next);
   }, []);
 
-  // Releases the camera and stops listening to motion sensors.
+  // Releases the camera and stops listening to motion and GPS sensors.
   const stopDevices = useCallback(() => {
     sessionRef.current++;
     unsubscribeRef.current?.();
     unsubscribeRef.current = null;
     stopStream(streamRef.current);
     streamRef.current = null;
-  }, []);
+    stopExtras();
+  }, [stopExtras]);
 
   // planCapture reuses the initial photos and obtains additional directions measured by the backend.
   const planCapture = useCallback(async (session: number) => {
@@ -93,8 +96,8 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
         const blob = await grabFrame(video, () => {
           const latest = sampleRef.current;
           if (session !== sessionRef.current || !latest || performance.now() - latest.timestamp > 250 ||
-            speedRef.current > STEADY_SPEED_DEG_S || screenAngle() !== screenRef.current ||
-            latest.quaternion.angleTo(sample.quaternion) * 180 / Math.PI > 2) {
+            speedRef.current > STEADY_SPEED_DEG_S * 1.5 || screenAngle() !== screenRef.current ||
+            latest.quaternion.angleTo(sample.quaternion) * 180 / Math.PI > SNAPSHOT_DRIFT_DEG) {
             throw new Error("HP bergerak saat foto diambil. Tahan pada titik yang sama lalu coba lagi.");
           }
           pose = latest.quaternion.clone();
@@ -122,12 +125,11 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
     [goTo, stopDevices, planCapture, videoRef]
   );
 
-  // Evaluates each sensor sample: tracks rotation speed and fires a shot after holding steady on a target.
+  // Evaluates each sensor sample: tracks windowed rotation speed and fires a shot once the hold on the target fills up.
   const handleSample = useCallback(
     (sample: OrientationSample) => {
-      const prev = sampleRef.current;
       sampleRef.current = sample;
-      if (prev) speedRef.current = Math.max(angularSpeed(prev, sample), speedRef.current * 0.7);
+      speedRef.current = speedTrackerRef.current(sample);
       if (phaseRef.current !== "capturing" || grabbingRef.current) return;
       if (screenAngle() !== screenRef.current) {
         stopDevices();
@@ -135,27 +137,28 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
         goTo("error");
         return;
       }
-      if (prev && sample.timestamp - prev.timestamp > 250) steadyRef.current = null;
-
       const forward = new Vector3(0, 0, -1).applyQuaternion(sample.quaternion);
       const nearest = nextPending(targetPlan.current, new Set(framesRef.current.keys()), forward);
-      const aimed = nearest && nearest.distance <= toleranceFor(nearest.target);
-      if (!nearest || !aimed || speedRef.current > STEADY_SPEED_DEG_S) {
+      if (!nearest) {
         steadyRef.current = null;
         return;
       }
-      if (steadyRef.current?.targetId !== nearest.target.id) {
-        steadyRef.current = { targetId: nearest.target.id, since: sample.timestamp };
-      } else if (sample.timestamp - steadyRef.current.since >= STEADY_HOLD_MS) {
-        void takeShot(nearest.target, sample);
-      }
+      steadyRef.current = advanceSteady(steadyRef.current, {
+        targetId: nearest.target.id,
+        distance: nearest.distance,
+        tolerance: toleranceFor(nearest.target),
+        speed: speedRef.current,
+        now: sample.timestamp,
+      });
+      if (steadyRef.current && steadyRef.current.heldMs >= STEADY_HOLD_MS) void takeShot(nearest.target, sample);
     },
     [goTo, stopDevices, takeShot]
   );
 
-  // Requests permissions, opens the camera, and waits for live sensor data before recording.
-  const start = useCallback(async () => {
+  // Requests permissions, opens the camera, and waits for live sensor data; GPS is collected alongside when allowed.
+  const start = useCallback(async (cameraHeightCm?: number) => {
     stopDevices();
+    beginExtras(cameraHeightCm);
     const session = sessionRef.current;
     targetPlan.current = buildCaptureTargets();
     planned.current = false;
@@ -167,6 +170,7 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
     setError("");
     sampleRef.current = null;
     speedRef.current = 0;
+    speedTrackerRef.current = createSpeedTracker();
     steadyRef.current = null;
     screenRef.current = screenAngle();
     goTo("starting");
@@ -188,7 +192,7 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
       setError(describeStartError(err));
       goTo("error");
     }
-  }, [goTo, handleSample, stopDevices, videoRef]);
+  }, [beginExtras, goTo, handleSample, stopDevices, videoRef]);
 
   // Clears captured frames so the room can be recorded again.
   const reset = useCallback(() => {
@@ -201,14 +205,21 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
     goTo("intro");
   }, [goTo, stopDevices]);
 
-  // Uploads all frames in target order and returns the room created for stitching.
+  // Packs the frames in target order with the phone height and GPS fix, or null while the recording is incomplete.
+  const finishedCapture = useCallback((): CaptureResult | null => {
+    if (!planned.current || framesRef.current.size !== targetPlan.current.length) return null;
+    const frames = [...framesRef.current.values()].sort((a, b) => a.targetId - b.targetId);
+    return { frames, extras: snapshotExtras() };
+  }, [snapshotExtras]);
+
+  // Uploads the finished recording and returns the room created for stitching.
   const upload = useCallback(
     async (propertyId: number, name: string): Promise<TourRoom | null> => {
-      if (!planned.current || framesRef.current.size !== targetPlan.current.length) return null;
+      const capture = finishedCapture();
+      if (!capture) return null;
       goTo("uploading");
       try {
-        const frames = [...framesRef.current.values()].sort((a, b) => a.targetId - b.targetId);
-        const room = await uploadTourCapture(propertyId, name, frames, setUploadProgress);
+        const room = await uploadTourCapture(propertyId, name, capture, setUploadProgress);
         goTo("done");
         return room;
       } catch (err) {
@@ -217,16 +228,16 @@ export function useSphereCapture(videoRef: RefObject<HTMLVideoElement | null>) {
         return null;
       }
     },
-    [goTo]
+    [finishedCapture, goTo]
   );
 
-  // Returns the recorded frames in target order and finishes without uploading (used before the property exists).
-  const collect = useCallback((): CapturedFrame[] => {
-    if (!planned.current || framesRef.current.size !== targetPlan.current.length) throw new Error("Rekaman belum lengkap.");
-    const frames = [...framesRef.current.values()].sort((a, b) => a.targetId - b.targetId);
+  // Returns the finished recording without uploading (used before the property exists).
+  const collect = useCallback((): CaptureResult => {
+    const capture = finishedCapture();
+    if (!capture) throw new Error("Rekaman belum lengkap.");
     goTo("done");
-    return frames;
-  }, [goTo]);
+    return capture;
+  }, [finishedCapture, goTo]);
 
   useEffect(() => stopDevices, [stopDevices]);
 

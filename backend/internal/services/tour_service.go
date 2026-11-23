@@ -12,12 +12,14 @@ import (
 
 // TourService manages sellers' recorded 360° rooms and the public virtual tour.
 type TourService interface {
-	StartCapture(ctx context.Context, ownerID, propertyID int64, name string, frames []CaptureFrame) (*models.TourRoom, error)
+	StartCapture(ctx context.Context, ownerID, propertyID int64, name string, frames []CaptureFrame,
+		extras CaptureExtras) (*models.TourRoom, error)
 	ImportPanorama(ctx context.Context, ownerID, propertyID int64, name string, data []byte) (*models.TourRoom, error)
 	OwnerRooms(ctx context.Context, ownerID, propertyID int64) ([]models.TourRoom, error)
 	PublicRooms(ctx context.Context, propertyID int64) ([]models.TourRoom, error)
 	GetOwnerRoom(ctx context.Context, ownerID, roomID int64) (*models.TourRoom, error)
 	UpdateRoom(ctx context.Context, ownerID, roomID int64, name, note string) error
+	SaveLayout(ctx context.Context, ownerID, roomID int64, layout models.RoomLayout) error
 	DeleteRoom(ctx context.Context, ownerID, roomID int64) error
 	ReorderRooms(ctx context.Context, ownerID, propertyID int64, roomIDs []int64) error
 	AddHotspot(ctx context.Context, ownerID int64, h models.TourHotspot) (*models.TourHotspot, error)
@@ -39,7 +41,7 @@ func NewTourService(tours repositories.TourRepository, props repositories.Proper
 
 // StartCapture validates a recorded room, stores its frames privately, and queues stitching.
 func (s *tourService) StartCapture(ctx context.Context, ownerID, propertyID int64, name string,
-	frames []CaptureFrame) (*models.TourRoom, error) {
+	frames []CaptureFrame, extras CaptureExtras) (*models.TourRoom, error) {
 	property, err := s.ownedProperty(ctx, ownerID, propertyID)
 	if err != nil {
 		return nil, err
@@ -51,10 +53,14 @@ func (s *tourService) StartCapture(ctx context.Context, ownerID, propertyID int6
 	if err := validateCaptureFrames(frames); err != nil {
 		return nil, err
 	}
+	if err := extras.normalize(); err != nil {
+		return nil, err
+	}
 	if err := s.movePropertyToDraft(ctx, property); err != nil {
 		return nil, err
 	}
-	room := &models.TourRoom{PropertyID: propertyID, Name: cleanName, Status: models.TourStatusProcessing,
+	room := &models.TourRoom{PropertyID: propertyID, Name: cleanName, Source: models.TourSourceCapture,
+		CameraHeightCm: extras.CameraHeightCm, CaptureFix: extras.Location, Status: models.TourStatusProcessing,
 		Hotspots: []models.TourHotspot{}}
 	if err := s.tours.CreateRoom(ctx, room); err != nil {
 		return nil, err
@@ -87,10 +93,12 @@ func (s *tourService) reloadRoom(ctx context.Context, room *models.TourRoom) *mo
 
 // OwnerRooms lists every room of a seller's property, including ones still processing.
 func (s *tourService) OwnerRooms(ctx context.Context, ownerID, propertyID int64) ([]models.TourRoom, error) {
-	if _, err := s.ownedProperty(ctx, ownerID, propertyID); err != nil {
+	prop, err := s.ownedProperty(ctx, ownerID, propertyID)
+	if err != nil {
 		return nil, err
 	}
-	return s.tours.ListRooms(ctx, propertyID, false)
+	rooms, err := s.tours.ListRooms(ctx, propertyID, false)
+	return annotateLocation(rooms, prop), err
 }
 
 // PublicRooms lists ready rooms of a published property, dropping hotspots that lead to unfinished rooms.
@@ -103,7 +111,7 @@ func (s *tourService) PublicRooms(ctx context.Context, propertyID int64) ([]mode
 	if err != nil {
 		return nil, err
 	}
-	return dropDanglingHotspots(rooms), nil
+	return annotateLocation(dropDanglingHotspots(rooms), prop), nil
 }
 
 // GetOwnerRoom returns one room after confirming the seller owns its property.

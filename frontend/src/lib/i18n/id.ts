@@ -14,11 +14,11 @@ export const id = {
     postProperty: "Jual Rumah Saya",
   },
   hero: {
-    badge: "Walk Inside 360° cukup dari HP — tanpa jasa foto mahal",
-    titleLine1: "Jual & temukan rumah",
-    titleLine2: "tanpa perantara mahal",
+    badge: "Untuk pembeli rumah pertama dan penjual perorangan",
+    titleLine1: "Beli rumah tanpa survei sia-sia,",
+    titleLine2: "jual rumah tanpa komisi",
     description:
-      "Penjual cukup merekam tiap ruangan dengan HP, lalu EstateVerse menyusunnya menjadi Walk Inside 360° yang bisa dijelajahi pembeli dari mana saja. Pembeli rumah pertama melihat isi rumah sebelum survei dan menghubungi penjual langsung lewat WhatsApp.",
+      "Banyak rumah ternyata tidak sesuai fotonya, dan penjual kecil sulit bersaing dengan perantara besar. Di EstateVerse, pembeli melihat setiap ruangan dan menghitung cicilan sebelum berangkat survei. Penjual memasang iklan sendiri, lalu dihubungi pembeli langsung lewat WhatsApp.",
     ctaPrimary: "Lihat Daftar Rumah",
     ctaSecondary: "Jual Rumah Saya",
   },
@@ -27,10 +27,7 @@ export const id = {
     titleLine2: "Anggaran Anda",
     description:
       "Saring berdasarkan kota, tipe, dan rentang harga — mulai dari rumah pertama yang terjangkau, lengkap dengan Walk Inside 360° dari penjualnya.",
-    tabBuy: "Beli Rumah",
-    tabRent: "Sewa",
-    tabNew: "Ada Walk Inside 360°",
-    tabCommercial: "Ruko & Lainnya",
+    walkInside: "Walk Inside 360°",
     locLabel: "Wilayah / Kota",
     locPlaceholder: "Semua Kota di Indonesia",
     typeLabel: "Jenis Properti",
@@ -42,6 +39,61 @@ export const id = {
     moreFilters: "+ Filter Lainnya",
     reset: "Atur Ulang",
     submit: "Cari Rumah",
+  },
+  problems: {
+    badge: "Masalah yang sering terjadi",
+    titleLine1: "Cari dan jual rumah",
+    titleLine2: "seharusnya tidak serepot ini",
+    subtitle: "Keluhan yang sama terus kami dengar dari pembeli rumah pertama dan penjual perorangan. Ini yang EstateVerse bantu selesaikan.",
+    problemLabel: "Masalahnya",
+    solutionLabel: "Yang kami bantu",
+    groups: [
+      {
+        audience: "Untuk pembeli",
+        items: [
+          { problem: "Foto iklan terlihat bagus, aslinya berbeda", solution: "Lihat setiap ruangan dari segala arah lewat Walk Inside yang direkam langsung di rumahnya, bukan hanya foto pilihan yang sudah diedit." },
+          { problem: "Survei jauh-jauh, ternyata tidak cocok", solution: "Saring dari rumah dulu: lihat isi rumah dan perkiraan ukuran ruangannya, lalu survei hanya ke rumah yang benar-benar cocok." },
+          { problem: "Ragu cicilan KPR sanggup atau tidak", solution: "Setiap iklan punya kalkulator kemampuan bayar, dan asisten pintar menjelaskan dokumen serta biaya membeli rumah." },
+        ],
+      },
+      {
+        audience: "Untuk penjual",
+        items: [
+          { problem: "Komisi perantara memotong hasil penjualan", solution: "Pasang iklan sendiri tanpa komisi. Pembeli menghubungi Anda langsung lewat WhatsApp." },
+          { problem: "Jasa foto 360° dan video promosi mahal", solution: "Cukup rekam dengan HP yang Anda punya. Tur ruangan dan video promosi untuk Status WA atau Reels dibuat otomatis." },
+          { problem: "Capek menemani orang yang cuma lihat-lihat", solution: "Pembeli sudah melihat isi rumah sebelum datang, jadi waktu Anda lebih banyak untuk pembeli yang serius." },
+        ],
+      },
+    ],
+  },
+  walkInside: {
+    badge: "Apa itu Walk Inside 360°?",
+    title: "Seperti datang dan melihat sendiri, tapi dari HP",
+    desc: "Walk Inside adalah tur 360° di dalam rumah. Anda bisa memutar pandangan ke segala arah, dari dinding dan lantai sampai plafon, lalu pindah ke ruangan lain lewat tanda panah. Penjual merekamnya sendiri dengan HP langsung di rumah tersebut.",
+    compareTitle: "Rumah yang sama, dua cara beriklan",
+    illustration: "Ilustrasi",
+    rooms: ["Ruang tamu", "Dapur", "Kamar"],
+    without: {
+      label: "Iklan biasa",
+      caption: "1 dari 8 foto pilihan penjual",
+      points: [
+        "Hanya sudut yang dipilih penjual; sisi lain ruangan tidak terlihat",
+        "Ukuran ruangan hanya bisa ditebak dari foto",
+        "Foto bisa sudah diedit atau diambil di tempat lain",
+        "Kondisi sebenarnya baru ketahuan saat survei",
+      ],
+    },
+    with: {
+      label: "Dengan Walk Inside",
+      caption: "Pandangan berputar ke segala arah",
+      points: [
+        "Lihat ke segala arah: dinding, lantai, dan plafon",
+        "Pindah antar-ruangan seperti berjalan di dalam rumah",
+        "Penjual bisa menandai perkiraan luas tiap ruangan",
+        "Ada tanda bila tur direkam langsung di lokasi rumah",
+      ],
+    },
+    cta: "Lihat rumah yang punya Walk Inside",
   },
   features: {
     titleLine1: "Cara Kerja",
@@ -61,20 +113,6 @@ export const id = {
     ],
   },
   impact: {
-    badge: "Kenapa EstateVerse?",
-    titleLine1: "Jual rumah lebih mudah,",
-    titleLine2: "beli rumah lebih yakin",
-    problemTitle: "Masalahnya",
-    problem:
-      "Penjual rumah perorangan dan developer kecil sulit bersaing: jasa foto 360° atau 3D profesional mahal, komisi perantara memotong hasil penjualan, dan pembeli harus survei berkali-kali ke rumah yang ternyata tidak cocok.",
-    solutionTitle: "Solusi EstateVerse",
-    solution:
-      "Walk Inside 360° cukup direkam dengan HP yang sudah dimiliki penjual dan diproses otomatis oleh sistem. Pembeli melihat isi rumah lebih dulu, mengecek kemampuan bayar, lalu menghubungi penjual langsung.",
-    benefits: [
-      { title: "Jual tanpa biaya mahal", text: "Tidak perlu jasa foto 360° atau komisi perantara. HP yang Anda punya sudah cukup untuk membuat Walk Inside 360°." },
-      { title: "Rekam sekali, dilihat kapan saja", text: "Calon pembeli dari kota mana pun bisa menjelajah isi rumah Anda kapan saja, tanpa Anda harus menemani." },
-      { title: "Survei lebih tepat sasaran", text: "Pembeli sudah melihat isi rumah dan cek kemampuan bayar sebelum datang, jadi waktu dan ongkos tidak terbuang." },
-    ],
     statsTitle: "EstateVerse dalam angka",
     statsNote: "Angka dihitung otomatis dari database EstateVerse saat halaman dibuka — bukan perkiraan.",
     stats: {
@@ -107,41 +145,45 @@ export const id = {
   faq: {
     titleLine1: "Pertanyaan yang",
     titleLine2: "Sering Ditanyakan",
-    subtitle: "Seputar merekam Walk Inside 360°, menghubungi penjual, dan memasang iklan rumah di EstateVerse.",
+    subtitle: "Seputar melihat rumah sebelum survei, menghubungi penjual, cicilan, dan memasang iklan di EstateVerse.",
     askAiLabel: "Masih ada pertanyaan?",
     askAiDesc: "Asisten Pintar siap membantu soal KPR, dokumen, biaya, dan tips menjual rumah.",
     askAiBtn: "Tanya Asisten",
     items: [
       {
-        q: "Bagaimana cara merekam Walk Inside 360° rumah saya?",
-        a: "Buka halaman edit iklan dari HP (Chrome atau Safari), pilih Rekam Ruangan, lalu berdiri di tengah ruangan dan putar HP di titik yang sama mengikuti titik di layar. Foto diambil otomatis — sekitar 2 menit per ruangan — dan sistem menggabungkannya menjadi panorama 360°.",
-      },
-      {
-        q: "Apakah perlu kamera 360 atau aplikasi khusus?",
-        a: "Tidak. Cukup HP dengan kamera dan sensor gerak, langsung dari browser tanpa memasang aplikasi. Jika sudah punya foto 360° dari kamera khusus, Anda juga bisa mengunggahnya.",
+        q: "Apa bedanya Walk Inside 360° dengan foto biasa?",
+        a: "Foto hanya menunjukkan sudut yang dipilih penjual. Di Walk Inside Anda bisa memutar pandangan ke segala arah di setiap ruangan dan berpindah antar-ruangan, jadi kondisi rumah terlihat sebelum Anda berangkat survei.",
       },
       {
         q: "Apakah EstateVerse memotong komisi?",
         a: "Tidak. Pembeli menghubungi penjual langsung lewat WhatsApp atau formulir permintaan survei.",
       },
       {
-        q: "Bagaimana pembeli tahu cicilannya sanggup?",
+        q: "Bagaimana saya tahu cicilannya sanggup?",
         a: "Di setiap halaman rumah ada kalkulator kemampuan bayar: masukkan gaji, DP, dan tenor untuk melihat apakah cicilan masih di bawah 30% gaji. Asisten Pintar juga bisa membantu menghitung.",
       },
       {
         q: "Apakah data rumah bisa dipercaya?",
-        a: "Data diisi langsung oleh penjual. Tur 360° membantu memastikan kondisi ruangan sebelum survei — tetap cek dokumen asli (SHM/HGB dan PBB) saat bertemu penjual.",
+        a: "Data diisi langsung oleh penjual. Walk Inside membantu memastikan kondisi ruangan sebelum survei, dan ada tanda bila tur direkam di lokasi rumah. Tetap cek dokumen asli (SHM/HGB dan PBB) saat bertemu penjual.",
+      },
+      {
+        q: "Saya penjual. Bagaimana cara membuat Walk Inside?",
+        a: "Buka halaman edit iklan dari HP (Chrome atau Safari), pilih Rekam Ruangan, lalu berdiri di tengah ruangan dan putar HP di titik yang sama mengikuti titik di layar. Foto diambil otomatis, sekitar 2 menit per ruangan, lalu disusun menjadi tur 360°.",
+      },
+      {
+        q: "Apakah perlu kamera 360 atau aplikasi khusus?",
+        a: "Tidak. Cukup HP dengan kamera dan sensor gerak, langsung dari browser tanpa memasang aplikasi. Jika sudah punya foto 360° dari kamera khusus, Anda juga bisa mengunggahnya.",
       },
     ],
   },
   footer: {
-    bannerTitleLine1: "Rekam rumah Anda dengan HP,",
-    bannerTitleLine2: "biarkan pembeli menjelajah",
+    bannerTitleLine1: "Jual rumah tanpa komisi,",
+    bannerTitleLine2: "beli rumah tanpa survei sia-sia",
     bannerDesc:
-      "EstateVerse membantu penjual perorangan dan developer kecil memasarkan rumah dengan Walk Inside 360° — langsung ke pembeli, tanpa perantara mahal.",
+      "EstateVerse mempertemukan penjual perorangan dan developer kecil langsung dengan pembeli yang serius, dan membantu pembeli rumah pertama memutuskan dengan yakin.",
     exploreBtn: "Lihat Daftar Rumah",
     consultBtn: "Tanya Asisten",
-    statement: "Teknologi agar penjual kecil bisa bersaing dan pembeli rumah pertama memutuskan dengan yakin.",
+    statement: "Agar penjual kecil bisa bersaing dan pembeli rumah pertama memutuskan dengan yakin.",
     rights: "Seluruh hak cipta dilindungi.",
     privacy: "Kebijakan Privasi",
   },

@@ -2,19 +2,24 @@
 
 import React, { useState } from "react";
 /* eslint-disable @next/next/no-img-element */
-import { AlertTriangle, Check, Loader2, MapPin, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, BadgeCheck, Check, Loader2, MapPin, Pencil, Ruler, Trash2 } from "lucide-react";
 import type { TourRoom } from "@/types/tour";
 import { getMediaUrl } from "@/lib/api/client";
+import { formatArea, summarizeRoom } from "@/lib/measure/roomGeometry";
+import { LOCATION_CHECK_TEXT, TONE_TEXT_CLASS } from "@/lib/trust/originLabels";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 interface TourRoomCardProps {
   room: TourRoom;
   onUpdate: (room: TourRoom, name: string, note: string) => Promise<void>;
   onDelete: (room: TourRoom) => Promise<void>;
   onEditHotspots: (room: TourRoom) => void;
+  onEditLayout: (room: TourRoom) => void;
 }
 
-// TourRoomCard shows one recorded room with its processing status, quality, and management actions.
-export function TourRoomCard({ room, onUpdate, onDelete, onEditHotspots }: TourRoomCardProps) {
+// TourRoomCard shows one recorded room with its processing status, size, origin proof, and management actions.
+export function TourRoomCard({ room, onUpdate, onDelete, onEditHotspots, onEditLayout }: TourRoomCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(room.name);
   const [note, setNote] = useState(room.note ?? "");
@@ -49,12 +54,19 @@ export function TourRoomCard({ room, onUpdate, onDelete, onEditHotspots }: TourR
         {isEditing ? (
           <div className="space-y-2">
             <label htmlFor={`room-name-${room.id}`} className="sr-only">Nama ruangan</label>
-            <input id={`room-name-${room.id}`} value={name} maxLength={40} onChange={(e) => setName(e.target.value)} onKeyDown={saveOnEnter} className="w-full h-9 px-3 rounded-lg border border-neutral-300 text-sm" />
-            <label htmlFor={`room-note-${room.id}`} className="block text-[11px] font-semibold text-neutral-700">Catatan ruangan (opsional)</label>
-            <input id={`room-note-${room.id}`} value={note} maxLength={160} placeholder="Contoh: 3×3 m, jendela menghadap timur" onChange={(e) => setNote(e.target.value)} onKeyDown={saveOnEnter} className="w-full h-9 px-3 rounded-lg border border-neutral-300 text-sm" />
-            <button type="button" onClick={saveDetails} className="h-9 px-3 rounded-lg bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer">
-              <Check className="w-4 h-4" aria-hidden="true" /> Simpan
-            </button>
+            <Input id={`room-name-${room.id}`} value={name} maxLength={40} onChange={(e) => setName(e.target.value)} onKeyDown={saveOnEnter} />
+            <Input
+              id={`room-note-${room.id}`}
+              label="Catatan ruangan (opsional)"
+              value={note}
+              maxLength={160}
+              placeholder="Contoh: 3×3 m, jendela menghadap timur"
+              onChange={(e) => setNote(e.target.value)}
+              onKeyDown={saveOnEnter}
+            />
+            <Button size="sm" onClick={saveDetails}>
+              <Check aria-hidden="true" /> Simpan
+            </Button>
           </div>
         ) : (
           <div className="space-y-1">
@@ -66,25 +78,49 @@ export function TourRoomCard({ room, onUpdate, onDelete, onEditHotspots }: TourR
           </div>
         )}
         {room.status === "ready" && <StatusBadge room={room} />}
+        {room.status === "ready" && <RoomFacts room={room} />}
         {room.status === "failed" && <p className="text-xs text-rose-700">{room.error_message}</p>}
-        <div className="flex gap-2 mt-auto pt-1">
+        <div className="flex flex-wrap gap-2 mt-auto pt-1">
           {room.status === "ready" && (
-            <button type="button" onClick={() => onEditHotspots(room)} className="flex-1 h-9 rounded-lg border border-neutral-300 text-xs font-semibold hover:border-sage-600 cursor-pointer inline-flex items-center justify-center gap-1.5">
-              <MapPin className="w-4 h-4" aria-hidden="true" /> Atur Panah
-            </button>
+            <>
+              <Button variant="outline" className="flex-1" onClick={() => onEditHotspots(room)}>
+                <MapPin aria-hidden="true" /> Atur Panah
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={() => onEditLayout(room)}>
+                <Ruler aria-hidden="true" /> Ukur Ruangan
+              </Button>
+            </>
           )}
-          <button
-            type="button"
+          <Button
+            variant="destructive"
             onClick={() => (confirmDelete ? onDelete(room) : setConfirmDelete(true))}
             onBlur={() => setConfirmDelete(false)}
-            className={`h-9 px-3 rounded-lg text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 ${confirmDelete ? "bg-rose-600 text-white" : "border border-neutral-300 text-rose-700 hover:border-rose-500"}`}
+            className={confirmDelete ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
           >
-            <Trash2 className="w-4 h-4" aria-hidden="true" />
+            <Trash2 aria-hidden="true" />
             {confirmDelete ? "Yakin hapus?" : "Hapus"}
-          </button>
+          </Button>
         </div>
       </div>
     </li>
+  );
+}
+
+// RoomFacts shows the traced room size and whether the recording is proven to be on site.
+function RoomFacts({ room }: { room: TourRoom }) {
+  const summary = summarizeRoom(room.floor_outline ?? [], room.camera_height_cm);
+  const origin = room.location_check ? LOCATION_CHECK_TEXT[room.location_check] : null;
+  return (
+    <div className="space-y-0.5 text-xs">
+      <p className={summary ? "font-semibold text-neutral-800" : "text-neutral-500"}>
+        {summary ? `Luas ±${formatArea(summary.areaM2)}` : "Ukuran belum ditandai"}
+      </p>
+      {origin && (
+        <p className={`flex items-center gap-1 ${TONE_TEXT_CLASS[origin.tone]}`}>
+          <BadgeCheck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> {origin.label}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -115,8 +151,8 @@ function StatusBadge({ room }: { room: TourRoom }) {
 // IconButton is a compact accessible icon-only button.
 function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} aria-label={label} title={label} className="w-9 h-9 rounded-lg hover:bg-neutral-100 text-neutral-600 inline-flex items-center justify-center cursor-pointer">
+    <Button variant="ghost" size="icon-lg" onClick={onClick} aria-label={label} title={label} className="text-muted-foreground">
       {children}
-    </button>
+    </Button>
   );
 }

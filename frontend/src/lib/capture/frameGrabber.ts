@@ -2,11 +2,18 @@
 import { FRAME_LONG_SIDE, FRAME_JPEG_QUALITY } from "../../../../shared/capturePolicy.ts";
 export { FRAME_LONG_SIDE } from "../../../../shared/capturePolicy.ts";
 
-// startRearCamera opens the back camera at high resolution and plays it inline in the video element.
+// startRearCamera opens the back camera in a native, uncropped mode and plays it inline in the video element.
+// Sizes are matched against the sensor's landscape formats (the browser rotates them to portrait), so asking for a
+// portrait 1080×1920 made Chrome Android crop a narrow strip that looked zoomed; resizeMode "none" forbids cropping.
 export async function startRearCamera(video: HTMLVideoElement): Promise<MediaStream> {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: false,
-    video: { facingMode: { exact: "environment" }, width: { ideal: 1080 }, height: { ideal: 1920 } },
+    video: {
+      facingMode: { exact: "environment" },
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      resizeMode: "none",
+    } as MediaTrackConstraints,
   });
   video.srcObject = stream;
   video.muted = true;

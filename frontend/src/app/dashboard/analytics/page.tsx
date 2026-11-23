@@ -103,8 +103,8 @@ export default function DashboardAnalyticsPage() {
                 <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-600">
                   {m.title}
                 </span>
-                <div className="w-8 h-8 rounded-xl bg-neutral-900 text-white flex items-center justify-center">
-                  <IconComp className="w-4 h-4 text-emerald-400" />
+                <div className="w-9 h-9 rounded-xl bg-sage-600 text-white flex items-center justify-center shrink-0" aria-hidden="true">
+                  <IconComp className="w-4 h-4" />
                 </div>
               </div>
 
@@ -130,7 +130,7 @@ export default function DashboardAnalyticsPage() {
       {/* Performance by Property Table */}
       <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-neutral-900" />
+          <BarChart3 className="w-5 h-5 text-sage-600" aria-hidden="true" />
           <h2 className="text-base font-bold text-neutral-950">
             Rincian Performa Iklan ({properties.length} Properti)
           </h2>

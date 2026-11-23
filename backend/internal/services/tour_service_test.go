@@ -29,7 +29,7 @@ func newTourFixture(t *testing.T) (*tourService, *mockTourRepo, *recordingQueue,
 // TestStartCaptureStoresFramesAndQueues verifies a valid capture is stored privately and queued.
 func TestStartCaptureStoresFramesAndQueues(t *testing.T) {
 	svc, _, queue, storage := newTourFixture(t)
-	room, err := svc.StartCapture(context.Background(), 1, 1, "  Ruang   Tamu ", testCaptureFrames(12, 320, 400))
+	room, err := svc.StartCapture(context.Background(), 1, 1, "  Ruang   Tamu ", testCaptureFrames(12, 320, 400), CaptureExtras{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -56,18 +56,18 @@ func TestStartCaptureStoresFramesAndQueues(t *testing.T) {
 func TestStartCaptureRejectsForeignAndInvalidInput(t *testing.T) {
 	svc, _, _, _ := newTourFixture(t)
 	ctx := context.Background()
-	if _, err := svc.StartCapture(ctx, 1, 2, "Dapur", testCaptureFrames(12, 320, 400)); !errors.Is(err, ErrNotFound) {
+	if _, err := svc.StartCapture(ctx, 1, 2, "Dapur", testCaptureFrames(12, 320, 400), CaptureExtras{}); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected ErrNotFound for foreign property, got %v", err)
 	}
-	if _, err := svc.StartCapture(ctx, 1, 1, "Dapur", testCaptureFrames(4, 320, 400)); err == nil {
+	if _, err := svc.StartCapture(ctx, 1, 1, "Dapur", testCaptureFrames(4, 320, 400), CaptureExtras{}); err == nil {
 		t.Fatal("expected validation error for too few frames")
 	}
 	frames := testCaptureFrames(12, 320, 400)
 	frames[5].Data = []byte("not a jpeg")
-	if _, err := svc.StartCapture(ctx, 1, 1, "Dapur", frames); err == nil {
+	if _, err := svc.StartCapture(ctx, 1, 1, "Dapur", frames, CaptureExtras{}); err == nil {
 		t.Fatal("expected validation error for invalid JPEG")
 	}
-	if _, err := svc.StartCapture(ctx, 1, 1, "", testCaptureFrames(12, 320, 400)); err == nil {
+	if _, err := svc.StartCapture(ctx, 1, 1, "", testCaptureFrames(12, 320, 400), CaptureExtras{}); err == nil {
 		t.Fatal("expected validation error for empty name")
 	}
 }
@@ -75,7 +75,7 @@ func TestStartCaptureRejectsForeignAndInvalidInput(t *testing.T) {
 // TestQueueProcessProducesPanorama runs the real stitching worker over a stored capture.
 func TestQueueProcessProducesPanorama(t *testing.T) {
 	svc, tours, _, storage := newTourFixture(t)
-	room, err := svc.StartCapture(context.Background(), 1, 1, "Kamar", roomSceneFrames())
+	room, err := svc.StartCapture(context.Background(), 1, 1, "Kamar", roomSceneFrames(), CaptureExtras{})
 	if err != nil {
 		t.Fatalf("capture failed: %v", err)
 	}
@@ -94,7 +94,7 @@ func TestQueueProcessProducesPanorama(t *testing.T) {
 // TestQueueStartRecoversProcessingRooms verifies interrupted jobs resume after the backend starts again.
 func TestQueueStartRecoversProcessingRooms(t *testing.T) {
 	svc, tours, _, storage := newTourFixture(t)
-	room, err := svc.StartCapture(context.Background(), 1, 1, "Kamar Recovery", roomSceneFrames())
+	room, err := svc.StartCapture(context.Background(), 1, 1, "Kamar Recovery", roomSceneFrames(), CaptureExtras{})
 	if err != nil {
 		t.Fatalf("capture failed: %v", err)
 	}

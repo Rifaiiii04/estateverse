@@ -48,6 +48,7 @@ func (s *propertyService) GetPublicProperty(ctx context.Context, slug string) (*
 		return nil, err
 	}
 	prop.Images = images
+	s.attachPhotoOrigin(ctx, prop)
 	return prop, nil
 }
 
@@ -83,6 +84,7 @@ func (s *propertyService) GetOwnerProperty(ctx context.Context, id int64, ownerI
 		return nil, err
 	}
 	prop.Images = images
+	s.attachPhotoOrigin(ctx, prop)
 	return prop, nil
 }
 
@@ -101,4 +103,15 @@ func (s *propertyService) ListOwnerProperties(ctx context.Context, ownerID int64
 // GetDashboardSummary returns metrics count for the seller's properties.
 func (s *propertyService) GetDashboardSummary(ctx context.Context, ownerID int64) (*models.DashboardSummary, error) {
 	return s.propRepo.GetOwnerSummary(ctx, ownerID)
+}
+
+// attachPhotoOrigin counts listing photos reused from another seller; a lookup failure leaves the count at zero.
+func (s *propertyService) attachPhotoOrigin(ctx context.Context, prop *models.Property) {
+	if s.photos == nil || len(prop.Images) == 0 {
+		return
+	}
+	count, err := s.photos.CountBorrowed(ctx, prop.ID, prop.OwnerID)
+	if err == nil {
+		prop.BorrowedPhotos = count
+	}
 }

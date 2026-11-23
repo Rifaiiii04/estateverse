@@ -51,6 +51,8 @@ export interface Property {
   address: string;
   city: string;
   province: string;
+  latitude?: number | null;
+  longitude?: number | null;
   land_area: number;
   building_area: number;
   bedrooms: number;
@@ -59,6 +61,8 @@ export interface Property {
   whatsapp_number: string;
   model_3d_path: string;
   has_tour?: boolean;
+  /** Listing photos that match a photo another seller uploaded earlier. */
+  borrowed_photo_count?: number;
   model_metadata?: Model3DMetadata;
   benefits?: string[];
   status: PropertyStatus;
@@ -76,6 +80,8 @@ export interface PropertyInput {
   address: string;
   city: string;
   province: string;
+  latitude?: number | null;
+  longitude?: number | null;
   land_area: number;
   building_area: number;
   bedrooms: number;

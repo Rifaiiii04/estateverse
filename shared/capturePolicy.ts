@@ -8,14 +8,27 @@ export interface CaptureTarget {
 
 export const CAPTURE_TOLERANCE_DEG = 4;
 export const POLE_TOLERANCE_DEG = 7;
-export const STEADY_SPEED_DEG_S = 4;
-export const STEADY_HOLD_MS = 650;
+export const STEADY_SPEED_DEG_S = 6;
+export const STEADY_HOLD_MS = 500;
 export const FRAME_LONG_SIDE = 1280;
 export const FRAME_JPEG_QUALITY = 0.85;
 
+/** GPS fix taken while recording, used by the backend to check the room was recorded at the listed house. */
+export interface CaptureLocation {
+  lat: number;
+  lng: number;
+  accuracy_m: number;
+}
+
+/** Optional measurements sent with a capture; older clients simply omit them. */
+export interface CaptureExtras {
+  camera_height_cm?: number;
+  location?: CaptureLocation;
+}
+
 // buildCaptureManifest pairs raw JPEG indexes with identical backend quaternion metadata on both clients.
-export function buildCaptureManifest(name: string, frames: { orientation: OrientationQuat }[]) {
-  return { name, frames: frames.map((frame, index) => ({ index, orientation: frame.orientation })) };
+export function buildCaptureManifest(name: string, frames: { orientation: OrientationQuat }[], extras: CaptureExtras = {}) {
+  return { name, frames: frames.map((frame, index) => ({ index, orientation: frame.orientation })), ...extras };
 }
 
 // buildCaptureTargets starts with three overlapping calibration views that are reused in the final panorama.

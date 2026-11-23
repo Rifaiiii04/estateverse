@@ -12,6 +12,10 @@ import { formatCompactIDR } from "@/lib/utils/formatters";
 import { getMediaUrl } from "@/lib/api/client";
 import { useToast } from "@/context/ToastContext";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/MotionPrimitives";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 
@@ -91,51 +95,39 @@ function DashboardPropertiesContent() {
           </div>
         </div>
 
-        <Link
-          href="/dashboard/properties/new"
-          className="h-9 inline-flex items-center gap-1.5 bg-neutral-950 hover:bg-sage-700 text-white text-xs font-bold px-4 rounded-full transition-colors shadow-2xs self-start sm:self-center"
-        >
-          <Plus className="w-3.5 h-3.5" />
+        <Button className="hidden md:inline-flex self-center" render={<Link href="/dashboard/properties/new" />}>
+          <Plus />
           <span>Tambah Listing</span>
-        </Link>
+        </Button>
       </div>
 
       {/* Pill Filter and Search Row */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {[
-            { id: "all", label: "Semua", count: counts.all },
-            { id: "published", label: "Aktif", count: counts.published },
-            { id: "draft", label: "Draft", count: counts.draft },
-            { id: "3d", label: "3D Interaktif", count: counts.with3d },
-          ].map((tab) => {
-            const active = filterStatus === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setFilterStatus(tab.id as typeof filterStatus)}
-                className={`h-9 inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold px-3.5 rounded-full transition-all border cursor-pointer ${
-                  active
-                    ? "bg-neutral-950 text-white border-neutral-950 shadow-2xs"
-                    : "bg-white border-neutral-200 text-neutral-700 hover:border-sage-400"
-                }`}
-              >
+        <Tabs value={filterStatus} onValueChange={(value) => setFilterStatus(value as typeof filterStatus)}>
+          <TabsList className="max-w-full overflow-x-auto no-scrollbar">
+            {[
+              { id: "all", label: "Semua", count: counts.all },
+              { id: "published", label: "Aktif", count: counts.published },
+              { id: "draft", label: "Draft", count: counts.draft },
+              { id: "3d", label: "3D Interaktif", count: counts.with3d },
+            ].map((tab) => (
+              <TabsTrigger key={tab.id} value={tab.id} className="px-3 py-2">
                 <span>{tab.label}</span>
-                <span className={active ? "text-neutral-300" : "text-neutral-500"}>{tab.count}</span>
-              </button>
-            );
-          })}
-        </div>
+                <Badge variant="secondary">{tab.count}</Badge>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
-        <div className="relative w-full md:w-80 h-9">
-          <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
+        <div className="relative w-full md:w-80">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="Cari judul properti, kota..."
-            className="w-full h-full bg-white border border-neutral-200 hover:border-sage-400 rounded-full pl-9 pr-4 text-xs sm:text-[13px] text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:border-sage-600 focus:ring-2 focus:ring-sage-600/15 transition-all"
+            aria-label="Cari listing"
+            className="bg-background pl-8"
           />
         </div>
       </div>
@@ -205,29 +197,31 @@ function DashboardPropertiesContent() {
                   <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs">
                     <span className="text-neutral-500 font-medium truncate">{item.city}</span>
                     <div className="flex items-center gap-1.5">
-                      <Link
-                        href={`/properties/${item.slug}`}
-                        target="_blank"
-                        className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-sage-700 hover:border-sage-300"
-                        title="Lihat halaman publik"
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label="Lihat halaman publik"
+                        render={<Link href={`/properties/${item.slug}`} target="_blank" title="Lihat halaman publik" />}
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </Link>
-                      <Link
-                        href={`/dashboard/properties/${item.id}/edit`}
-                        className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:text-sage-700 hover:border-sage-300"
-                        title="Edit listing"
+                        <ExternalLink />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label="Edit listing"
+                        render={<Link href={`/dashboard/properties/${item.id}/edit`} title="Edit listing" />}
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </Link>
-                      <button
-                        type="button"
+                        <Edit3 />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon-sm"
                         onClick={() => handleDelete(item.id, item.title)}
-                        className="p-1.5 rounded-lg border border-neutral-200 text-red-500 hover:bg-red-50 cursor-pointer"
+                        aria-label="Hapus listing"
                         title="Hapus listing"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        <Trash2 />
+                      </Button>
                     </div>
                   </div>
                 </div>

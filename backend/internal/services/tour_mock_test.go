@@ -101,6 +101,12 @@ func (m *mockTourRepo) UpdateRoom(_ context.Context, id int64, name, note string
 	return nil
 }
 
+// SaveLayout stores a room's camera height and floor outline.
+func (m *mockTourRepo) SaveLayout(_ context.Context, id int64, layout models.RoomLayout) error {
+	m.rooms[id].CameraHeightCm, m.rooms[id].FloorOutline = layout.CameraHeightCm, layout.FloorOutline
+	return nil
+}
+
 // DeleteRoom removes a stored room.
 func (m *mockTourRepo) DeleteRoom(_ context.Context, id int64) error {
 	delete(m.rooms, id)

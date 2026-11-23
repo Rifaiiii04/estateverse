@@ -42,8 +42,9 @@ func (s *tourService) ImportPanorama(ctx context.Context, ownerID, propertyID in
 	if err != nil {
 		return nil, err
 	}
-	room := &models.TourRoom{PropertyID: propertyID, Name: cleanName, Status: models.TourStatusReady,
-		PanoramaPath: mainPath, PreviewPath: previewPath, QualityScore: 100, Hotspots: []models.TourHotspot{}}
+	room := &models.TourRoom{PropertyID: propertyID, Name: cleanName, Source: models.TourSourceImport,
+		Status: models.TourStatusReady, PanoramaPath: mainPath, PreviewPath: previewPath, QualityScore: 100,
+		Hotspots: []models.TourHotspot{}}
 	if err := s.tours.CreateRoom(ctx, room); err != nil {
 		return nil, err
 	}
