@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"projectfai/backend/internal/httpx"
 	"projectfai/backend/internal/models"
 	"projectfai/backend/internal/services"
 )
@@ -27,19 +28,39 @@ func RequireAuth(authSvc services.AuthService) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := extractToken(r)
 			if token == "" {
-				http.Error(w, `{"error":"unauthorized: session token missing"}`, http.StatusUnauthorized)
+				httpx.WriteError(w, http.StatusUnauthorized, "unauthorized: session token missing")
 				return
 			}
 
 			user, err := authSvc.ValidateSession(r.Context(), token)
 			if err != nil || user == nil {
-				http.Error(w, `{"error":"unauthorized: invalid or expired session"}`, http.StatusUnauthorized)
+				httpx.WriteError(w, http.StatusUnauthorized, "unauthorized: invalid or expired session")
 				return
 			}
 
 			SetRequestUserID(r.Context(), user.ID)
 			ctx := context.WithValue(r.Context(), userContextKey, user)
 			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// OptionalAuth attaches the signed-in user when a valid session is present and lets anonymous requests through.
+func OptionalAuth(authSvc services.AuthService) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			token := extractToken(r)
+			if token == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+			user, err := authSvc.ValidateSession(r.Context(), token)
+			if err != nil || user == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+			SetRequestUserID(r.Context(), user.ID)
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), userContextKey, user)))
 		})
 	}
 }

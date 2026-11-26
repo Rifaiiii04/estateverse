@@ -10,11 +10,15 @@ import { Alert } from "@/components/ui/Alert";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { LogoMark } from "@/components/ui/Logo";
+import { AuthPageLoading } from "@/components/layout/AuthPageLoading";
+import { nextPathFromLocation } from "@/lib/auth/redirect";
+import { useGuestOnly } from "@/lib/hooks/useGuestOnly";
 
 // LoginPage renders the seller authentication interface with error handling and redirects.
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const hidePage = useGuestOnly();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,13 +34,15 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login({ email, password });
-      router.push("/dashboard");
+      router.push(nextPathFromLocation());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal masuk. Periksa kembali kredensial Anda.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (hidePage) return <AuthPageLoading />;
 
   return (
     <>
@@ -57,6 +63,9 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
+              id="login-email"
+              name="email"
+              autoComplete="email"
               label="Email"
               type="email"
               placeholder="nama@domain.com"
@@ -65,6 +74,9 @@ export default function LoginPage() {
               required
             />
             <Input
+              id="login-password"
+              name="password"
+              autoComplete="current-password"
               label="Password"
               type="password"
               placeholder="••••••••"
@@ -72,6 +84,11 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <div className="flex justify-end -mt-1">
+              <Link href="/forgot-password" className="inline-flex min-h-6 items-center text-xs font-semibold text-sage-700 hover:underline">
+                Lupa password?
+              </Link>
+            </div>
             <Button
               type="submit"
               size="lg"
@@ -94,3 +111,4 @@ export default function LoginPage() {
     </>
   );
 }
+

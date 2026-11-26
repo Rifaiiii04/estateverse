@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { loginUrlFor } from "@/lib/auth/redirect";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardAddFab } from "@/components/dashboard/DashboardAddFab";
@@ -20,7 +21,8 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push("/login");
+      // Remember the requested page so the seller lands back on it after signing in.
+      router.replace(loginUrlFor(window.location.pathname + window.location.search));
     }
   }, [isLoading, isAuthenticated, router]);
 

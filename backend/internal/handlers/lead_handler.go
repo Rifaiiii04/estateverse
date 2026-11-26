@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,6 +11,7 @@ import (
 	"projectfai/backend/internal/middleware"
 	"projectfai/backend/internal/models"
 	"projectfai/backend/internal/repositories"
+	"projectfai/backend/internal/services"
 )
 
 // LeadHandler exposes HTTP handlers for managing buyer leads and inquiries.
@@ -63,12 +64,21 @@ func (h *LeadHandler) UpdateLeadStatus(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Status string `json:"status"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || !validLeadStatuses[payload.Status] {
-		WriteError(w, http.StatusBadRequest, "status is required")
+	if err := httpx.DecodeJSON(w, r, &payload); err != nil {
+		httpx.WriteDecodeError(w, err)
+		return
+	}
+	if !validLeadStatuses[payload.Status] {
+		WriteError(w, http.StatusBadRequest, "status tidak valid; gunakan new, contacted, scheduled, atau closed")
 		return
 	}
 
-	if err := h.leadRepo.UpdateStatus(r.Context(), leadID, user.ID, payload.Status); err != nil {
+	err = h.leadRepo.UpdateStatus(r.Context(), leadID, user.ID, payload.Status)
+	if errors.Is(err, repositories.ErrNotFound) {
+		WriteError(w, http.StatusNotFound, "lead not found")
+		return
+	}
+	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "failed updating lead status")
 		return
 	}
@@ -127,6 +137,11 @@ func validateLeadInput(in *models.LeadInput) string {
 		return "name, phone, or budget is too long"
 	case utf8.RuneCountInString(in.Note) > 2000:
 		return "note is too long"
+	}
+	// Sellers reply through wa.me, which needs 62… without "+", spaces, dashes, or a trunk 0.
+	in.Phone = services.NormalizeWhatsApp(in.Phone)
+	if !services.IsValidWhatsApp(in.Phone) {
+		return "valid WhatsApp phone number is required"
 	}
 	return ""
 }

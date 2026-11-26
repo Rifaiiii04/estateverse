@@ -25,13 +25,27 @@ func (s *propertyService) toursReadyForPublish(ctx context.Context, propertyID i
 	return true, nil
 }
 
-// DeleteProperty removes a property owned by the specified seller.
+// DeleteProperty removes a property owned by the specified seller together with its photos, model, and tour rooms.
 func (s *propertyService) DeleteProperty(ctx context.Context, id int64, ownerID int64) error {
-	err := s.propRepo.Delete(ctx, id, ownerID)
+	existing, err := s.propRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if existing == nil || existing.OwnerID != ownerID {
+		return ErrNotFound
+	}
+	media := s.listingMedia(ctx, existing)
+	rooms := s.listingRooms(ctx, id)
+	err = s.propRepo.Delete(ctx, id, ownerID)
 	if errors.Is(err, repositories.ErrNotFound) {
 		return ErrNotFound
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	s.removeListingRooms(ctx, rooms)
+	s.releaseMedia(ctx, media)
+	return nil
 }
 
 // GetPublicProperty fetches a single published listing with its images.
@@ -48,6 +62,7 @@ func (s *propertyService) GetPublicProperty(ctx context.Context, slug string) (*
 		return nil, err
 	}
 	prop.Images = images
+	s.hideMissingPhotos(prop)
 	s.attachPhotoOrigin(ctx, prop)
 	return prop, nil
 }
@@ -67,6 +82,9 @@ func (s *propertyService) ListPublicProperties(ctx context.Context, page, limit 
 	if err := attachPropertyImagesBatch(ctx, s.imageRepo, props); err != nil {
 		return nil, 0, err
 	}
+	for i := range props {
+		s.hideMissingPhotos(&props[i])
+	}
 	return props, total, nil
 }
 
@@ -84,6 +102,7 @@ func (s *propertyService) GetOwnerProperty(ctx context.Context, id int64, ownerI
 		return nil, err
 	}
 	prop.Images = images
+	s.hideMissingPhotos(prop)
 	s.attachPhotoOrigin(ctx, prop)
 	return prop, nil
 }

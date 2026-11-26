@@ -69,7 +69,7 @@ func newSeeder(cfg *config.Config, db *sql.DB) *seeder {
 	storage := services.NewStorageService(cfg.UploadDir, cfg.MaxUploadBytes())
 	phone := os.Getenv("SEED_WHATSAPP")
 	if phone == "" {
-		phone = "628000000000" // non-routable placeholder so demo buttons never message a real person
+		phone = services.DemoWhatsAppPlaceholder // non-routable; the site shows "WhatsApp belum tersedia" instead of a link
 	}
 	return &seeder{
 		db:       db,

@@ -9,7 +9,11 @@ import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { PhoneInput } from "@/components/ui/PhoneInput";
 import { Textarea } from "@/components/ui/Textarea";
+import { formatWhatsAppDisplay, isValidSubscriber } from "@/lib/utils/whatsapp";
+
+const PHONE_HINT = "Nomor WhatsApp belum lengkap. Ketik tanpa 0 di depan, contoh: 812 3456 7890.";
 
 interface PropertyLeadFormProps {
   propertyId: number;
@@ -20,7 +24,8 @@ interface PropertyLeadFormProps {
 export function PropertyLeadForm({ propertyId, propertyTitle }: PropertyLeadFormProps) {
   const { toast } = useToast();
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(""); // digits after the fixed +62 prefix
+  const [phoneError, setPhoneError] = useState("");
   const [note, setNote] = useState("");
   const [viewedTour, setViewedTour] = useState(false);
   const [tourTouched, setTourTouched] = useState(false);
@@ -35,8 +40,12 @@ export function PropertyLeadForm({ propertyId, propertyTitle }: PropertyLeadForm
   // Submits the buyer inquiry to the seller.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) {
+    if (!name.trim() || !phone) {
       toast.error("Nama dan nomor WhatsApp wajib diisi.");
+      return;
+    }
+    if (!isValidSubscriber(phone)) {
+      setPhoneError(PHONE_HINT);
       return;
     }
     setIsSubmitting(true);
@@ -44,7 +53,7 @@ export function PropertyLeadForm({ propertyId, propertyTitle }: PropertyLeadForm
       await submitBuyerInquiry({
         property_id: propertyId,
         name: name.trim(),
-        phone: phone.trim(),
+        phone: `62${phone}`,
         note: note.trim() || `Ingin survei lokasi untuk properti ${propertyTitle}.`,
         viewed_tour: viewedTour,
       });
@@ -64,7 +73,9 @@ export function PropertyLeadForm({ propertyId, propertyTitle }: PropertyLeadForm
           <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
         </div>
         <h4 className="text-sm font-bold text-neutral-950">Permintaan Terkirim!</h4>
-        <p className="text-xs text-neutral-700 leading-relaxed">Penjual akan menghubungi nomor WhatsApp Anda.</p>
+        <p className="text-xs text-neutral-700 leading-relaxed">
+          Penjual akan menghubungi WhatsApp Anda di <span className="font-semibold whitespace-nowrap">{formatWhatsAppDisplay(`62${phone}`)}</span>.
+        </p>
         <p className="text-xs text-amber-800 leading-relaxed">Ingat: jangan transfer uang apa pun sebelum survei langsung dan cek sertifikat.</p>
       </div>
     );
@@ -82,7 +93,19 @@ export function PropertyLeadForm({ propertyId, propertyTitle }: PropertyLeadForm
 
       <form onSubmit={handleSubmit} onFocusCapture={syncTourFlag} className="space-y-3 pt-1">
         <Input id="lead-name" label="Nama Lengkap" type="text" required maxLength={100} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Contoh: Budi Santoso" />
-        <Input id="lead-phone" label="Nomor WhatsApp" type="tel" required maxLength={30} autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0812xxxxxxxx" />
+        <PhoneInput
+          id="lead-phone"
+          label="Nomor WhatsApp"
+          required
+          autoComplete="tel-national"
+          value={phone}
+          onValueChange={(digits) => {
+            setPhone(digits);
+            if (phoneError) setPhoneError("");
+          }}
+          placeholder="812 3456 7890"
+          error={phoneError}
+        />
         <Textarea id="lead-note" label="Catatan Tambahan (Opsional)" rows={2} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Kapan waktu luang Anda untuk survei lokasi?" className="resize-none" />
         <Label htmlFor="lead-viewed-tour" className="items-start leading-snug font-normal text-muted-foreground">
           <Checkbox

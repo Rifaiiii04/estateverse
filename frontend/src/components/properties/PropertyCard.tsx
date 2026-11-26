@@ -1,30 +1,21 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { NO_PHOTO_PLACEHOLDER, hasVirtualTour } from "@/lib/utils/media";
+import { NO_PHOTO_PLACEHOLDER, showPlaceholderOnError, virtualTourKind } from "@/lib/utils/media";
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Box, Layers } from "lucide-react";
+import { Box, Layers, Orbit } from "lucide-react";
 import { Property } from "@/types/property";
 import { formatCompactIDR, formatIDR } from "@/lib/utils/formatters";
 import { getMediaUrl } from "@/lib/api/client";
 import { useLanguage } from "@/context/LanguageContext";
 import { smoothEase } from "@/components/ui/MotionPrimitives";
+import { propertyTypeLabel } from "@/lib/utils/propertyType";
 
 interface PropertyCardProps {
   property: Property;
   showStatus?: boolean;
-}
-
-// Formats property_type into a readable label in the active language.
-function getTypeLabel(type: string, isEn: boolean): string {
-  const key = (type || "house").toLowerCase();
-  if (key === "villa") return "Villa";
-  if (key === "apartment") return isEn ? "Apartment" : "Apartemen";
-  if (key === "commercial") return isEn ? "Commercial" : "Komersial";
-  if (key === "land") return isEn ? "Land" : "Kavling";
-  return isEn ? "Modern House" : "Rumah Modern";
 }
 
 // PropertyCard renders a compact animated architectural property listing card with hover elevation.
@@ -37,8 +28,10 @@ export function PropertyCard({ property }: PropertyCardProps) {
       ? getMediaUrl(property.images[0].file_path)
       : NO_PHOTO_PLACEHOLDER;
 
-  const has3D = hasVirtualTour(property);
-  const typeLabel = getTypeLabel(property.property_type, isEn);
+  const tourKind = virtualTourKind(property);
+  const hasTour = tourKind !== "none";
+  const typeLabel = propertyTypeLabel(property.property_type, isEn);
+  const mediaLabel = { tour360: isEn ? "360° tour" : "Tur 360°", model3d: isEn ? "3D model" : "Model 3D", none: isEn ? "Photos" : "Foto" }[tourKind];
 
   return (
     <motion.article
@@ -57,17 +50,25 @@ export function PropertyCard({ property }: PropertyCardProps) {
         <img
           src={primaryImage}
           alt={property.title}
+          onError={showPlaceholderOnError}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
         />
 
         {/* Top-Left Status / 3D Badge */}
         <div className="absolute top-2.5 left-2.5 flex items-center gap-1">
-          {has3D ? (
+          {tourKind === "tour360" && (
             <span className="h-5 px-2 rounded-full text-[10px] font-bold bg-sage-600/95 backdrop-blur-xs text-white shadow-2xs inline-flex items-center gap-1">
-              <Box className="w-2.5 h-2.5 text-sage-100" />
+              <Orbit className="w-2.5 h-2.5 text-sage-100" aria-hidden="true" />
               <span>Walk Inside 360°</span>
             </span>
-          ) : (
+          )}
+          {tourKind === "model3d" && (
+            <span className="h-5 px-2 rounded-full text-[10px] font-bold bg-neutral-900/85 backdrop-blur-xs text-white shadow-2xs inline-flex items-center gap-1">
+              <Box className="w-2.5 h-2.5 text-sage-100" aria-hidden="true" />
+              <span>{isEn ? "3D Model" : "Model 3D"}</span>
+            </span>
+          )}
+          {tourKind === "none" && (
             <span className="h-5 px-2 rounded-full text-[10px] font-semibold bg-neutral-900/80 backdrop-blur-xs text-white shadow-2xs inline-flex items-center">
               {typeLabel}
             </span>
@@ -116,27 +117,19 @@ export function PropertyCard({ property }: PropertyCardProps) {
           <div className="flex items-center gap-1.5 min-w-0 text-neutral-600 font-medium truncate">
             <span
               className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                has3D ? "bg-sage-600" : "bg-neutral-400"
+                hasTour ? "bg-sage-600" : "bg-neutral-400"
               }`}
             />
             <span className="truncate font-semibold text-neutral-800">{property.city}</span>
             <span className="text-neutral-300">|</span>
-            <span className="truncate text-neutral-500">
-              {has3D
-                ? isEn
-                  ? "Virtual tour"
-                  : "Tur virtual"
-                : isEn
-                ? "Photos"
-                : "Foto"}
-            </span>
+            <span className="truncate text-neutral-500">{mediaLabel}</span>
           </div>
 
           <Link
             href={`/properties/${property.slug}`}
-            className="text-sage-600 group-hover:text-sage-800 font-bold shrink-0 inline-flex items-center gap-0.5 transition-colors text-[11px]"
+            className="text-sage-600 group-hover:text-sage-800 font-bold shrink-0 inline-flex min-h-6 items-center gap-0.5 px-1.5 -mr-1.5 transition-colors text-[11px]"
           >
-            <span>{has3D ? (isEn ? "Open Tour" : "Buka Tur") : isEn ? "Details" : "Detail"}</span>
+            <span>{hasTour ? (isEn ? "Open Tour" : "Buka Tur") : isEn ? "Details" : "Detail"}</span>
             <span aria-hidden="true">&rarr;</span>
           </Link>
         </div>

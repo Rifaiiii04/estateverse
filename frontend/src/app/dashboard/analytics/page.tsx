@@ -6,6 +6,7 @@ import { Property, DashboardSummary } from "@/types/property";
 import { getDashboardSummary, getDashboardProperties } from "@/lib/api/properties";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { TourImpactComparison } from "@/components/dashboard/TourImpactComparison";
+import { propertyTypeLabel } from "@/lib/utils/propertyType";
 
 // DashboardAnalyticsPage displays real database portfolio analytics, 3D engagement, and per-listing metrics.
 export default function DashboardAnalyticsPage() {
@@ -156,7 +157,7 @@ export default function DashboardAnalyticsPage() {
                 {properties.map((row) => (
                   <tr key={row.id} className="hover:bg-neutral-50/60 transition-colors">
                     <td className="py-3.5 font-bold text-neutral-950">{row.title}</td>
-                    <td className="py-3.5 capitalize">{row.property_type} &bull; {row.city}</td>
+                    <td className="py-3.5">{propertyTypeLabel(row.property_type)} &bull; {row.city}</td>
                     <td className="py-3.5">Rp {row.price.toLocaleString("id-ID")}</td>
                     <td className="py-3.5">
                       {row.model_3d_path ? (

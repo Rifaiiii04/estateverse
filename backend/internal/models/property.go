@@ -40,6 +40,8 @@ type Property struct {
 	OwnerName      string           `json:"owner_name,omitempty"`
 	HasTour        bool             `json:"has_tour"`
 	BorrowedPhotos int              `json:"borrowed_photo_count"`
+	// UnreadablePhotos counts gallery files that no longer exist (removed or quarantined); they are left out of Images.
+	UnreadablePhotos int `json:"unreadable_photo_count"`
 }
 
 // WalkCoordinate specifies a 3D vector for first-person spawn locations.

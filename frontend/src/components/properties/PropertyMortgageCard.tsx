@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Calculator } from "lucide-react";
 import { formatIDR, formatRupiahInput, parseRupiahInput } from "@/lib/utils/formatters";
-import { assessAffordability, AffordabilityLevel, minimumIncomeFor, monthlyInstallment, residualIncome } from "@/lib/utils/mortgage";
+import { assessAffordability, AffordabilityLevel, MAX_ANNUAL_RATE_PCT, minimumIncomeFor, monthlyInstallment, parseAnnualRate, residualIncome } from "@/lib/utils/mortgage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
@@ -27,10 +27,11 @@ export function PropertyMortgageCard({ price }: PropertyMortgageCardProps) {
   const [incomeRaw, setIncomeRaw] = useState("");
   const [expensesRaw, setExpensesRaw] = useState("");
 
-  const annualRate = Math.min(20, Math.max(0, Number(rate.replace(",", ".")) || 0));
-  const installment = monthlyInstallment({ price, downPaymentPct: dp, annualRatePct: annualRate, years });
+  const annualRate = parseAnnualRate(rate);
+  const rateError = annualRate === null ? `Isi bunga lebih dari 0% dan maksimal ${MAX_ANNUAL_RATE_PCT}%, contoh 7 atau 6,5.` : "";
+  const installment = annualRate === null ? 0 : monthlyInstallment({ price, downPaymentPct: dp, annualRatePct: annualRate, years });
   const income = parseRupiahInput(incomeRaw);
-  const check = income > 0 ? assessAffordability(installment, income) : null;
+  const check = income > 0 && annualRate !== null ? assessAffordability(installment, income) : null;
   const leftover = residualIncome(income, installment, parseRupiahInput(expensesRaw));
 
   return (
@@ -44,7 +45,7 @@ export function PropertyMortgageCard({ price }: PropertyMortgageCardProps) {
       <ChoiceGroup label="Tenor" options={TENOR_OPTIONS} value={years} suffix=" thn" onChange={setYears} />
 
       <div className="grid grid-cols-2 gap-3">
-        <Input id="mortgage-rate" label="Bunga per tahun (%)" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
+        <Input id="mortgage-rate" label="Bunga per tahun (%)" inputMode="decimal" value={rate} error={rateError} onChange={(e) => setRate(e.target.value)} />
         <Input id="mortgage-income" label="Gaji bulanan (opsional)" inputMode="numeric" value={incomeRaw} placeholder="Rp 6.000.000" onChange={(e) => setIncomeRaw(formatRupiahInput(e.target.value))} />
       </div>
       {income > 0 && (
@@ -58,6 +59,7 @@ export function PropertyMortgageCard({ price }: PropertyMortgageCardProps) {
         />
       )}
 
+      {annualRate !== null && (
       <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200/70 space-y-1" aria-live="polite">
         <span className="text-xs text-neutral-700 block">Estimasi cicilan bulanan</span>
         <div className="text-xl font-extrabold text-sage-700">
@@ -78,6 +80,7 @@ export function PropertyMortgageCard({ price }: PropertyMortgageCardProps) {
           </p>
         )}
       </div>
+      )}
       <p className="text-[11px] text-neutral-600">
         Perkiraan saja. Batas DSR, bunga, dan syarat sebenarnya ditentukan masing-masing bank. Pastikan sisa uang cukup untuk kebutuhan pokok — rasio saja tidak cukup. Siapkan juga biaya pajak dan notaris sekitar 5–10% dari harga.
       </p>

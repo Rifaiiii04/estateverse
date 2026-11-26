@@ -27,6 +27,7 @@ type propertyService struct {
 	modelQueue ModelQueue
 	tours      repositories.TourRepository
 	photos     PhotoFingerprinter
+	media      MediaJanitor
 }
 
 // NewPropertyService instantiates the property business service with background 3D processing.
@@ -35,27 +36,30 @@ func NewPropertyService(
 	iRepo repositories.PropertyImageRepository,
 	mQueue ModelQueue,
 ) PropertyService {
-	return newPropertyService(pRepo, iRepo, mQueue, nil, nil)
+	return newPropertyService(pRepo, iRepo, mQueue, nil, nil, nil)
 }
 
-// NewPropertyServiceWithTours wires tour readiness into publication checks and, when photos is set, flags borrowed listing photos.
+// NewPropertyServiceWithTours wires tour readiness into publication checks; when set, photos flags borrowed
+// listing photos and media deletes files a listing no longer uses.
 func NewPropertyServiceWithTours(
 	pRepo repositories.PropertyRepository,
 	iRepo repositories.PropertyImageRepository,
 	mQueue ModelQueue,
 	tours repositories.TourRepository,
 	photos PhotoFingerprinter,
+	media MediaJanitor,
 ) PropertyService {
-	return newPropertyService(pRepo, iRepo, mQueue, tours, photos)
+	return newPropertyService(pRepo, iRepo, mQueue, tours, photos, media)
 }
 
-// newPropertyService constructs the property service with optional tour readiness and photo-origin checks.
+// newPropertyService constructs the property service with optional tour readiness, photo-origin, and media cleanup.
 func newPropertyService(
 	pRepo repositories.PropertyRepository,
 	iRepo repositories.PropertyImageRepository,
 	mQueue ModelQueue,
 	tours repositories.TourRepository,
 	photos PhotoFingerprinter,
+	media MediaJanitor,
 ) PropertyService {
 	return &propertyService{
 		propRepo:   pRepo,
@@ -63,6 +67,7 @@ func newPropertyService(
 		modelQueue: mQueue,
 		tours:      tours,
 		photos:     photos,
+		media:      media,
 	}
 }
 
@@ -132,6 +137,7 @@ func (s *propertyService) UpdateProperty(ctx context.Context, id int64, ownerID 
 		return nil, ErrNotFound
 	}
 
+	previousMedia := s.listingMedia(ctx, existing)
 	modelChanged := cleanIn.Model3DPath != "" && cleanIn.Model3DPath != existing.Model3DPath
 	requestedPublish := cleanIn.Status == models.StatusPublished
 	if requestedPublish {
@@ -185,6 +191,7 @@ func (s *propertyService) UpdateProperty(ctx context.Context, id int64, ownerID 
 			AutoPublish:  requestedPublish,
 		})
 	}
+	s.releaseMedia(ctx, previousMedia) // only files the saved listing no longer uses are deleted
 
 	return s.GetOwnerProperty(ctx, id, ownerID)
 }

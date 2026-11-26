@@ -29,6 +29,9 @@ var (
 	nonDigitPattern      = regexp.MustCompile(`[^0-9]`)
 )
 
+// DemoWhatsAppPlaceholder is the non-routable number the seeder gives demo listings; buyers see it as "not available".
+const DemoWhatsAppPlaceholder = "628000000000"
+
 // sanitizePropertyInput trims, normalizes, and validates every client-supplied property field.
 func sanitizePropertyInput(in models.PropertyInput) (models.PropertyInput, error) {
 	in.Title = strings.TrimSpace(in.Title)
@@ -59,6 +62,9 @@ func sanitizePropertyInput(in models.PropertyInput) (models.PropertyInput, error
 	if err := validatePropertyPin(in); err != nil {
 		return in, err
 	}
+	if err := validatePropertyRegion(in); err != nil {
+		return in, err
+	}
 	return in, nil
 }
 
@@ -84,6 +90,9 @@ func validatePropertyText(in models.PropertyInput) error {
 	}
 	if !whatsAppPattern.MatchString(in.WhatsAppNumber) {
 		return newValidationError("valid WhatsApp phone number is required")
+	}
+	if in.WhatsAppNumber == DemoWhatsAppPlaceholder {
+		return newValidationError("isi nomor WhatsApp penjual yang aktif, bukan nomor contoh")
 	}
 	return nil
 }
@@ -145,13 +154,21 @@ func NormalizeWhatsApp(phone string) string {
 	if digits == "" {
 		return ""
 	}
+	if strings.HasPrefix(digits, "620") { // "+62 0812…": the trunk 0 must not follow the country code
+		return "62" + strings.TrimLeft(digits[2:], "0")
+	}
 	if strings.HasPrefix(digits, "0") {
-		return "62" + digits[1:]
+		return "62" + strings.TrimLeft(digits, "0")
 	}
 	if strings.HasPrefix(digits, "62") {
 		return digits
 	}
 	return "62" + digits
+}
+
+// IsValidWhatsApp reports whether a normalized number (62 + 8–13 subscriber digits) can receive a wa.me chat.
+func IsValidWhatsApp(normalized string) bool {
+	return whatsAppPattern.MatchString(normalized)
 }
 
 // sanitizeBenefits trims, deduplicates, and caps property benefit highlights.

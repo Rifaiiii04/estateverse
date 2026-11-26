@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/MotionPrimitives";
 import { useDebounce } from "@/lib/hooks/useDebounce";
+import { buildWhatsAppChatLink, formatWhatsAppDisplay } from "@/lib/utils/whatsapp";
 
 const leadStatusOptions: SelectOption[] = [
   { value: "new", label: "Baru" },
@@ -148,6 +149,9 @@ export default function DashboardLeadsPage() {
                   <p className="text-xs text-neutral-600 font-medium">
                     Minat Properti: <span className="text-neutral-950 font-bold">{item.property_title || `Properti #${item.property_id}`}</span> {item.budget ? `(${item.budget})` : ""}
                   </p>
+                  <p className="text-xs text-neutral-600 font-medium">
+                    WhatsApp: <span className="text-neutral-950 font-semibold tabular-nums">{formatWhatsAppDisplay(item.phone)}</span>
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -163,7 +167,7 @@ export default function DashboardLeadsPage() {
                     size="sm"
                     render={
                       <a
-                        href={`https://wa.me/${item.phone}?text=${encodeURIComponent(`Halo Bapak/Ibu ${item.name}, saya pemilik properti ${item.property_title || ""}. Terima kasih atas minat Anda melalui EstateVerse.`)}`}
+                        href={buildWhatsAppChatLink(item.phone, `Halo Bapak/Ibu ${item.name}, saya pemilik properti ${item.property_title || ""}. Terima kasih atas minat Anda melalui EstateVerse.`)}
                         target="_blank"
                         rel="noreferrer"
                       />

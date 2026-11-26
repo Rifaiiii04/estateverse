@@ -10,11 +10,15 @@ import { Alert } from "@/components/ui/Alert";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { LogoMark } from "@/components/ui/Logo";
+import { AuthPageLoading } from "@/components/layout/AuthPageLoading";
+import { nextPathFromLocation } from "@/lib/auth/redirect";
+import { useGuestOnly } from "@/lib/hooks/useGuestOnly";
 
 // RegisterPage renders the seller registration interface with validation and instant session initialization.
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
+  const hidePage = useGuestOnly();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,13 +51,15 @@ export default function RegisterPage() {
         password,
         confirm_password: confirmPassword,
       });
-      router.push("/dashboard");
+      router.push(nextPathFromLocation());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Pendaftaran gagal. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (hidePage) return <AuthPageLoading />;
 
   return (
     <>
@@ -74,6 +80,10 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
+              id="register-name"
+              name="name"
+              autoComplete="name"
+              maxLength={100}
               label="Nama Lengkap / Agensi"
               type="text"
               placeholder="Budi Pratama"
@@ -82,6 +92,9 @@ export default function RegisterPage() {
               required
             />
             <Input
+              id="register-email"
+              name="email"
+              autoComplete="email"
               label="Alamat Email"
               type="email"
               placeholder="budi@domain.com"
@@ -90,6 +103,10 @@ export default function RegisterPage() {
               required
             />
             <Input
+              id="register-password"
+              name="password"
+              autoComplete="new-password"
+              minLength={8}
               label="Password (min. 8 karakter)"
               type="password"
               placeholder="••••••••"
@@ -98,6 +115,10 @@ export default function RegisterPage() {
               required
             />
             <Input
+              id="register-confirm-password"
+              name="confirm_password"
+              autoComplete="new-password"
+              minLength={8}
               label="Konfirmasi Password"
               type="password"
               placeholder="••••••••"

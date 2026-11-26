@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { Camera } from "lucide-react";
 import { PropertyImage } from "@/types/property";
 import { getMediaUrl } from "@/lib/api/client";
+import { showPlaceholderOnError } from "@/lib/utils/media";
 
 interface PropertyGalleryProps {
   images: PropertyImage[];
@@ -37,6 +38,7 @@ export function PropertyGallery({ images }: PropertyGalleryProps) {
           <img
             src={getMediaUrl(selectedImage)}
             alt="Foto properti terpilih"
+            onError={showPlaceholderOnError}
             className="w-full h-full object-cover"
           />
         </div>
@@ -57,6 +59,7 @@ export function PropertyGallery({ images }: PropertyGalleryProps) {
             <img
               src={getMediaUrl(img.file_path)}
               alt={img.alt_text || "Thumbnail foto properti"}
+              onError={showPlaceholderOnError}
               className="w-full h-full object-cover"
             />
           </button>

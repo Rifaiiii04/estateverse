@@ -19,6 +19,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils/cn";
 import { PAGE_CONTAINER } from "@/lib/utils/layout";
+import { hasShowablePhotos } from "@/lib/utils/media";
 
 // HomePage presents EstateVerse from the user's side: the problems of first-time buyers and small sellers, then how we help.
 export default function HomePage() {
@@ -44,7 +45,8 @@ export default function HomePage() {
     };
   }, []);
 
-  const displayProperties = dbProperties.slice(0, 8);
+  // Listings whose every photo is unreadable are left off the home page so it never shows broken cards.
+  const displayProperties = dbProperties.filter(hasShowablePhotos).slice(0, 8);
 
   return (
     <>

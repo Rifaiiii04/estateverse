@@ -3,6 +3,8 @@ package middleware
 import (
 	"net/http"
 	"net/url"
+
+	"projectfai/backend/internal/httpx"
 )
 
 // Cors configures Cross-Origin Resource Sharing and handles preflight options.
@@ -47,7 +49,7 @@ func ValidateOrigin(allowedOrigin string) func(http.Handler) http.Handler {
 			if isStateChangingMethod(r.Method) {
 				origin := r.Header.Get("Origin")
 				if origin != "" && !isOriginAllowed(origin, allowedOrigin) {
-					http.Error(w, `{"error":"forbidden origin"}`, http.StatusForbidden)
+					httpx.WriteError(w, http.StatusForbidden, "forbidden origin")
 					return
 				}
 			}

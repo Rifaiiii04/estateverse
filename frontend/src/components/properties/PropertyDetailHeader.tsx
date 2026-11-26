@@ -7,6 +7,7 @@ import { MediaTab, Property } from "@/types/property";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { MediaTabSwitcher } from "./MediaTabSwitcher";
+import { propertyTypeLabel } from "@/lib/utils/propertyType";
 
 interface PropertyDetailHeaderProps {
   property: Property;
@@ -61,8 +62,8 @@ export function PropertyDetailHeader({
             <span>/</span>
             <span className="capitalize">{property.city}</span>
             <span>/</span>
-            <span className="px-2 py-0.5 rounded-md bg-sage-50 border border-sage-200 text-sage-800 text-[11px] font-bold uppercase tracking-wide">
-              {property.property_type || "House"}
+            <span className="px-2 py-0.5 rounded-md bg-sage-50 border border-sage-200 text-sage-800 text-[11px] font-bold tracking-wide">
+              {propertyTypeLabel(property.property_type)}
             </span>
           </div>
           <ShareButton onShare={onShare} iconOnly className="lg:hidden" />

@@ -28,6 +28,8 @@ type RouterDeps struct {
 	RateLimiter   *middleware.RateLimiter
 	EventLimiter  *middleware.RateLimiter
 	AiLimiter     *middleware.RateLimiter
+	UploadLimiter *middleware.RateLimiter
+	AccountHdl    *handlers.AccountHandler
 }
 
 // SetupRoutes registers all application API routes and middleware chain.
@@ -101,10 +103,17 @@ func SetupRoutes(deps RouterDeps) http.Handler {
 
 	registerTourRoutes(mux, deps, requireAuth)
 	registerEngagementRoutes(mux, deps)
+	registerAccountRoutes(mux, deps, requireAuth)
 
-	// Upload routes
-	mux.Handle("/api/v1/upload/image", requireAuth(http.HandlerFunc(deps.StorageHdl.UploadImage)))
-	mux.Handle("/api/v1/upload/model", requireAuth(http.HandlerFunc(deps.StorageHdl.UploadModel)))
+	// Upload routes, throttled so one client cannot flood storage
+	uploads := func(h http.HandlerFunc) http.Handler {
+		if deps.UploadLimiter == nil {
+			return requireAuth(h)
+		}
+		return deps.UploadLimiter.Limit(requireAuth(h))
+	}
+	mux.Handle("/api/v1/upload/image", uploads(deps.StorageHdl.UploadImage))
+	mux.Handle("/api/v1/upload/model", uploads(deps.StorageHdl.UploadModel))
 
 	// Static storage serving
 	mux.HandleFunc("/api/v1/storage/", deps.StorageHdl.ServeFile)

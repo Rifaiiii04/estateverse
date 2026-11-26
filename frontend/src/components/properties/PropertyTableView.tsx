@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { NO_PHOTO_PLACEHOLDER, hasVirtualTour } from "@/lib/utils/media";
+import { NO_PHOTO_PLACEHOLDER, showPlaceholderOnError, virtualTourKind } from "@/lib/utils/media";
 import React from "react";
 import Link from "next/link";
 import { Box } from "lucide-react";
@@ -40,7 +40,8 @@ export function PropertyTableView({ properties }: PropertyTableViewProps) {
                 item.images && item.images.length > 0
                   ? getMediaUrl(item.images[0].file_path)
                   : NO_PHOTO_PLACEHOLDER;
-              const has3D = hasVirtualTour(item);
+              const tourKind = virtualTourKind(item);
+              const has3D = tourKind !== "none";
 
               return (
                 <tr key={item.id} className="hover:bg-sage-50/40 transition-colors group">
@@ -49,6 +50,7 @@ export function PropertyTableView({ properties }: PropertyTableViewProps) {
                       <img
                         src={thumb}
                         alt={item.title}
+                        onError={showPlaceholderOnError}
                         className="w-14 h-10 rounded-lg object-cover bg-neutral-100 shrink-0 border border-neutral-200/60"
                       />
                       <div className="min-w-0">
@@ -72,7 +74,7 @@ export function PropertyTableView({ properties }: PropertyTableViewProps) {
                     {has3D ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-sage-50 text-sage-700 border border-sage-200">
                         <Box className="w-3 h-3 text-sage-600" />
-                        <span>{isEn ? "Available" : "Tersedia"}</span>
+                        <span>{tourKind === "tour360" ? (isEn ? "360° tour" : "Tur 360°") : isEn ? "3D model" : "Model 3D"}</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-neutral-100 text-neutral-500">
@@ -89,7 +91,7 @@ export function PropertyTableView({ properties }: PropertyTableViewProps) {
                   <td className="py-3 px-4 sm:px-6 text-right whitespace-nowrap">
                     <Link
                       href={`/properties/${item.slug}`}
-                      className="text-xs font-bold text-sage-600 hover:text-sage-800"
+                      className="inline-flex min-h-6 items-center text-xs font-bold text-sage-600 hover:text-sage-800"
                     >
                       {has3D ? (isEn ? "Open Tour →" : "Buka Tur →") : isEn ? "View →" : "Detail →"}
                     </Link>

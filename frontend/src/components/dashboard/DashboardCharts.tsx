@@ -3,6 +3,7 @@
 import React from "react";
 import { DashboardSummary } from "@/types/property";
 import { formatIDR } from "@/lib/utils/formatters";
+import { propertyTypeLabel } from "@/lib/utils/propertyType";
 
 interface DashboardChartsProps {
   summary: DashboardSummary | null;
@@ -13,21 +14,12 @@ interface BarRow {
   value: number;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  house: "Rumah",
-  villa: "Villa",
-  townhouse: "Townhouse",
-  cluster: "Cluster",
-  apartment: "Apartemen",
-  land: "Kavling",
-  commercial: "Komersial",
-};
-
 // HorizontalBars draws labelled bars scaled to the largest value, with the exact number beside each bar.
 function HorizontalBars({ rows, emptyText }: { rows: BarRow[]; emptyText: string }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
   if (rows.every((r) => r.value === 0)) {
-    return <p className="text-xs text-neutral-600 py-6 text-center">{emptyText}</p>;
+    // Narrow, centered text on phones stays clear of the floating add button at the right edge.
+    return <p className="text-xs text-neutral-600 py-6 text-center text-balance max-md:max-w-60 max-md:mx-auto">{emptyText}</p>;
   }
   return (
     <ul className="space-y-3">
@@ -49,7 +41,7 @@ function HorizontalBars({ rows, emptyText }: { rows: BarRow[]; emptyText: string
 // DashboardCharts shows real portfolio composition and the buyer journey from page view to inquiry.
 export function DashboardCharts({ summary }: DashboardChartsProps) {
   const typeRows = Object.entries(summary?.type_breakdown ?? {}).map(([type, count]) => ({
-    label: TYPE_LABELS[type] ?? type,
+    label: propertyTypeLabel(type),
     value: count,
   }));
   const views = summary?.total_views ?? 0;
