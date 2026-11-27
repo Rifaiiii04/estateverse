@@ -11,49 +11,32 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/MotionPri
 import { formatIDR } from "@/lib/utils/formatters";
 import { assessAffordability, monthlyInstallment } from "@/lib/utils/mortgage";
 
+type AgentsCopy = ReturnType<typeof useLanguage>["t"]["agents"];
+
 interface PromptPreview {
   query: string;
   response: string;
   category: string;
 }
 
-// buildPromptCards prepares example questions; the affordability answer is computed, not hard-coded.
-function buildPromptCards(): PromptPreview[] {
+const CAPABILITY_ICONS = [Calculator, ShieldCheck, Camera];
+
+// buildPromptCards prepares example questions in the active language; the affordability answer is computed, not hard-coded.
+function buildPromptCards(copy: AgentsCopy): PromptPreview[] {
   const installment = monthlyInstallment({ price: 350_000_000, downPaymentPct: 10, annualRatePct: 7, years: 15 });
   const { ratio } = assessAffordability(installment, 6_000_000);
-  return [
-    {
-      query: "Rumah 350 juta, gaji saya 6 juta — cicilannya aman?",
-      response: `Estimasi cicilan ${formatIDR(installment)}/bulan (DP 10%, bunga 7%, 15 tahun) = ${Math.round(ratio * 100)}% gaji. Nyaman ≤30%; batas bank umumnya 35–40%.`,
-      category: "Kemampuan Bayar",
-    },
-    {
-      query: "Dokumen apa saja untuk mengajukan KPR?",
-      response: "KTP, Kartu Keluarga, NPWP, slip gaji 3 bulan, rekening koran, dan surat keterangan kerja.",
-      category: "Dokumen KPR",
-    },
-    {
-      query: "Biaya tambahan apa saja saat membeli rumah?",
-      response: "BPHTB, AJB/PPAT, balik nama, dan biaya KPR — sisihkan kira-kira 5–10% dari harga rumah.",
-      category: "Biaya Pembelian",
-    },
-    {
-      query: "Saya mau jual rumah sendiri, mulai dari mana?",
-      response: "Pasang iklan, rekam tur 360° tiap ruangan dari HP, lalu terima pertanyaan pembeli langsung lewat WhatsApp.",
-      category: "Untuk Penjual",
-    },
-  ];
+  const { affordability, documents, costs, sellers } = copy.prompts;
+  const computed = affordability.response
+    .replace("{installment}", formatIDR(installment))
+    .replace("{ratio}", String(Math.round(ratio * 100)));
+  return [{ ...affordability, response: computed }, documents, costs, sellers];
 }
 
 // AiConsultantSection introduces the smart assistant for first-home buyers and independent sellers.
 export function AiConsultantSection() {
   const { t } = useLanguage();
-  const promptCards = buildPromptCards();
-  const capabilities = [
-    { icon: Calculator, text: "Hitung kemampuan bayar KPR dari gaji Anda" },
-    { icon: ShieldCheck, text: "Panduan dokumen dan biaya resmi membeli rumah" },
-    { icon: Camera, text: "Tips penjual: merekam tur 360° dan menulis iklan jujur" },
-  ];
+  const promptCards = buildPromptCards(t.agents);
+  const capabilities = t.agents.capabilities.map((text, i) => ({ icon: CAPABILITY_ICONS[i] ?? Sparkles, text }));
 
   return (
     <section id="ai-consultant" aria-labelledby="assistant-title" className="py-14 sm:py-20 bg-sage-50/55 border-y border-sage-200/60">
@@ -68,7 +51,7 @@ export function AiConsultantSection() {
             </div>
             <Button size="lg" className="w-full sm:w-auto" render={<Link href="/ai-consultant" />}>
               <Sparkles aria-hidden="true" />
-              <span>Mulai Tanya Asisten</span>
+              <span>{t.agents.cta}</span>
               <ArrowRight aria-hidden="true" />
             </Button>
           </div>
@@ -87,7 +70,7 @@ export function AiConsultantSection() {
                   <p className="text-xs text-neutral-700 leading-relaxed">{card.response}</p>
                 </div>
                 <div className="pt-4 mt-4 border-t border-neutral-100 flex items-center justify-between text-xs font-semibold text-neutral-800 group-hover:text-sage-700">
-                  <span>Tanyakan ke asisten</span>
+                  <span>{t.agents.askLink}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-sage-600" aria-hidden="true" />
                 </div>
               </Link>

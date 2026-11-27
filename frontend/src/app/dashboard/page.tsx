@@ -11,10 +11,12 @@ import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { ActiveAdvertisements } from "@/components/dashboard/ActiveAdvertisements";
 import { ListingEfficiency } from "@/components/dashboard/ListingEfficiency";
 import { FadeIn } from "@/components/ui/MotionPrimitives";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 // DashboardPage displays the seller analytical overview, interactive charts, and active property listings.
 export default function DashboardPage() {
   const { toast } = useToast();
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [properties, setProperties] = useState<Property[]>([]);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +61,13 @@ export default function DashboardPage() {
   }, []);
 
   const handleDelete = async (id: number, title: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus properti "${title}"?`)) return;
+    const ok = await confirm({
+      title: "Hapus properti?",
+      description: `"${title}" beserta foto dan tur 360°-nya akan dihapus permanen.`,
+      confirmLabel: "Hapus",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await deleteProperty(id);
       toast.success(`Properti "${title}" berhasil dihapus.`, "Properti Dihapus");
@@ -108,6 +116,7 @@ export default function DashboardPage() {
           />
         </div>
       </FadeIn>
+      {confirmDialog}
     </div>
   );
 }

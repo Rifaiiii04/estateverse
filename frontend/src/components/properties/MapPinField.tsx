@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import type { LeafletMouseEvent, Map as LeafletMap, Marker } from "leaflet";
 import { LocateFixed, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { isPinInProvince, provinceBounds } from "@/lib/utils/regions";
 
 /** A map pin in decimal degrees. */
 export interface GeoPin {
@@ -15,6 +16,8 @@ export interface GeoPin {
 interface MapPinFieldProps {
   value: GeoPin | null;
   onChange: (pin: GeoPin) => void;
+  /** Province chosen in the form; the map zooms to it and warns when the pin lies outside. */
+  province?: string;
 }
 
 type LeafletModule = typeof import("leaflet");
@@ -26,12 +29,13 @@ const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 // MapPinField lets the seller place the house on a map, which is later used to prove tours were recorded on site.
-export function MapPinField({ value, onChange }: MapPinFieldProps) {
+export function MapPinField({ value, onChange, province = "" }: MapPinFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
   const leafletRef = useRef<LeafletModule | null>(null);
   const onChangeRef = useRef(onChange);
+  const valueRef = useRef(value);
   const initialPin = useRef(value);
   const [ready, setReady] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -39,7 +43,8 @@ export function MapPinField({ value, onChange }: MapPinFieldProps) {
 
   useEffect(() => {
     onChangeRef.current = onChange;
-  }, [onChange]);
+    valueRef.current = value;
+  }, [onChange, value]);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +79,16 @@ export function MapPinField({ value, onChange }: MapPinFieldProps) {
     marker.on("dragend", () => onChangeRef.current(roundPin(marker.getLatLng())));
     markerRef.current = marker;
   }, [ready, value]);
+
+  // Zooms to the chosen province unless the existing pin is already inside it.
+  useEffect(() => {
+    const map = mapRef.current;
+    const box = provinceBounds(province);
+    if (!ready || !map || !box) return;
+    const pin = valueRef.current;
+    if (pin && isPinInProvince(province, pin.lat, pin.lng)) return;
+    map.fitBounds([[box[0], box[2]], [box[1], box[3]]]);
+  }, [ready, province]);
 
   // Pins the seller's current GPS position, which is the most accurate when filling the form at the house.
   const useMyLocation = () => {
@@ -110,6 +125,11 @@ export function MapPinField({ value, onChange }: MapPinFieldProps) {
         Dipakai untuk membuktikan tur 360° direkam di rumah ini. Ketuk peta atau geser pin untuk mengubah.
       </p>
       {geoError && <p role="alert" className="text-xs text-rose-700">{geoError}</p>}
+      {value && province && !isPinInProvince(province, value.lat, value.lng) && (
+        <p role="alert" className="text-xs font-semibold text-amber-800">
+          Pin berada di luar provinsi {province}. Geser pin ke lokasi rumah yang sebenarnya.
+        </p>
+      )}
     </div>
   );
 }

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"projectfai/backend/internal/httpx"
 )
 
 type clientRecord struct {
@@ -52,7 +54,7 @@ func (rl *RateLimiter) Limit(next http.Handler) http.Handler {
 
 		if record.count >= rl.limit {
 			rl.mu.Unlock()
-			http.Error(w, `{"error":"too many requests, please slow down"}`, http.StatusTooManyRequests)
+			httpx.WriteError(w, http.StatusTooManyRequests, "too many requests, please slow down")
 			return
 		}
 

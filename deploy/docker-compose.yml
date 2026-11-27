@@ -36,6 +36,11 @@ services:
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       SEED_PASSWORD: ${SEED_PASSWORD:-}
       SEED_WHATSAPP: ${SEED_WHATSAPP:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
     volumes:
       - uploads:/app/storage/uploads
 
@@ -46,6 +51,9 @@ services:
       args:
         NEXT_PUBLIC_API_URL: /api/v1
     restart: unless-stopped
+    environment:
+      # Server-side fetches (page titles, sitemap) reach the API directly inside the Docker network.
+      API_INTERNAL_URL: http://backend:8085/api/v1
 
   caddy:
     image: caddy:2

@@ -65,7 +65,7 @@ function CatalogStatsLine({ stats, isEn }: { stats: CatalogStats; isEn: boolean 
       </span>
       <span>
         <strong className="font-bold text-neutral-950">{stats.count3D}</strong>{" "}
-        {isEn ? "with a virtual tour" : "punya tur virtual"}
+        {isEn ? "with a 360° tour" : "punya tur 360°"}
       </span>
       <span>
         <strong className="font-bold text-neutral-950">{stats.cities.length}</strong> {isEn ? "cities" : "kota"}

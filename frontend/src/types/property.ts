@@ -63,6 +63,8 @@ export interface Property {
   has_tour?: boolean;
   /** Listing photos that match a photo another seller uploaded earlier. */
   borrowed_photo_count?: number;
+  /** Gallery photos whose file can no longer be served (removed or quarantined); they are left out of images. */
+  unreadable_photo_count?: number;
   model_metadata?: Model3DMetadata;
   benefits?: string[];
   status: PropertyStatus;

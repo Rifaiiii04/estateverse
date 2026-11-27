@@ -22,6 +22,8 @@ export function ListingEfficiency({ summary, properties }: ListingEfficiencyProp
   const ratioImages = total > 0 ? Math.round((propertiesWithImages / total) * 100) : 0;
   const propertiesWithPhone = properties.filter((p) => Boolean(p.whatsapp_number)).length;
   const ratioPhone = total > 0 ? Math.round((propertiesWithPhone / total) * 100) : 0;
+  // Overall completeness is the average of the three readiness bars shown below.
+  const overall = total > 0 ? Math.round((ratio3D + ratioImages + ratioPhone) / 3) : 0;
 
   return (
     <div id="efficiency" className="bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 shadow-2xs space-y-6">
@@ -36,7 +38,7 @@ export function ListingEfficiency({ summary, properties }: ListingEfficiencyProp
           </p>
         </div>
         <span className="text-xs font-bold px-2.5 py-1 bg-neutral-100 text-neutral-800 rounded-lg whitespace-nowrap shrink-0">
-          % Lengkap
+          {total > 0 ? `${overall}% Lengkap` : "Belum ada iklan"}
         </span>
       </div>
 

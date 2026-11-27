@@ -23,6 +23,17 @@ export function monthlyInstallment({ price, downPaymentPct, annualRatePct, years
   return Math.round((principal * r * factor) / (factor - 1));
 }
 
+/** Highest annual KPR rate the calculator accepts; anything above is almost certainly a typing mistake. */
+export const MAX_ANNUAL_RATE_PCT = 30;
+
+// parseAnnualRate reads a typed yearly interest rate ("7", "6,5"), returning null unless it is above 0 and at most 30%.
+export function parseAnnualRate(raw: string): number | null {
+  const text = raw.trim().replace(",", ".");
+  if (!/^\d+(\.\d+)?$/.test(text)) return null;
+  const value = Number(text);
+  return value > 0 && value <= MAX_ANNUAL_RATE_PCT ? value : null;
+}
+
 export type AffordabilityLevel = "nyaman" | "batas-bank" | "berisiko";
 
 // debtServiceRatio returns the share of monthly income consumed by the installment (0 when income is unknown).
@@ -48,8 +59,8 @@ export function minimumIncomeFor(installment: number): number {
   return Math.round(installment / COMFORT_DSR);
 }
 
-const AMOUNT_PATTERN = /(\d+(?:[.,]\d+)*)\s*(miliar|milyar|juta|jt|ribu|rb)?/gi;
-const MULTIPLIERS: Record<string, number> = { miliar: 1e9, milyar: 1e9, juta: 1e6, jt: 1e6, ribu: 1e3, rb: 1e3 };
+const AMOUNT_PATTERN = /(\d+(?:[.,]\d+)*)\s*(miliar|milyar|billion|juta|jt|million|ribu|rb)?/gi;
+const MULTIPLIERS: Record<string, number> = { miliar: 1e9, milyar: 1e9, billion: 1e9, juta: 1e6, jt: 1e6, million: 1e6, ribu: 1e3, rb: 1e3 };
 
 // parseRupiahAmounts extracts money amounts like "350 juta", "1,2 miliar", or "Rp 450.000.000" from text.
 export function parseRupiahAmounts(text: string): number[] {

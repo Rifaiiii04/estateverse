@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Property } from "@/types/property";
-import { hasVirtualTour } from "@/lib/utils/media";
+import { hasWalkInside360 } from "@/lib/utils/media";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { matchesPriceRange, parsePriceRange, type PriceRangeFilter } from "@/lib/utils/priceRanges";
 
@@ -32,6 +32,7 @@ export interface CatalogFilters {
 export interface CatalogStats {
   totalCount: number;
   totalValue: number;
+  /** Listings with a ready Walk Inside 360° tour (a 3D model alone does not count). */
   count3D: number;
   houseCount: number;
   villaCount: number;
@@ -49,7 +50,7 @@ function catalogStats(properties: Property[]): CatalogStats {
   return {
     totalCount: properties.length,
     totalValue: properties.reduce((sum, p) => sum + (p.price || 0), 0),
-    count3D: properties.filter((p) => hasVirtualTour(p)).length,
+    count3D: properties.filter((p) => hasWalkInside360(p)).length,
     houseCount,
     villaCount,
     otherCount: Math.max(0, properties.length - houseCount - villaCount),
@@ -60,7 +61,7 @@ function catalogStats(properties: Property[]): CatalogStats {
 // matchesFilters reports whether one listing passes every active catalog filter.
 function matchesFilters(item: Property, f: FilterValues): boolean {
   const type = (item.property_type || "").toLowerCase();
-  if (f.walkInside && !hasVirtualTour(item)) return false;
+  if (f.walkInside && !hasWalkInside360(item)) return false;
   if (f.typeTab === "house" && type !== "house") return false;
   if (f.typeTab === "villa" && type !== "villa") return false;
   if (f.typeTab === "other" && (type === "house" || type === "villa")) return false;
@@ -80,17 +81,41 @@ function sortListings(items: Property[], sortBy: SortByOption): Property[] {
   });
 }
 
-// usePropertyFilters keeps the catalog filters (seeded from the URL) and derives the stats and visible listings.
+const SORT_OPTIONS: SortByOption[] = ["newest", "price_asc", "price_desc", "area_desc"];
+
+// filtersToQuery writes the active filters as URL parameters so a search can be shared or bookmarked.
+function filtersToQuery(f: FilterValues & { sortBy: SortByOption }): string {
+  const params = new URLSearchParams();
+  if (f.keyword.trim()) params.set("q", f.keyword.trim());
+  if (f.typeTab !== "all") params.set("type", f.typeTab);
+  if (f.walkInside) params.set("walkInside", "1");
+  if (f.priceRange !== "all") params.set("priceRange", f.priceRange);
+  if (f.city) params.set("city", f.city);
+  if (f.sortBy !== "newest") params.set("sort", f.sortBy);
+  return params.toString();
+}
+
+// usePropertyFilters keeps the catalog filters in sync with the URL and derives the stats and visible listings.
 export function usePropertyFilters(properties: Property[]) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const initialType = searchParams.get("type")?.toLowerCase();
-  const [typeTab, setTypeTab] = useState<TypeTab>(initialType === "house" || initialType === "villa" ? initialType : "all");
+  const [typeTab, setTypeTab] = useState<TypeTab>(initialType === "house" || initialType === "villa" || initialType === "other" ? initialType : "all");
   const [walkInside, setWalkInside] = useState(searchParams.get("walkInside") === "1");
   const [priceRange, setPriceRange] = useState<PriceRangeFilter>(parsePriceRange(searchParams.get("priceRange")));
   const [city, setCity] = useState(searchParams.get("city") || "");
   const [keyword, setKeyword] = useState(searchParams.get("q") || "");
-  const [sortBy, setSortBy] = useState<SortByOption>("newest");
+  const initialSort = searchParams.get("sort") as SortByOption | null;
+  const [sortBy, setSortBy] = useState<SortByOption>(initialSort && SORT_OPTIONS.includes(initialSort) ? initialSort : "newest");
   const debouncedKeyword = useDebounce(keyword, 300);
+
+  // Mirrors the filters into the address bar without adding history entries or scrolling.
+  useEffect(() => {
+    const query = filtersToQuery({ typeTab, walkInside, priceRange, city, keyword: debouncedKeyword, sortBy });
+    if (query === searchParams.toString()) return;
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [typeTab, walkInside, priceRange, city, debouncedKeyword, sortBy, pathname, router, searchParams]);
 
   const stats = useMemo(() => catalogStats(properties), [properties]);
   const visible = useMemo(() => {

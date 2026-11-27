@@ -22,6 +22,16 @@ type Config struct {
 	TrustProxy      bool
 	OpenRouterKey   string
 	OpenRouterModel string
+	SMTP            SMTPSettings
+}
+
+// SMTPSettings configures outgoing email (password reset links); an empty host disables email.
+type SMTPSettings struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	From     string
 }
 
 // Load loads configuration from environment variables and .env file.
@@ -57,6 +67,13 @@ func Load() (*Config, error) {
 		TrustProxy:      trustProxy,
 		OpenRouterKey:   os.Getenv("OPENROUTER_API_KEY"),
 		OpenRouterModel: os.Getenv("OPENROUTER_MODEL"),
+		SMTP: SMTPSettings{
+			Host:     os.Getenv("SMTP_HOST"),
+			Port:     getEnvOrDefault("SMTP_PORT", "587"),
+			Username: os.Getenv("SMTP_USERNAME"),
+			Password: os.Getenv("SMTP_PASSWORD"),
+			From:     os.Getenv("SMTP_FROM"),
+		},
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -101,8 +118,8 @@ func getEnvOrDefault(key, defaultValue string) string {
 
 // PrintSafeSummary prints loaded configuration without revealing credentials.
 func (c *Config) PrintSafeSummary() string {
-	return fmt.Sprintf("env=%s port=%s frontend=%s uploadDir=%s maxMB=%d trustProxy=%t assistantLLM=%t",
-		c.AppEnv, c.Port, c.FrontendOrigin, c.UploadDir, c.MaxUploadSizeMB, c.TrustProxy, c.AssistantEnabled())
+	return fmt.Sprintf("env=%s port=%s frontend=%s uploadDir=%s maxMB=%d trustProxy=%t assistantLLM=%t email=%t",
+		c.AppEnv, c.Port, c.FrontendOrigin, c.UploadDir, c.MaxUploadSizeMB, c.TrustProxy, c.AssistantEnabled(), c.SMTP.Host != "")
 }
 
 // AssistantEnabled reports whether the OpenRouter-backed assistant has credentials and a model configured.

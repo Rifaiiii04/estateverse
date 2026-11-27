@@ -10,6 +10,7 @@ import { Alert } from "@/components/ui/Alert";
 import { PropertyFormHeader, PropertySaveButton } from "./PropertyFormHeader";
 import { GeoPin, MapPinField } from "./MapPinField";
 import { LocationSelector } from "./LocationSelector";
+import { isPinInProvince } from "@/lib/utils/regions";
 import { DimensionsInputGrid, preventNonNumericKey } from "./DimensionsInputGrid";
 import { ImageGalleryUploader } from "./ImageGalleryUploader";
 import { PropertyModelUploader } from "./PropertyModelUploader";
@@ -75,6 +76,12 @@ export function PropertyForm({
       const msg = "Harga, provinsi, dan kota/kabupaten wajib dipilih dengan benar.";
       setErrorMessage(msg);
       toast.warning(msg, "Lokasi / Harga Belum Dipilih");
+      return;
+    }
+    if (pin && !isPinInProvince(province, pin.lat, pin.lng)) {
+      const msg = `Titik lokasi di peta berada di luar ${province}. Geser pin ke lokasi rumah.`;
+      setErrorMessage(msg);
+      toast.warning(msg, "Lokasi Peta Tidak Cocok");
       return;
     }
     const cleanWa = whatsapp.replace(/[^0-9]/g, "");
@@ -175,7 +182,7 @@ export function PropertyForm({
                 </div>
               </div>
               <Input label="Alamat Lengkap *" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Jl. Karang Mas Sejahtera No. 15" required />
-              <MapPinField value={pin} onChange={setPin} />
+              <MapPinField value={pin} onChange={setPin} province={province} />
               <DimensionsInputGrid
                 landArea={landArea}
                 buildingArea={buildingArea}

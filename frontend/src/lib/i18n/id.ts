@@ -136,6 +136,35 @@ export const id = {
     title: "Asisten Pintar EstateVerse",
     subtitle:
       "Pendamping pembeli rumah pertama dan penjual perorangan: hitung kemampuan bayar KPR, pahami dokumen dan biaya, serta dapatkan rekomendasi dari daftar rumah yang asli.",
+    cta: "Mulai Tanya Asisten",
+    askLink: "Tanyakan ke asisten",
+    capabilities: [
+      "Hitung kemampuan bayar KPR dari gaji Anda",
+      "Panduan dokumen dan biaya resmi membeli rumah",
+      "Tips penjual: merekam tur 360° dan menulis iklan jujur",
+    ],
+    prompts: {
+      affordability: {
+        category: "Kemampuan Bayar",
+        query: "Rumah 350 juta, gaji saya 6 juta — cicilannya aman?",
+        response: "Estimasi cicilan {installment}/bulan (DP 10%, bunga 7%, 15 tahun) = {ratio}% gaji. Nyaman ≤30%; batas bank umumnya 35–40%.",
+      },
+      documents: {
+        category: "Dokumen KPR",
+        query: "Dokumen apa saja untuk mengajukan KPR?",
+        response: "KTP, Kartu Keluarga, NPWP, slip gaji 3 bulan, rekening koran, dan surat keterangan kerja.",
+      },
+      costs: {
+        category: "Biaya Pembelian",
+        query: "Biaya tambahan apa saja saat membeli rumah?",
+        response: "BPHTB, AJB/PPAT, balik nama, dan biaya KPR — sisihkan kira-kira 5–10% dari harga rumah.",
+      },
+      sellers: {
+        category: "Untuk Penjual",
+        query: "Saya mau jual rumah sendiri, mulai dari mana?",
+        response: "Pasang iklan, rekam tur 360° tiap ruangan dari HP, lalu terima pertanyaan pembeli langsung lewat WhatsApp.",
+      },
+    },
   },
   catalog: {
     title: "Rumah Pilihan",

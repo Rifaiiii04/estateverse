@@ -1,95 +1,54 @@
+import REGION_DATA from "./regions-id.json";
+
 // Interface representing an administrative province.
 export interface Province {
   id: string;
   name: string;
 }
 
-// Interface representing an administrative regency or city.
-export interface Regency {
-  id: string;
-  province_id: string;
-  name: string;
+/** Province bounding box [south, north, west, east] in degrees. */
+export type ProvinceBounds = readonly [number, number, number, number];
+
+interface RegionEntry extends Province {
+  bbox: number[];
+  cities: string[];
 }
 
-const FALLBACK_PROVINCES: Province[] = [
-  { id: "31", name: "DKI JAKARTA" },
-  { id: "32", name: "JAWA BARAT" },
-  { id: "33", name: "JAWA TENGAH" },
-  { id: "34", name: "DI YOGYAKARTA" },
-  { id: "35", name: "JAWA TIMUR" },
-  { id: "36", name: "BANTEN" },
-  { id: "51", name: "BALI" },
-  { id: "12", name: "SUMATERA UTARA" },
-  { id: "13", name: "SUMATERA BARAT" },
-  { id: "14", name: "RIAU" },
-  { id: "16", name: "SUMATERA SELATAN" },
-  { id: "64", name: "KALIMANTAN TIMUR" },
-  { id: "73", name: "SULAWESI SELATAN" },
-];
+// regions-id.json bundles all 34 provinces and 514 regencies/cities (names as in the emsifa wilayah API) with
+// OpenStreetMap province bounding boxes, so the form works offline and matches the server-side location check.
+const REGIONS = REGION_DATA as RegionEntry[];
 
-const FALLBACK_CITIES: Record<string, string[]> = {
-  "31": ["JAKARTA SELATAN", "JAKARTA PUSAT", "JAKARTA BARAT", "JAKARTA UTARA", "JAKARTA TIMUR"],
-  "32": ["KOTA BANDUNG", "KABUPATEN BANDUNG", "KOTA BEKASI", "KOTA BOGOR", "KOTA DEPOK", "KABUPATEN BOGOR", "KOTA CIMAHI"],
-  "33": ["KOTA SEMARANG", "KOTA SURAKARTA", "KOTA MAGELANG", "KABUPATEN BANYUMAS", "KABUPATEN KUDUS"],
-  "34": ["KOTA YOGYAKARTA", "KABUPATEN SLEMAN", "KABUPATEN BANTUL", "KABUPATEN GUNUNGKIDUL"],
-  "35": ["KOTA SURABAYA", "KOTA MALANG", "KABUPATEN SIDOARJO", "KOTA BATU", "KABUPATEN GRESIK"],
-  "36": ["KOTA TANGERANG", "KOTA TANGERANG SELATAN", "KABUPATEN TANGERANG", "KOTA SERANG"],
-  "51": ["KOTA DENPASAR", "KABUPATEN BADUNG", "KABUPATEN GIANYAR", "KABUPATEN TABANAN"],
-  "12": ["KOTA MEDAN", "KOTA BINJAI", "KABUPATEN DELI SERDANG"],
-  "13": ["KOTA PADANG", "KOTA BUKITTINGGI", "KOTA PARIAMAN"],
-  "14": ["KOTA PEKANBARU", "KOTA DUMAI"],
-  "16": ["KOTA PALEMBANG", "KOTA PRABUMULIH"],
-  "64": ["KOTA BALIKPAPAN", "KOTA SAMARINDA", "KOTA BONTANG", "KABUPATEN PENAJAM PASER UTARA"],
-  "73": ["KOTA MAKASSAR", "KABUPATEN GOWA", "KOTA PAREPARE"],
-};
+// Pins up to about 20 km outside the box are accepted, mirroring the backend margin for border houses.
+const PIN_BOUNDS_MARGIN = 0.2;
 
-// Fetches Indonesian provinces with online priority and instant offline fallback.
+// findRegion looks up a province by name, ignoring case and extra spaces.
+function findRegion(provinceName: string): RegionEntry | undefined {
+  const key = provinceName.trim().replace(/\s+/g, " ").toUpperCase();
+  return REGIONS.find((r) => r.name === key);
+}
+
+// Returns every Indonesian province.
 export async function getProvinces(): Promise<Province[]> {
-  try {
-    const res = await fetch("https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json", {
-      signal: AbortSignal.timeout(3000),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) return data;
-    }
-  } catch {
-    // Falls back seamlessly to bundled offline directory
-  }
-  return FALLBACK_PROVINCES;
+  return REGIONS.map(({ id, name }) => ({ id, name }));
 }
 
-// Fetches cities for a given province ID or name with offline fallback.
+// Returns the regencies and cities of a province (by id, or by name when the id is unknown).
 export async function getCities(provinceId: string, provinceName?: string): Promise<string[]> {
-  try {
-    if (provinceId) {
-      const res = await fetch(
-        `https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${provinceId}.json`,
-        { signal: AbortSignal.timeout(3000) }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          return data.map((item: Regency) => item.name);
-        }
-      }
-    }
-  } catch {
-    // Falls back to offline list
-  }
+  const byId = REGIONS.find((r) => r.id === provinceId);
+  return (byId ?? findRegion(provinceName ?? ""))?.cities ?? [];
+}
 
-  if (provinceId && FALLBACK_CITIES[provinceId]) {
-    return FALLBACK_CITIES[provinceId];
-  }
+// provinceBounds returns the bounding box of a province, or null for names outside the bundled list.
+export function provinceBounds(provinceName: string): ProvinceBounds | null {
+  const bbox = findRegion(provinceName)?.bbox;
+  return bbox && bbox.length === 4 ? [bbox[0], bbox[1], bbox[2], bbox[3]] : null;
+}
 
-  if (provinceName) {
-    const matched = FALLBACK_PROVINCES.find(
-      (p) => p.name.toLowerCase() === provinceName.toLowerCase()
-    );
-    if (matched && FALLBACK_CITIES[matched.id]) {
-      return FALLBACK_CITIES[matched.id];
-    }
-  }
-
-  return ["KOTA BANDUNG", "KOTA JAKARTA SELATAN", "KOTA SURABAYA", "KOTA SEMARANG", "KOTA DENPASAR"];
+// isPinInProvince reports whether a map pin lies inside (or just outside) the chosen province; unknown names pass.
+export function isPinInProvince(provinceName: string, lat: number, lng: number): boolean {
+  const box = provinceBounds(provinceName);
+  if (!box) return true;
+  const [south, north, west, east] = box;
+  const m = PIN_BOUNDS_MARGIN;
+  return lat >= south - m && lat <= north + m && lng >= west - m && lng <= east + m;
 }

@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"projectfai/backend/internal/httpx"
+	"projectfai/backend/internal/middleware"
 	"projectfai/backend/internal/models"
 	"projectfai/backend/internal/repositories"
 )
@@ -22,7 +23,7 @@ func NewEngagementHandler(stats repositories.StatsRepository, props repositories
 	return &EngagementHandler{stats: stats, props: props}
 }
 
-// RecordEvent stores a detail-page view or virtual tour open for a published property.
+// RecordEvent stores a detail-page view or virtual tour open for a published property, skipping the owner's own visits.
 func (h *EngagementHandler) RecordEvent(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		PropertyID int64  `json:"property_id"`
@@ -39,6 +40,10 @@ func (h *EngagementHandler) RecordEvent(w http.ResponseWriter, r *http.Request) 
 	prop, err := h.props.GetByID(r.Context(), body.PropertyID)
 	if err != nil || prop == nil || prop.Status != models.StatusPublished {
 		WriteError(w, http.StatusNotFound, "resource not found")
+		return
+	}
+	if viewer := middleware.UserFromContext(r.Context()); viewer != nil && viewer.ID == prop.OwnerID {
+		WriteJSON(w, http.StatusOK, map[string]bool{"recorded": false}) // the seller's own visit is not buyer interest
 		return
 	}
 	if err := h.stats.RecordView(r.Context(), body.PropertyID, body.Kind); err != nil {

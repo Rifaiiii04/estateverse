@@ -29,6 +29,11 @@ func validateRegisterInput(name, email, password, confirm string) error {
 	if err := validateEmail(email); err != nil {
 		return err
 	}
+	return validateNewPassword(password, confirm)
+}
+
+// validateNewPassword enforces the password length rules and that the confirmation matches.
+func validateNewPassword(password, confirm string) error {
 	if utf8.RuneCountInString(password) < minPasswordRunes {
 		return newValidationError("password must be at least 8 characters")
 	}

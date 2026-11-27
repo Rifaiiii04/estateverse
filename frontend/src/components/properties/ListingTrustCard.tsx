@@ -5,6 +5,7 @@ import { AlertTriangle, BadgeCheck, CircleDashed, Fingerprint } from "lucide-rea
 import type { Property } from "@/types/property";
 import type { TourRoom } from "@/types/tour";
 import { summarizeTourOrigin, TONE_TEXT_CLASS, TrustTone } from "@/lib/trust/originLabels";
+import { isPinInProvince } from "@/lib/utils/regions";
 
 interface TrustSignal {
   tone: TrustTone;
@@ -61,8 +62,12 @@ function tourSignal(rooms: TourRoom[]): TrustSignal | null {
   return { tone: "neutral", title: "Belum ada bukti rekam di lokasi", detail: "Tur diunggah tanpa data lokasi rekaman. Pastikan saat survei." };
 }
 
-// photoSignal warns when listing photos match photos another seller uploaded earlier.
+// photoSignal warns when listing photos cannot be loaded or match photos another seller uploaded earlier.
 function photoSignal(property: Property): TrustSignal | null {
+  const unreadable = property.unreadable_photo_count ?? 0;
+  if (unreadable > 0) {
+    return { tone: "warn", title: `${unreadable} foto iklan tidak bisa ditampilkan`, detail: "File foto rusak atau sudah dihapus karena tidak lolos pemeriksaan. Minta foto terbaru dan pastikan saat survei." };
+  }
   if (!property.images?.length) return null;
   const borrowed = property.borrowed_photo_count ?? 0;
   if (borrowed > 0) {
@@ -71,9 +76,14 @@ function photoSignal(property: Property): TrustSignal | null {
   return { tone: "good", title: "Foto tidak ditemukan di iklan lain", detail: "Tidak ada foto yang sama dengan unggahan penjual lain sebelumnya." };
 }
 
-// pinSignal tells whether the seller marked the house on the map.
+// pinSignal tells whether the seller marked the house on the map, and warns when the pin is outside the listed province.
 function pinSignal(property: Property): TrustSignal {
-  return property.latitude != null
-    ? { tone: "good", title: "Lokasi rumah ditandai di peta", detail: "Penjual memasang titik lokasi untuk dicocokkan dengan rekaman tur." }
-    : { tone: "neutral", title: "Lokasi rumah belum ditandai", detail: "Tanyakan alamat lengkap dan titik lokasi kepada penjual." };
+  const { latitude: lat, longitude: lng } = property;
+  if (lat == null || lng == null) {
+    return { tone: "neutral", title: "Lokasi rumah belum ditandai", detail: "Tanyakan alamat lengkap dan titik lokasi kepada penjual." };
+  }
+  if (!isPinInProvince(property.province, lat, lng)) {
+    return { tone: "warn", title: "Titik peta tidak cocok dengan alamat", detail: `Pin berada di luar ${property.province}. Pastikan lokasi rumah saat survei.` };
+  }
+  return { tone: "good", title: "Lokasi rumah ditandai di peta", detail: "Penjual memasang titik lokasi untuk dicocokkan dengan rekaman tur." };
 }

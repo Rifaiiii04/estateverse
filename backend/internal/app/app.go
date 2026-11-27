@@ -18,6 +18,7 @@ const (
 	generalRateLimit   = 20
 	assistantRateLimit = 10
 	eventRateLimit     = 60
+	uploadRateLimit    = 40
 	modelQueueWorkers  = 2
 )
 
@@ -46,9 +47,17 @@ func Build(ctx context.Context, cfg *config.Config, db *sql.DB) http.Handler {
 	if db != nil {
 		photos.StartBackfill(ctx)
 	}
-	propSvc := services.NewPropertyServiceWithTours(propRepo, imgRepo, modelQueue, tourRepo, photos)
+	media := services.NewMediaJanitor(repositories.NewMediaReferenceRepository(db), storageSvc)
+	if db != nil {
+		media.Start(ctx)
+	}
+	propSvc := services.NewPropertyServiceWithTours(propRepo, imgRepo, modelQueue, tourRepo, photos, media)
 	tourSvc := services.NewTourService(tourRepo, propRepo, storageSvc, tourQueue)
 	assistantSvc := services.NewAssistantService(cfg.OpenRouterKey, cfg.OpenRouterModel, propRepo)
+	mailer := services.NewSMTPMailer(services.SMTPConfig(cfg.SMTP))
+	accountSvc := services.NewAccountService(userRepo, repositories.NewAccountRepository(db), propSvc,
+		mailer, cfg.FrontendOrigin, !cfg.IsProduction())
+	authHdl := handlers.NewAuthHandler(authSvc, cfg.IsProduction(), activitySvc)
 
 	return routes.SetupRoutes(routes.RouterDeps{
 		Config:        cfg,
@@ -56,7 +65,8 @@ func Build(ctx context.Context, cfg *config.Config, db *sql.DB) http.Handler {
 		PropSvc:       propSvc,
 		StorageSvc:    storageSvc,
 		HealthHdl:     handlers.NewHealthHandler(db),
-		AuthHdl:       handlers.NewAuthHandler(authSvc, cfg.IsProduction(), activitySvc),
+		AuthHdl:       authHdl,
+		AccountHdl:    handlers.NewAccountHandler(accountSvc, authHdl),
 		PropHdl:       handlers.NewPropertyHandler(propSvc),
 		StorageHdl:    handlers.NewStorageHandler(storageSvc, photos),
 		LeadHdl:       handlers.NewLeadHandler(leadRepo, propRepo),
@@ -68,6 +78,7 @@ func Build(ctx context.Context, cfg *config.Config, db *sql.DB) http.Handler {
 		RateLimiter:   newLimiter(cfg, generalRateLimit),
 		EventLimiter:  newLimiter(cfg, eventRateLimit),
 		AiLimiter:     newLimiter(cfg, assistantRateLimit),
+		UploadLimiter: newLimiter(cfg, uploadRateLimit),
 	})
 }
 

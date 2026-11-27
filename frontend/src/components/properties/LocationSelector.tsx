@@ -42,12 +42,9 @@ export function LocationSelector({
       .then((data) => {
         if (!mounted) return;
         setLoadedCities({ province, list: data });
-        const matchedCity = data.find((c) => c.toLowerCase() === city.toLowerCase());
-        if (matchedCity && matchedCity !== city) {
-          onCityChange(matchedCity);
-        } else if (!city && data.length > 0) {
-          onCityChange(data[0]);
-        }
+        const matchedCity = data.find((c) => c.toLowerCase() === city.trim().toLowerCase());
+        // A city kept from another province (e.g. Kab. Bandung after switching to Jawa Timur) must be chosen again.
+        if ((matchedCity ?? "") !== city) onCityChange(matchedCity ?? "");
       })
       .catch(() => mounted && setLoadedCities({ province, list: [] }));
     return () => {

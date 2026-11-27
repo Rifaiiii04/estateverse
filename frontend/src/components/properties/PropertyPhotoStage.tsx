@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { smoothEase } from "@/components/ui/MotionPrimitives";
+import { showPlaceholderOnError } from "@/lib/utils/media";
 
 interface PropertyPhotoStageProps {
   title: string;
@@ -27,6 +28,7 @@ export function PropertyPhotoStage({ title, photoUrls }: PropertyPhotoStageProps
             key={photoUrls[currentIdx]}
             src={photoUrls[currentIdx]}
             alt={`${title} - Foto ${currentIdx + 1} dari ${count}`}
+            onError={showPlaceholderOnError}
             initial={{ opacity: 0, scale: 1.02 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
@@ -63,7 +65,7 @@ export function PropertyPhotoStage({ title, photoUrls }: PropertyPhotoStageProps
                 currentIdx === idx ? "border-sage-600 ring-2 ring-sage-600/20" : "border-neutral-200 opacity-70 hover:opacity-100"
               }`}
             >
-              <img src={url} alt="" className="w-full h-full object-cover" />
+              <img src={url} alt="" onError={showPlaceholderOnError} className="w-full h-full object-cover" />
             </button>
           ))}
         </div>

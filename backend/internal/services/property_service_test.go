@@ -209,7 +209,7 @@ func TestPropertyServiceDefersPublishUntilToursReady(t *testing.T) {
 	pRepo := &mockPropRepo{props: make(map[int64]*models.Property)}
 	iRepo := &mockImgRepo{images: make(map[int64][]models.PropertyImage)}
 	tours := newMockTourRepo()
-	svc := NewPropertyServiceWithTours(pRepo, iRepo, nil, tours, nil)
+	svc := NewPropertyServiceWithTours(pRepo, iRepo, nil, tours, nil, nil)
 	input := models.PropertyInput{
 		Title: "Async Tour House", Description: "Rumah dengan panorama yang sedang diproses.", PropertyType: "house",
 		Price: 900000000, Address: "Jl. Merdeka 1", City: "Bandung", Province: "Jawa Barat",

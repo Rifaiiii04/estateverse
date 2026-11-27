@@ -69,7 +69,7 @@ export function ActiveAdvertisements({ properties, onDelete }: ActiveAdvertiseme
       {/* Listings List */}
       <div className="space-y-4">
         {filteredProperties.length === 0 ? (
-          <div className="py-12 text-center text-xs text-neutral-500">
+          <div className="py-12 text-center text-xs text-neutral-500 text-balance max-md:max-w-60 max-md:mx-auto">
             Belum ada properti dalam kategori ini.
           </div>
         ) : (

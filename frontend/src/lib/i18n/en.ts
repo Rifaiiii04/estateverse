@@ -135,6 +135,35 @@ export const en = {
     title: "EstateVerse Smart Assistant",
     subtitle:
       "A companion for first-time buyers and independent sellers: check mortgage affordability, understand documents and costs, and get recommendations from real listings.",
+    cta: "Ask the Assistant",
+    askLink: "Ask the assistant",
+    capabilities: [
+      "Check mortgage affordability from your salary",
+      "Guidance on official documents and costs of buying a home",
+      "Seller tips: recording 360° tours and writing honest listings",
+    ],
+    prompts: {
+      affordability: {
+        category: "Affordability",
+        query: "A 350 million house, my salary is 6 million — is the installment safe?",
+        response: "Estimated installment {installment}/month (10% down payment, 7% interest, 15 years) = {ratio}% of salary. Comfortable is ≤30%; banks usually cap at 35–40%.",
+      },
+      documents: {
+        category: "Mortgage Documents",
+        query: "Which documents do I need to apply for a mortgage (KPR)?",
+        response: "ID card (KTP), family card (KK), tax number (NPWP), last 3 payslips, bank statements, and an employment letter.",
+      },
+      costs: {
+        category: "Buying Costs",
+        query: "What extra costs come with buying a house?",
+        response: "Acquisition tax (BPHTB), deed/notary (AJB/PPAT), title transfer, and mortgage fees — set aside roughly 5–10% of the price.",
+      },
+      sellers: {
+        category: "For Sellers",
+        query: "I want to sell my house myself — where do I start?",
+        response: "List your home, record a 360° tour of each room with your phone, then receive buyer questions directly on WhatsApp.",
+      },
+    },
   },
   catalog: {
     title: "Featured Homes",

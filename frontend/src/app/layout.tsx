@@ -3,12 +3,25 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { MotionProvider } from "@/components/ui/MotionProvider";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "EstateVerse — Jual & Temukan Rumah dengan Walk Inside 360° dari HP",
-  description:
-    "EstateVerse membantu penjual perorangan dan developer kecil memasarkan rumah dengan tur virtual 360° yang direkam dari HP, dan membantu pembeli rumah pertama melihat isi rumah sebelum survei.",
+  ...(process.env.NEXT_PUBLIC_SITE_URL ? { metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL) } : {}),
+  title: {
+    default: "EstateVerse — Jual & Temukan Rumah dengan Walk Inside 360° dari HP",
+    template: "%s | EstateVerse",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "id_ID",
+    title: "EstateVerse — Rumah dengan Walk Inside 360° dari HP",
+    description: SITE_DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 // RootLayout provides global providers, a skip link for keyboard users, and base styles.
