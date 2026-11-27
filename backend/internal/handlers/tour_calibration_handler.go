@@ -17,7 +17,7 @@ func (h *TourHandler) CalibrateCapture(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.MultipartForm.RemoveAll()
 	var meta models.CaptureMeta
-	if err := json.Unmarshal([]byte(r.FormValue("meta")), &meta); err != nil || len(meta.Frames) != 3 {
+	if err := json.Unmarshal([]byte(r.FormValue("meta")), &meta); err != nil || len(meta.Frames) != 3 || meta.Bands != nil {
 		WriteError(w, http.StatusBadRequest, "kalibrasi membutuhkan tiga foto")
 		return
 	}

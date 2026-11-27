@@ -29,6 +29,7 @@ const (
 type CaptureFrame struct {
 	Data        []byte
 	Orientation [4]float64
+	Band        *models.CaptureBandMeta
 }
 
 // validateRoomName trims a room name and enforces a readable length.
@@ -52,11 +53,17 @@ func validateRoomNote(note string) (string, error) {
 
 // validateCaptureFrames checks frame count, JPEG content, consistent dimensions, and sane orientations.
 func validateCaptureFrames(frames []CaptureFrame) error {
+	if len(frames) > 0 && frames[0].Band != nil {
+		return validateCaptureBands(frames)
+	}
 	if len(frames) < panorama.MinFrames || len(frames) > maxCaptureFrames {
 		return newValidationError(fmt.Sprintf("jumlah foto harus %d-%d", panorama.MinFrames, maxCaptureFrames))
 	}
 	var first image.Config
 	for i, f := range frames {
+		if f.Band != nil {
+			return newValidationError("pita panorama dan foto terpisah tidak dapat dicampur")
+		}
 		cfg, err := inspectFrame(f)
 		if err != nil {
 			return newValidationError(fmt.Sprintf("foto ke-%d tidak valid: %v", i+1, err))
@@ -108,7 +115,11 @@ func storeCapture(storage StorageService, roomID int64, name string, frames []Ca
 		if err := storage.WriteFile(path.Join(captureDir(roomID), frameFileName(i)), f.Data); err != nil {
 			return err
 		}
-		manifest.Frames = append(manifest.Frames, models.CaptureFrameMeta{Index: i, Orientation: f.Orientation})
+		if f.Band != nil {
+			manifest.Bands = append(manifest.Bands, *f.Band)
+		} else {
+			manifest.Frames = append(manifest.Frames, models.CaptureFrameMeta{Index: i, Orientation: f.Orientation})
+		}
 	}
 	data, err := json.Marshal(manifest)
 	if err != nil {

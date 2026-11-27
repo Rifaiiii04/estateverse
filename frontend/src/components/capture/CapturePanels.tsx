@@ -26,7 +26,7 @@ export function CaptureIntroPanel({ onStart, isStarting, error }: CaptureIntroPr
   const tips = [
     "Berdiri di area terang. Pegang HP tegak setinggi mata dengan kamera belakang menghadap ruangan.",
     "Putar perlahan ke kanan dengan lensa sebagai poros. Gambar akan mengisi pratinjau selama Anda menyapu.",
-    "Sesudah pengukuran lensa, lanjutkan putaran. Ikuti panah untuk merekam bagian atas dan bawah ruangan.",
+    "Selesaikan satu putaran penuh di setiap ketinggian. Kamera menyimpan satu panorama tiap putaran, lalu memandu Anda ke bagian atas dan bawah ruangan.",
   ];
   return (
     <div className="absolute inset-0 overflow-y-auto bg-neutral-950/90 text-white p-6 flex flex-col justify-center gap-5">
@@ -134,7 +134,7 @@ function CaptureDonePanel({ mode, onRecordAnother, onClose }: CaptureReviewPanel
       <p className="text-sm text-neutral-200 max-w-sm">
         {mode === "local"
           ? "Rekaman disimpan sementara di HP ini dan akan diunggah otomatis saat Anda menekan Simpan Properti."
-          : "Sistem sedang menggabungkan foto menjadi panorama 360°. Status ruangan akan diperbarui setelah selesai."}
+          : "Sistem sedang menyatukan panorama tiap putaran menjadi satu ruangan 360°. Status ruangan akan diperbarui setelah selesai."}
       </p>
       <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
         <Button type="button" size="lg" className="flex-1" onClick={onRecordAnother}>

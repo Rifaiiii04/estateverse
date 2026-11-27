@@ -23,8 +23,8 @@ import { useAuth } from '@/context/AuthContext';
 import { getOwnedProperty } from '@/lib/api/properties';
 import { createProperty, updateProperty } from '@/lib/api/propertyWrites';
 import { getOwnerTourRooms } from '@/lib/api/tours';
-import { saveTourDrafts } from '@/lib/capture/saveTourDrafts';
-import type { DraftTourRoom } from '@/types/capture';
+import { useTourDrafts } from '@/lib/hooks/useTourDrafts';
+import { localTourFiles } from '@/types/capture';
 import { PROPERTY_TYPE_OPTIONS } from '@/lib/content';
 import { normalizeWhatsAppNumber } from '@/lib/formatters';
 import type { PropertyInput, PropertyStatus, PropertyType } from '@/types/property';
@@ -51,12 +51,13 @@ export default function PropertyFormScreen() {
   const [status, setStatus] = useState<PropertyStatus>('published');
   const [benefits, setBenefits] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
-  const [tourRooms, setTourRooms] = useState<DraftTourRoom[]>([]);
+  const { rooms: tourRooms, setRooms: setTourRooms, beginSave, endSave, saveRooms } = useTourDrafts();
   const [savedId, setSavedId] = useState(id ? Number(id) : null);
   const [model3dPath, setModel3dPath] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    let active = true;
     // Loads an existing property and its 360 tour rooms if editing by id.
     async function loadExisting() {
       if (!id || !user) return;
@@ -65,7 +66,7 @@ export default function PropertyFormScreen() {
         getOwnedProperty(propId),
         getOwnerTourRooms(propId),
       ]);
-      if (!existing) return;
+      if (!existing || !active) return;
       setTitle(existing.title);
       setPropertyType(existing.propertyType);
       setPrice(String(existing.price));
@@ -83,21 +84,13 @@ export default function PropertyFormScreen() {
       setBenefits(existing.benefits);
       setImages(existing.images.map((img) => img.filePath));
       setModel3dPath(existing.model3dPath || '');
-      setTourRooms(
-        existingRooms.map((r) => ({
-          id: r.id,
-          status: r.status,
-          errorMessage: r.errorMessage,
-          name: r.name,
-          panoramaUrl: r.panoramaUrl,
-          roomSpecs: r.roomSpecs,
-        })),
-      );
+      setTourRooms(current => [...existingRooms, ...current.filter(room => !room.id)]);
     }
     void loadExisting().catch((error) => Alert.alert('Gagal memuat properti', error instanceof Error ? error.message : 'Periksa koneksi server.'));
-  }, [id, user]);
+    return () => { active = false; };
+  }, [id, user, setTourRooms]);
 
-  // Saves the backend listing before uploading raw captures to the shared stitching queue.
+  // Saves the backend listing before uploading the panorama bands for each new room.
   const handleSave = async () => {
     if (!user) return;
     const parsedPrice = Number.parseInt(price.replace(/\D/g, ''), 10);
@@ -124,12 +117,13 @@ export default function PropertyFormScreen() {
       floors: Number.parseInt(floors, 10) || 1,
       whatsappNumber: cleanWa,
       description: description.trim() || 'Hunian modern dengan lingkungan nyaman.',
-      status: tourRooms.some((room) => Boolean(room.frames?.length)) ? 'draft' : status,
+      status: tourRooms.some((room) => localTourFiles(room).length > 0) ? 'draft' : status,
       benefits,
       imagePaths: images,
       model3dPath,
     };
 
+    if (!beginSave()) return;
     try {
       setSubmitting(true);
       let targetPropId = savedId || 0;
@@ -142,9 +136,9 @@ export default function PropertyFormScreen() {
         targetPropId = await createProperty(payload);
         setSavedId(targetPropId);
       }
-      await saveTourDrafts(targetPropId, tourRooms, (index, room) => setTourRooms((current) => current.map((r, i) => i === index ? room : r)));
+      await saveRooms(targetPropId, tourRooms);
 
-      const hasAsyncCaptures = tourRooms.some((room) => Boolean(room.frames?.length));
+      const hasAsyncCaptures = tourRooms.some((room) => localTourFiles(room).length > 0);
       Alert.alert('Berhasil Disimpan', hasAsyncCaptures
         ? 'Properti disimpan sebagai draft. Server sedang menyusun panorama; Anda akan mendapat pemberitahuan saat siap dipublish.'
         : 'Properti tersimpan. Foto ruangan diproses di server; buka Edit untuk melihat status panoramanya.', [
@@ -153,6 +147,7 @@ export default function PropertyFormScreen() {
     } catch (error) {
       Alert.alert('Belum Selesai', error instanceof Error ? error.message : 'Gagal menyimpan. Coba lagi; rekaman yang belum terkirim tetap tersedia.');
     } finally {
+      endSave();
       setSubmitting(false);
     }
   };

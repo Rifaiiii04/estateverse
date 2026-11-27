@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SweepMotion } from '../src/lib/capture/sweepMotion.ts';
-import { sweepGuidance } from '../src/lib/capture/sweepGuidance.ts';
-
-const target = { id: 1, yaw: 20, pitch: 0, ring: 'horizon' };
 
 // Creates a portrait-camera sample moving clockwise through the horizon band.
 function reading(yaw, timestamp) {
@@ -15,18 +12,19 @@ test('a continuous ten-degree-per-second sweep takes a frame without a stationar
   const motion = new SweepMotion();
   for (let time = 0; time <= 200; time += 25) motion.observe(reading(18 + time / 100, time));
   assert.ok(Math.abs(motion.speed - 10) < 0.01);
-  assert.ok(motion.canExpose(target));
+  assert.ok(motion.canExpose());
   motion.beginShutter(motion.latest);
-  motion.observe(reading(21, 300));
-  assert.doesNotThrow(() => motion.finishShutter(310));
+  for (let time = 225; time <= 550; time += 25) motion.observe(reading(18 + time / 100, time));
+  const pose = motion.finishShutter(550);
+  assert.ok(pose.every((value, i) => Math.abs(value - reading(21.75, 0).quaternion[i]) < 1e-8));
 });
 
-test('fast turns and a missed portion cannot advance coverage', () => {
+test('fast turns slow acquisition while a fresh slow turn allows any heading', () => {
   const motion = new SweepMotion();
   for (let time = 0; time <= 200; time += 25) motion.observe(reading(12 + time / 25, time));
-  assert.equal(motion.canExpose(target), false);
+  assert.equal(motion.canExpose(), false);
   for (let time = 250; time <= 650; time += 25) motion.observe(reading(30, time));
-  assert.equal(motion.canExpose(target), false);
+  assert.equal(motion.canExpose(), true);
 });
 
 test('a shutter that drifts away and comes back still rejects the photograph', () => {
@@ -46,13 +44,5 @@ test('a sensor freeze or a gap during exposure cannot advance the strip', () => 
   motion.beginShutter(motion.latest);
   motion.observe(reading(20, 400));
   assert.throws(() => motion.finishShutter(410), /Perlambat/);
-  assert.equal(motion.canExpose(target), false);
-});
-
-test('guidance corrects a four-degree pitch miss and gives a level cue at the pole', () => {
-  const low = -2 * Math.PI / 180;
-  const level = { ...target, yaw: 0 };
-  assert.equal(sweepGuidance([Math.cos(low), Math.sin(low), 0, 0], level, 0, true).arrow, '↑');
-  const pole = { ...target, yaw: 90, pitch: 90, ring: 'ceiling' };
-  assert.match(sweepGuidance([Math.SQRT1_2, Math.SQRT1_2, 0, 0], pole, 0, true).arrow, /[↶↷]/);
+  assert.equal(motion.canExpose(), false);
 });

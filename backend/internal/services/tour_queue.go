@@ -101,12 +101,25 @@ func (q *tourQueue) process(ctx context.Context, roomID int64) {
 	jobCtx, cancel := context.WithTimeout(ctx, stitchTimeout)
 	defer cancel()
 
+	room, lookupErr := q.tours.GetRoom(jobCtx, roomID)
+	if lookupErr != nil {
+		if !errors.Is(lookupErr, repositories.ErrNotFound) && ctx.Err() == nil {
+			q.retryRoomLookup(ctx, roomID, lookupErr)
+		}
+		return
+	}
+	if jobCtx.Err() != nil || room.Status != models.TourStatusProcessing {
+		return
+	}
 	result, err := q.stitchRoom(jobCtx, roomID)
 	if jobCtx.Err() != nil {
 		err = jobCtx.Err()
 	}
 	if err == nil {
 		err = q.savePanorama(jobCtx, roomID, result)
+	}
+	if errors.Is(err, repositories.ErrTourNotProcessing) {
+		return
 	}
 	if err != nil {
 		q.recordStitchFailure(ctx, roomID, err)
@@ -120,6 +133,17 @@ func (q *tourQueue) process(ctx context.Context, roomID int64) {
 		fmt.Sprintf("engine=%s quality=%d coverage=%.3f matches=%d match_rms_px=%.2f", result.Engine, result.Quality, result.Coverage, result.Matches, result.MatchRMS))
 }
 
+// retryRoomLookup revisits an unreadable room without touching its inputs while other queued rooms can progress.
+func (q *tourQueue) retryRoomLookup(ctx context.Context, roomID int64, cause error) {
+	slog.Warn("tour status unavailable, retrying", "room_id", roomID, "error", cause)
+	time.AfterFunc(time.Second, func() {
+		select {
+		case <-ctx.Done():
+		case q.jobs <- roomID:
+		}
+	})
+}
+
 // recordStitchFailure persists a terminal result after the job deadline but leaves interrupted jobs for restart.
 func (q *tourQueue) recordStitchFailure(workerCtx context.Context, roomID int64, cause error) {
 	if workerCtx.Err() != nil {
@@ -127,8 +151,12 @@ func (q *tourQueue) recordStitchFailure(workerCtx context.Context, roomID int64,
 	}
 	ctx, cancel := context.WithTimeout(workerCtx, 10*time.Second)
 	defer cancel()
+	err := q.tours.MarkFailed(ctx, roomID, stitchFailureMessage(cause))
+	if errors.Is(err, repositories.ErrTourNotProcessing) {
+		return
+	}
 	slog.Error("tour stitching failed", "room_id", roomID, "error", cause)
-	if err := q.tours.MarkFailed(ctx, roomID, stitchFailureMessage(cause)); err != nil {
+	if err != nil {
 		slog.Error("tour stitch failure could not be saved", "room_id", roomID, "error", err)
 	}
 	q.recordActivity(ctx, "tour.stitch.failed", "error", roomID, "Tour panorama processing failed", cause.Error())
@@ -157,9 +185,18 @@ func (q *tourQueue) savePanorama(ctx context.Context, roomID int64, res *panoram
 	}
 	previewPath, err := writePanoramaJPEG(q.storage, panorama.Downsample2(res.Panorama))
 	if err != nil {
+		removePanoramaFiles(q.storage, mainPath)
 		return err
 	}
-	return q.tours.MarkReady(ctx, roomID, mainPath, previewPath, res.Quality)
+	if err := ctx.Err(); err != nil {
+		removePanoramaFiles(q.storage, mainPath, previewPath)
+		return err
+	}
+	err = q.tours.MarkReady(ctx, roomID, mainPath, previewPath, res.Quality)
+	if errors.Is(err, repositories.ErrTourNotProcessing) {
+		removePanoramaFiles(q.storage, mainPath, previewPath)
+	}
+	return err
 }
 
 // writePanoramaJPEG encodes an image as JPEG into the panoramas folder and returns its public URL path.
@@ -174,6 +211,7 @@ func writePanoramaJPEG(storage StorageService, img image.Image) (string, error) 
 	}
 	rel := path.Join(CategoryPanoramas, name)
 	if err := storage.WriteFile(rel, buf.Bytes()); err != nil {
+		_ = storage.DeleteFile(rel)
 		return "", err
 	}
 	return "/api/v1/storage/" + rel, nil

@@ -56,12 +56,15 @@ func (s *tourService) StartCapture(ctx context.Context, ownerID, propertyID int6
 	if err := extras.normalize(); err != nil {
 		return nil, err
 	}
-	if err := s.movePropertyToDraft(ctx, property); err != nil {
-		return nil, err
-	}
 	room := &models.TourRoom{PropertyID: propertyID, Name: cleanName, Source: models.TourSourceCapture,
 		CameraHeightCm: extras.CameraHeightCm, CaptureFix: extras.Location, Status: models.TourStatusProcessing,
 		Hotspots: []models.TourHotspot{}}
+	if extras.CaptureID != "" {
+		return s.acceptRecording(ctx, ownerID, room, extras.CaptureID, frames)
+	}
+	if err := s.movePropertyToDraft(ctx, property); err != nil {
+		return nil, err
+	}
 	if err := s.tours.CreateRoom(ctx, room); err != nil {
 		return nil, err
 	}
@@ -147,11 +150,14 @@ func (s *tourService) UpdateRoom(ctx context.Context, ownerID, roomID int64, nam
 
 // DeleteRoom removes an owned room together with its panorama files and leftover frames.
 func (s *tourService) DeleteRoom(ctx context.Context, ownerID, roomID int64) error {
-	room, err := s.GetOwnerRoom(ctx, ownerID, roomID)
-	if err != nil {
+	if _, err := s.GetOwnerRoom(ctx, ownerID, roomID); err != nil {
 		return err
 	}
-	if err := s.tours.DeleteRoom(ctx, roomID); err != nil {
+	room, err := s.tours.DeleteRoom(ctx, roomID)
+	if errors.Is(err, repositories.ErrNotFound) {
+		return nil
+	}
+	if err != nil {
 		return err
 	}
 	removeRoomFiles(s.storage, room)
@@ -188,12 +194,17 @@ func (s *tourService) ownedProperty(ctx context.Context, ownerID, propertyID int
 
 // removeRoomFiles deletes stored panoramas and any unprocessed frames of a room.
 func removeRoomFiles(storage StorageService, room *models.TourRoom) {
-	for _, p := range []string{room.PanoramaPath, room.PreviewPath} {
+	removePanoramaFiles(storage, room.PanoramaPath, room.PreviewPath)
+	_ = storage.RemoveAll(captureDir(room.ID))
+}
+
+// removePanoramaFiles releases output JPEGs when a room or an incomplete stitch is discarded.
+func removePanoramaFiles(storage StorageService, paths ...string) {
+	for _, p := range paths {
 		if p != "" {
 			_ = storage.DeleteFile(strings.TrimPrefix(p, "/api/v1/storage/"))
 		}
 	}
-	_ = storage.RemoveAll(captureDir(room.ID))
 }
 
 // dropDanglingHotspots keeps only hotspots whose destination room is part of the list.

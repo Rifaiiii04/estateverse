@@ -6,12 +6,11 @@ import type { DraftTourRoom } from '@/types/capture';
 export function useTourStatus(
   propertyId: number | null,
   rooms: DraftTourRoom[],
-  onChange: (rooms: DraftTourRoom[]) => void,
+  onChange: React.Dispatch<React.SetStateAction<DraftTourRoom[]>>,
   disabled: boolean,
   onReady?: (room: DraftTourRoom) => void,
 ) {
   const current = useRef(rooms);
-  const previousStatuses = useRef<Map<number, DraftTourRoom['status']> | null>(null);
   const [error, setError] = useState('');
   useEffect(() => { current.current = rooms; }, [rooms]);
   useEffect(() => {
@@ -25,16 +24,15 @@ export function useTourStatus(
       try {
         const remote = await getOwnerTourRooms(propertyId);
         if (!active) return;
-        const previous = previousStatuses.current;
-        if (previous) {
-          remote.forEach((room) => {
-            if (room.id && previous.get(room.id) === 'processing' && room.status === 'ready') {
-              onReady?.(room);
-            }
-          });
-        }
-        previousStatuses.current = new Map(remote.filter((room) => room.id).map((room) => [room.id as number, room.status]));
-        onChange(current.current.map((r) => r.id ? remote.find((item) => item.id === r.id) || r : r));
+        const byId = new Map(remote.map(room => [room.id, room]));
+        current.current.forEach(room => {
+          const updated = room.id && byId.get(room.id);
+          if (updated && room.status === 'processing' && updated.status === 'ready') onReady?.(updated);
+        });
+        onChange(latest => latest.map(room => {
+          const updated = room.id && byId.get(room.id);
+          return updated ? { ...room, status: updated.status, panoramaUrl: updated.panoramaUrl, errorMessage: updated.errorMessage } : room;
+        }));
         setError('');
       } catch { if (active) setError('Status server belum dapat diperbarui. Periksa koneksi.'); }
       finally { pending = false; }

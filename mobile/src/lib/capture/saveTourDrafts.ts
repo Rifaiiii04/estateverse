@@ -1,15 +1,20 @@
-import { uploadTourCapture, updateTourRoom } from '@/lib/api/tours';
-import { removeCaptureFiles } from './camera';
-import type { DraftTourRoom } from '@/types/capture';
+import { localTourFiles, type DraftTourRoom } from '../../types/capture.ts';
 
-// saveTourDrafts queues raw captures on Go and checkpoints returned ids so retries do not recreate completed uploads.
-export async function saveTourDrafts(propertyId: number, rooms: DraftTourRoom[], onSaved: (index: number, room: DraftTourRoom) => void) {
-  for (const [index, room] of rooms.entries()) {
-    if (room.id) { await updateTourRoom(room.id, room.name, room.roomSpecs); continue; }
-    const result = await uploadTourCapture(propertyId, room);
-    const saved: DraftTourRoom = { ...room, id: result.id, frames: undefined, panoramaUrl: '', status: result.status };
-    onSaved(index, saved);
-    removeCaptureFiles(room.frames || []);
-    await updateTourRoom(result.id, room.name, room.roomSpecs);
+interface DraftOperations {
+  upload: (propertyId: number, room: DraftTourRoom) => Promise<{ id: number; status: DraftTourRoom['status'] }>;
+  update: (id: number, name: string, note: string) => Promise<void>;
+  remove: (files: { uri: string }[]) => void;
+}
+
+// saveTourDrafts checkpoints accepted uploads before releasing their local panorama files.
+export async function saveTourDrafts(propertyId: number, rooms: DraftTourRoom[], io: DraftOperations,
+  onSaved: (draft: DraftTourRoom, room: DraftTourRoom) => void) {
+  for (const room of rooms) {
+    if (room.id) { await io.update(room.id, room.name, room.roomSpecs); continue; }
+    const result = await io.upload(propertyId, room);
+    const saved: DraftTourRoom = { ...room, id: result.id, bands: undefined, frames: undefined, panoramaUrl: '', status: result.status };
+    onSaved(room, saved);
+    io.remove(localTourFiles(room));
+    await io.update(result.id, room.name, room.roomSpecs);
   }
 }

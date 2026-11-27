@@ -15,6 +15,7 @@ const (
 
 // CaptureExtras are the optional measurements a phone sends with a live capture.
 type CaptureExtras struct {
+	CaptureID      string
 	CameraHeightCm int
 	Location       *models.GeoFix
 }

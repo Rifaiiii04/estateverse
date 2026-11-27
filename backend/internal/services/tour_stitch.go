@@ -22,6 +22,9 @@ func (q *tourQueue) stitchRoom(ctx context.Context, roomID int64) (*panorama.Res
 	if err != nil {
 		return nil, err
 	}
+	if len(manifest.Bands) > 0 {
+		return q.stitchBands(ctx, roomID, manifest.Bands)
+	}
 	inputs := make([]panorama.FrameInput, 0, len(manifest.Frames))
 	for _, meta := range manifest.Frames {
 		img, err := q.decodeFrame(roomID, meta.Index)

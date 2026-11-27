@@ -1,6 +1,28 @@
-import { apiClient, apiUrl, ApiError } from "./client";
-import { buildCaptureManifest, type CaptureCalibration } from "../../../../shared/capturePolicy.ts";
-import { CapturedFrame, CaptureResult, RoomLayout, TourHotspot, TourRoom } from "@/types/tour";
+import { apiClient, apiUrl, ApiError } from "./client.ts";
+import { checkAborted } from "../abort.ts";
+import type { CaptureResult, RoomLayout, TourHotspot, TourRoom } from "@/types/tour";
+
+const captureIds = new WeakMap<Blob, string>();
+
+// Generates a secure v4 identifier on browsers with either Web Crypto UUIDs or random bytes.
+function newCaptureId() {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+  return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join("-");
+}
+
+// Keeps one UUID with the recording's first JPEG across review uploads and unsaved-property draft retries.
+function captureId(firstBand: Blob) {
+  let id = captureIds.get(firstBand);
+  if (!id) {
+    id = newCaptureId();
+    captureIds.set(firstBand, id);
+  }
+  return id;
+}
 
 // getPublicTourRooms fetches the ready 360° rooms of a published property.
 export async function getPublicTourRooms(propertyId: number): Promise<TourRoom[]> {
@@ -47,27 +69,21 @@ export async function saveTourRoomLayout(roomId: number, layout: RoomLayout): Pr
   await apiClient(`/tours/layouts/${roomId}`, { method: "PUT", body: JSON.stringify(layout) });
 }
 
-// uploadTourCapture sends auto-captured frames with their orientations and optional extras, reporting progress (0..1).
+// Sends one completed panorama JPEG per sweep, its latitude bounds and optional room measurements.
 export function uploadTourCapture(
   propertyId: number,
   name: string,
   capture: CaptureResult,
-  onProgress?: (fraction: number) => void
+  onProgress?: (fraction: number) => void,
+  signal?: AbortSignal
 ): Promise<TourRoom> {
-  const { frames, extras } = capture;
+  const { bands, extras } = capture;
   const form = new FormData();
   form.append("property_id", String(propertyId));
-  form.append("meta", JSON.stringify(buildCaptureManifest(name, frames, extras)));
-  frames.forEach((f, index) => form.append(`frame_${index}`, f.blob, `frame_${index}.jpg`));
-  return sendMultipart<TourRoom>("/tours/captures", form, onProgress);
-}
-
-// calibrateTourCapture asks the shared Go engine to measure the lens and compute additional photo directions.
-export function calibrateTourCapture(frames: CapturedFrame[]): Promise<CaptureCalibration> {
-  const form = new FormData();
-  form.append("meta",JSON.stringify(buildCaptureManifest("calibration",frames)));
-  frames.forEach((frame,i) => form.append(`frame_${i}`,frame.blob,`frame_${i}.jpg`));
-  return sendMultipart<CaptureCalibration>("/tours/calibration",form);
+  if (!bands.length) throw new Error("Sapuan belum lengkap.");
+  form.append("meta", JSON.stringify({ name, ...extras, capture_id: captureId(bands[0].blob), bands: bands.map(({ meta }) => meta) }));
+  bands.forEach(({ blob }, index) => form.append(`frame_${index}`, blob, `panorama_${index}.jpg`));
+  return sendMultipart<TourRoom>("/tours/captures", form, onProgress, signal);
 }
 
 // importTourPanorama uploads a ready-made equirectangular 360° photo as a room.
@@ -85,16 +101,22 @@ export function importTourPanorama(
 }
 
 // sendMultipart posts form data with cookies via XHR so upload progress can be shown on slow mobile data.
-function sendMultipart<T>(endpoint: string, form: FormData, onProgress?: (fraction: number) => void): Promise<T> {
+function sendMultipart<T>(endpoint: string, form: FormData, onProgress?: (fraction: number) => void, signal?: AbortSignal): Promise<T> {
   return new Promise((resolve, reject) => {
+    checkAborted(signal);
     const xhr = new XMLHttpRequest();
     xhr.open("POST", apiUrl(endpoint));
     xhr.withCredentials = true;
     xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total);
+      if (!signal?.aborted && e.lengthComputable && onProgress) onProgress(e.loaded / e.total);
     };
     xhr.onerror = () => reject(new ApiError("Koneksi terputus saat mengunggah. Coba lagi.", 0));
     xhr.onload = () => resolveXhr<T>(xhr, resolve, reject);
+    // Cancels the active network transfer if its camera modal closes.
+    const cancel = () => xhr.abort();
+    signal?.addEventListener("abort", cancel, { once: true });
+    xhr.onabort = () => reject(new DOMException("Unggahan dibatalkan.", "AbortError"));
+    xhr.onloadend = () => signal?.removeEventListener("abort", cancel);
     xhr.send(form);
   });
 }

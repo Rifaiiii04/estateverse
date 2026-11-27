@@ -1,11 +1,7 @@
-/** Long edge (px) of uploaded frames: sharp enough for a 4096 px panorama, small enough for mobile data. */
-import { FRAME_LONG_SIDE, FRAME_JPEG_QUALITY } from "../../../../shared/capturePolicy.ts";
-export { FRAME_LONG_SIDE } from "../../../../shared/capturePolicy.ts";
+import { checkAborted } from "../abort.ts";
 
-// startRearCamera opens the back camera in a native, uncropped mode and plays it inline in the video element.
-// Sizes are matched against the sensor's landscape formats (the browser rotates them to portrait), so asking for a
-// portrait 1080×1920 made Chrome Android crop a narrow strip that looked zoomed; resizeMode "none" forbids cropping.
-export async function startRearCamera(video: HTMLVideoElement): Promise<MediaStream> {
+// Opens the full rear sensor and releases this recording's tracks even if permission or playback finishes late.
+export async function startRearCamera(video: HTMLVideoElement, signal?: AbortSignal): Promise<MediaStream> {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: false,
     video: {
@@ -15,63 +11,28 @@ export async function startRearCamera(video: HTMLVideoElement): Promise<MediaStr
       resizeMode: "none",
     } as MediaTrackConstraints,
   });
-  video.srcObject = stream;
-  video.muted = true;
-  video.playsInline = true;
+  let released = false;
+  // Detaches only our stream so a late camera response cannot disturb a subsequent recording.
+  const release = () => {
+    if (released) return;
+    released = true;
+    signal?.removeEventListener("abort", release);
+    if (video.srcObject === stream) video.srcObject = null;
+    stream.getTracks().forEach((track) => track.stop());
+  };
   try {
+    checkAborted(signal);
+    signal?.addEventListener("abort", release, { once: true });
+    video.srcObject = stream;
+    video.muted = true;
+    video.playsInline = true;
     await video.play();
+    checkAborted(signal);
     return stream;
   } catch (error) {
-    stopStream(stream);
+    release();
     throw error;
   }
-}
-
-// stopStream releases the camera so the phone's camera indicator turns off.
-export function stopStream(stream: MediaStream | null) {
-  stream?.getTracks().forEach((track) => track.stop());
-}
-
-// grabFrame snapshots a newly presented video frame and records its pose immediately before copying pixels.
-export function grabFrame(video: HTMLVideoElement, onSnapshot: () => void = () => {}): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    let callback: number | undefined;
-    const timer = setTimeout(() => {
-      if (callback !== undefined) video.cancelVideoFrameCallback(callback);
-      reject(new Error("Kamera tidak mengirim foto baru. Coba mulai ulang rekaman."));
-    }, 1500);
-    // Copies pixels and pose in the same browser turn before asynchronous JPEG encoding.
-    const snapshot = () => {
-      clearTimeout(timer);
-      try {
-        if (!video.videoWidth || !video.videoHeight || video.readyState < 2) throw new Error("Kamera belum siap.");
-        onSnapshot();
-        encodeFrame(video).then(resolve, reject);
-      } catch (error) {
-        reject(error);
-      }
-    };
-    if (typeof video.requestVideoFrameCallback === "function") callback = video.requestVideoFrameCallback(snapshot);
-    else snapshot();
-  });
-}
-
-// encodeFrame scales the current camera pixels to a bounded JPEG without cropping or mirroring them.
-function encodeFrame(video: HTMLVideoElement): Promise<Blob> {
-  const scale = Math.min(1, FRAME_LONG_SIDE / Math.max(video.videoWidth, video.videoHeight));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(video.videoWidth * scale);
-  canvas.height = Math.round(video.videoHeight * scale);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return Promise.reject(new Error("Canvas tidak tersedia di browser ini."));
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("Gagal mengambil foto dari kamera."))),
-      "image/jpeg",
-      FRAME_JPEG_QUALITY
-    );
-  });
 }
 
 // captureSupportIssue explains why this device/browser cannot record, or returns null when it can.

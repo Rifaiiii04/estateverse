@@ -31,30 +31,32 @@ Aplikasi Expo SDK 58 ini memakai **Go API dan MySQL yang sama dengan website**. 
 
 3. Jalankan `npm start`, lalu pindai QR dengan Expo Go yang mendukung SDK 58. Restart Metro setelah mengganti variabel lingkungan. Build produksi wajib memakai API HTTPS.
 4. Login menggunakan **akun website**. Buka Dashboard → tambah/edit properti → Rekam 360° → izinkan kamera dan sensor.
-5. Ikuti tiga titik awal untuk kalibrasi. Backend mengukur lensa lalu menentukan jumlah dan arah foto tambahan secara otomatis; tidak ada pilihan jumlah foto. Tahan posisi lensa saat setiap foto diambil. Koneksi backend diperlukan selama kalibrasi.
-6. Beri nama ruangan lalu **Simpan Properti**. Listing disimpan sebagai draft bila ada capture baru. Foto mentah diunggah dan diproses di server secara background. Mobile memberi dialog saat status berubah menjadi `ready`; setelah semua room siap, pilih Tayang untuk mempublish. Ruangan siap muncul di tur publik dan dapat dibuka juga dari website.
+5. Pegang HP tegak, mulai dari bagian ruangan yang memiliki detail, lalu putar perlahan ke kanan dari satu posisi lensa. Kamera mengukur lensa di HP dan menampilkan panorama yang terbentuk saat bergerak. Selesaikan putaran sejajar mata, lalu ikuti panduan untuk putaran atas dan bawah. Lebar bidang pandang menentukan apakah diperlukan tiga atau lima putaran.
+6. Periksa pratinjau panorama, beri nama ruangan, lalu pilih **Simpan Properti**. Aplikasi mengunggah satu JPEG per putaran. Backend menggabungkan seluruh sapuan dan menyimpan ruangan berstatus `ready` setelah hasil lolos pemeriksaan. Properti dengan rekaman baru tersimpan sebagai draft sampai penjual memilih Tayang.
 
 ## Alur 360°
 
 ```text
-Web / kamera Expo
-  → JPEG + quaternion + ID properti server
+Kamera Expo + sensor orientasi
+  → kalibrasi lensa dan pencocokan gambar di HP
+  → 3–5 JPEG panorama + rentang lintang setiap sapuan + ID properti
   → POST /api/v1/tours/captures
-  → Go: validasi kepemilikan dan file → antrean stitching
-  → kalibrasi, alignment, exposure, panorama 4096×2048 + preview
+  → Go memeriksa kepemilikan dan berkas, lalu mengantrekan ruangan
+  → penggabungan pita menjadi panorama 360° × 180° dan pratinjau
   → URL panorama yang sama untuk web dan mobile
 ```
 
-Capture memakai aturan bersama di `../shared/`. Mobile tidak menggabungkan foto atau membuat panorama. Viewer GL mobile hanya memproyeksikan panorama backend menjadi tampilan bola 360°.
+Web dan mobile menggunakan proyeksi serta pencocokan gambar bersama di `../shared/`. Mobile membentuk setiap pita selebar 2.048 piksel. Viewer GL menampilkan panorama akhir dari backend sebagai ruangan yang dapat dilihat ke segala arah.
 
-Draft foto berada di cache privat aplikasi sampai dikirim; jangan menutup aplikasi sebelum menyimpan. Saat sebagian upload gagal, listing yang sudah dibuat dan ID ruangan yang berhasil dikirim dipertahankan untuk percobaan simpan berikutnya. Hasil gagal tidak ditampilkan sebagai panorama siap.
+Kamera dapat menyelesaikan semua sapuan secara lokal. Setelah diberi nama dan disimpan, ruangan tersimpan di formulir meskipun kamera ditutup atau dibuka kembali. Simpan properti sebelum meninggalkan formulir agar JPEG di cache privat terkirim. Bila koneksi terputus, coba lagi dari formulir yang sama. Setiap ruangan baru memakai UUID rekaman yang tetap pada percobaan berikutnya sehingga server dapat mengenali unggahan yang sudah diterima.
 
 ## Verifikasi
 
 ```powershell
 npm run lint
+npm run test:api
 node_modules/.bin/tsc.cmd --noEmit
 node_modules/.bin/expo.cmd export --platform android --output-dir .expo/verification --no-bytecode
 ```
 
-Tes kesetaraan orientasi, grid, dan manifest dijalankan dari `frontend` dengan `npm run test:capture`. Backend menjalankan `go test ./...`, termasuk kontrak cookie/bearer dan worker panorama. Bundle Android bukan APK terpasang dan tidak menggantikan pengujian kamera, sensor, dan GPU pada HP fisik. Panduan kualitas dan batasan ada di [capture 360°](../docs/walk-inside-capture.md).
+Tes mobile mensimulasikan sapuan lengkap dengan kamera sintetis, kegagalan penyimpanan pita, percobaan ulang, serta pembersihan berkas. Tes proyeksi bersama tersedia di `frontend` melalui `npm run test:capture`. Jalankan `go test ./...` di backend untuk memeriksa kontrak upload dan pemrosesan panorama. Kamera, stabilitas sensor, dan tampilan Walk Inside juga perlu diuji langsung di HP. [Panduan capture 360°](../docs/walk-inside-capture.md)

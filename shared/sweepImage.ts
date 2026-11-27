@@ -13,6 +13,8 @@ export interface SweepImage {
 }
 
 const RAD = Math.PI / 180;
+const LOW_DETAIL_STDDEV = 6;
+const VISIBLE_DETAIL_STDDEV = 16;
 
 // Converts a camera rotation to a row-major matrix for repeated pixel projections.
 export function rotationMatrix([w, x, y, z]: OrientationQuat) {
@@ -43,7 +45,7 @@ function luminance(pixels: SweepPixels, offset: number) {
 }
 
 // Detects a frozen preview being reported at a new heading without mistaking a plain wall for a duplicate.
-function isFrozenFrame(current: SweepPixels, previous: SweepPixels) {
+export function isFrozenFrame(current: SweepPixels, previous: SweepPixels) {
   if (current.width !== previous.width || current.height !== previous.height) return false;
   let low = 255, high = 0;
   for (let i = 0; i < current.data.length; i += 28) {
@@ -86,7 +88,12 @@ export function overlapScore(current: SweepImage, previous: SweepImage, hfov: nu
   if (count < 30) return undefined;
   const varianceA = aa - a * a / count;
   const varianceB = bb - b * b / count;
-  if (Math.min(varianceA, varianceB) < 36 * count) return null;
+  if (Math.min(varianceA, varianceB) < LOW_DETAIL_STDDEV ** 2 * count) {
+    // A plain shared wall can move without trackable features, but it cannot erase clearly visible detail.
+    const bothPlain = Math.max(varianceA, varianceB) < VISIBLE_DETAIL_STDDEV ** 2 * count;
+    const brightnessAgrees = Math.abs(a - b) <= Math.max(24 * count, .25 * Math.max(a, b));
+    return bothPlain && brightnessAgrees ? null : -1;
+  }
   return (ab - a * b / count) / Math.sqrt(varianceA * varianceB);
 }
 

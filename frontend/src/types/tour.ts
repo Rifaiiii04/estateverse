@@ -1,5 +1,6 @@
 // Type definitions for 360° virtual tour rooms recorded by sellers.
 import type { CaptureExtras, OrientationQuat } from "../../../shared/capturePolicy.ts";
+import type { PanoramaBand } from "../../../shared/panoramaSweep.ts";
 
 export type TourRoomStatus = "processing" | "ready" | "failed";
 
@@ -51,15 +52,14 @@ export interface TourRoom {
 /** Quaternion (w, x, y, z) describing the camera-to-world rotation of the phone when a frame was taken. */
 export type { CaptureExtras, OrientationQuat };
 
-export interface CapturedFrame {
-  targetId: number;
+export interface CapturedBand {
+  meta: PanoramaBand;
   blob: Blob;
-  orientation: OrientationQuat;
 }
 
-/** A finished recording: frames plus the optional camera height and GPS fix taken during capture. */
+/** Finished panoramic strips and the optional camera height and GPS fix taken during the sweep. */
 export interface CaptureResult {
-  frames: CapturedFrame[];
+  bands: CapturedBand[];
   extras: CaptureExtras;
 }
 
@@ -68,7 +68,7 @@ export interface DraftTourRoom {
   key: string;
   name: string;
   kind: "capture" | "import";
-  frames?: CapturedFrame[];
+  bands?: CapturedBand[];
   extras?: CaptureExtras;
   file?: File;
   thumbUrl: string;

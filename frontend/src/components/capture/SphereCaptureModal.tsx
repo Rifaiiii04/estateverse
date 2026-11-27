@@ -22,17 +22,23 @@ function CaptureContents(props: SphereCaptureModalProps & { capture: ReturnType<
   const { phase } = capture;
   // Saves the room to the property draft or starts stitching on an existing property.
   const save = async (name: string) => {
-    if (onCaptured) return onCaptured(name, capture.collect());
+    if (onCaptured) {
+      const result = capture.collect();
+      if (result) onCaptured(name, result);
+      return;
+    }
     if (!propertyId) return;
     const room = await capture.upload(propertyId, name);
     if (room) onUploaded?.(room);
   };
-  if (phase === "capturing") return <CaptureOverlay {...capture} />;
-  if (phase === "calibrating" || phase === "calibrationError") return (
+  if (phase === "capturing" || phase === "encoding") {
+    return <CaptureOverlay {...capture} hint={phase === "encoding" ? "Putaran lengkap. Menyimpan panorama…" : capture.hint} />;
+  }
+  if (phase === "encodeError") return (
     <div role="status" className="absolute inset-0 flex flex-col gap-4 items-center justify-center bg-black/75 p-8 text-center text-white">
-      <p>{phase === "calibrating" ? "Berhenti sebentar. Kamera sedang mengukur lensa untuk sapuan berikutnya…" : capture.error}</p>
-      {phase === "calibrationError" && <button type="button" onClick={capture.retryCalibration}
-        className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-neutral-900">Ulangi pengukuran lensa</button>}
+      <p>{capture.error}</p>
+      <button type="button" onClick={() => void capture.retryEncode()}
+        className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-neutral-900">Coba simpan putaran ini lagi</button>
     </div>
   );
   if (phase === "intro" || phase === "starting" || phase === "error") {
@@ -48,7 +54,7 @@ export function SphereCaptureModal(props: SphereCaptureModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const capture = useSphereCapture(videoRef);
   const { phase } = capture;
-  const showCamera = phase === "starting" || phase === "capturing" || phase === "calibrating" || phase === "calibrationError";
+  const showCamera = phase === "starting" || phase === "capturing" || phase === "encoding" || phase === "encodeError";
   useEffect(() => {
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";

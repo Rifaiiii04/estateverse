@@ -15,6 +15,7 @@ import (
 
 // mockTourRepo is an in-memory TourRepository for service tests.
 type mockTourRepo struct {
+	receipts map[recordingKey]testReceipt
 	rooms    map[int64]*models.TourRoom
 	hotspots map[int64]*models.TourHotspot
 	nextID   int64
@@ -85,12 +86,18 @@ func (m *mockTourRepo) ListProcessing(context.Context) ([]models.TourRoom, error
 // MarkReady records stitched output on the stored room.
 func (m *mockTourRepo) MarkReady(_ context.Context, id int64, pano, preview string, quality int) error {
 	r := m.rooms[id]
+	if r == nil || r.Status != models.TourStatusProcessing {
+		return repositories.ErrTourNotProcessing
+	}
 	r.Status, r.PanoramaPath, r.PreviewPath, r.QualityScore = models.TourStatusReady, pano, preview, quality
 	return nil
 }
 
 // MarkFailed records a failure message on the stored room.
 func (m *mockTourRepo) MarkFailed(_ context.Context, id int64, msg string) error {
+	if r := m.rooms[id]; r == nil || r.Status != models.TourStatusProcessing {
+		return repositories.ErrTourNotProcessing
+	}
 	m.rooms[id].Status, m.rooms[id].ErrorMessage = models.TourStatusFailed, msg
 	return nil
 }
@@ -108,9 +115,13 @@ func (m *mockTourRepo) SaveLayout(_ context.Context, id int64, layout models.Roo
 }
 
 // DeleteRoom removes a stored room.
-func (m *mockTourRepo) DeleteRoom(_ context.Context, id int64) error {
+func (m *mockTourRepo) DeleteRoom(_ context.Context, id int64) (*models.TourRoom, error) {
+	room := m.rooms[id]
+	if room == nil {
+		return nil, repositories.ErrNotFound
+	}
 	delete(m.rooms, id)
-	return nil
+	return room, nil
 }
 
 // ReorderRooms is a no-op for tests.

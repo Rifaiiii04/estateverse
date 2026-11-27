@@ -50,11 +50,12 @@ func (s *propertyService) listingRooms(ctx context.Context, propertyID int64) []
 // removeListingRooms deletes the rooms of a deleted listing and their panorama files right away.
 func (s *propertyService) removeListingRooms(ctx context.Context, rooms []models.TourRoom) {
 	for i := range rooms {
-		if err := s.tours.DeleteRoom(ctx, rooms[i].ID); err != nil {
+		deleted, err := s.tours.DeleteRoom(ctx, rooms[i].ID)
+		if err != nil {
 			slog.Warn("failed deleting room of deleted listing", "room_id", rooms[i].ID, "error", err)
 			continue
 		}
-		s.media.ReleaseRoom(ctx, &rooms[i])
+		s.media.ReleaseRoom(ctx, deleted)
 	}
 }
 

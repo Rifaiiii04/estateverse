@@ -1,209 +1,218 @@
 import type { RefObject } from "react";
-import type { CapturedFrame } from "@/types/tour";
-import { buildCaptureTargets, calibratedTargets, type CaptureCalibration } from "../../../../shared/capturePolicy.ts";
+import type { CapturedBand } from "@/types/tour";
+import { checkAborted } from "../abort.ts";
+import { PanoramaSweep } from "../../../../shared/panoramaSweep.ts";
 import { SWEEP_MAX_SPEED_DEG_S } from "../../../../shared/captureSweep.ts";
-import type { SweepImage } from "../../../../shared/sweepImage.ts";
-import { describeStartError, waitForSensor } from "./captureStartup.ts";
-import { startRearCamera, stopStream } from "./frameGrabber.ts";
-import { requestMotionPermission, screenAngle, subscribeOrientation, type OrientationSample } from "./orientation.ts";
+import { describeStartError, waitForSensor, watchCamera } from "./captureStartup.ts";
+import { startRearCamera } from "./frameGrabber.ts";
+import { requestMotionPermission, screenAngle, subscribeOrientation, toWireQuat, type OrientationSample } from "./orientation.ts";
 import { createSpeedTracker } from "./steadiness.ts";
-import { recordExposure, STALE_POSE_MS, withinSweepWindow, type LiveSweep } from "./sweepAcquisition.ts";
 import { SweepPreview } from "./sweepPreview.ts";
+import { VideoSweepSource, encodeBand, watchVideo } from "./videoSweep.ts";
+import { ExposurePoses } from "./exposurePose.ts";
 
-export type CapturePhase = "intro" | "starting" | "capturing" | "calibrating" | "calibrationError" | "review" | "uploading" | "done" | "error";
-
+export type CapturePhase = "intro" | "starting" | "capturing" | "encoding" | "encodeError" | "review" | "uploading" | "done" | "error";
 export const initialSweep = {
-  phase: "intro" as CapturePhase,
-  targets: buildCaptureTargets(),
-  count: 0,
-  error: "",
-  preview: "",
+  phase: "intro" as CapturePhase, index: 0, total: 0, pitch: 0, progress: 0,
+  hint: "", error: "", preview: "",
 };
 
 type SweepView = typeof initialSweep;
-type MeasureLens = (frames: CapturedFrame[]) => Promise<CaptureCalibration>;
-const DEFAULT_PREVIEW_FOV = 48;
-const RETRY_DELAY_MS = 220;
+const READ_INTERVAL_MS = 100;
+const PREVIEW_INTERVAL_MS = 330;
+const POSE_TIMEOUT_MS = 350;
 
-// Owns one camera and its accepted images until the room is saved or retaken.
+// Drives the panorama compositor from presented video frames and retains one JPEG per completed turn.
 export class SweepRecorder {
-  readonly live: LiveSweep = { sample: null, speed: 0 };
-  readonly frames: CapturedFrame[] = [];
-  private history: SweepImage[] = [];
+  readonly bands: CapturedBand[] = [];
+  private live: { sample: OrientationSample | null } = { sample: null };
   private view = initialSweep;
   private token = 0;
-  private grabbing = false;
-  private lastShot = 0;
-  private angle = 0;
-  private calibrated = false;
-  private measuredFov: number | null = null;
-  private previewFov = DEFAULT_PREVIEW_FOV;
+  private lastRead = -Infinity;
+  private lastPreview = -Infinity;
+  private sweep: PanoramaSweep | null = null;
+  private pending: ReturnType<PanoramaSweep["finish"]> | null = null;
+  private speed = 0;
+  private poses = new ExposurePoses();
   private preview: SweepPreview | null = null;
-  private stream: MediaStream | null = null;
-  private size = "";
-  private unsubscribe?: () => void;
-  private watchdog?: ReturnType<typeof setInterval>;
-  private speed = createSpeedTracker();
+  private camera?: AbortController;
+  private saving?: AbortController;
+  private stopSensor?: () => void;
+  private stopVideo?: () => void;
   private videoRef: RefObject<HTMLVideoElement | null>;
   private publish: (view: SweepView) => void;
   private stopExtras: () => void;
-  private measureLens: MeasureLens;
 
-  // Connects the recording lifecycle to the live video element and modal state.
-  constructor(video: RefObject<HTMLVideoElement | null>, publish: (view: SweepView) => void, stopExtras: () => void, measureLens: MeasureLens) {
+  // Connects optical capture and session cleanup to the seller's camera modal.
+  constructor(video: RefObject<HTMLVideoElement | null>, publish: (view: SweepView) => void, stopExtras: () => void) {
     this.videoRef = video;
     this.publish = publish;
     this.stopExtras = stopExtras;
-    this.measureLens = measureLens;
   }
 
-  // Publishes one consistent view of phase, preview and progress.
+  // Publishes only changed feedback so holding the camera still leaves the interface idle.
   update(changes: Partial<SweepView>) {
+    if (!(Object.keys(changes) as (keyof SweepView)[]).some((k) => this.view[k] !== changes[k])) return;
     this.view = { ...this.view, ...changes };
     this.publish(this.view);
   }
 
-  // Invalidates in-flight camera operations before releasing media tracks and sensors.
+  // Invalidates pending encodes and releases every media and sensor subscription.
   stop() {
     this.token++;
-    clearInterval(this.watchdog);
-    this.unsubscribe?.();
-    this.unsubscribe = undefined;
-    stopStream(this.stream);
-    this.stream = null;
+    this.camera?.abort();
+    this.saving?.abort();
+    this.camera = this.saving = undefined;
+    this.stopVideo?.();
+    this.stopSensor?.();
+    this.stopVideo = this.stopSensor = undefined;
     this.stopExtras();
   }
 
-  // Opens a fresh sweep with no images or device state retained from the previous attempt.
+  // Starts a fresh panorama on the rear camera and binds the live video exposure loop.
   async start(beginExtras: () => void) {
     this.reset();
     this.update({ phase: "starting" });
     const token = this.token;
+    this.camera = new AbortController();
+    const signal = this.camera.signal;
     try {
       const permission = requestMotionPermission();
       beginExtras();
-      if (!(await permission)) throw new Error("Izinkan sensor gerak agar kamera dapat menentukan arah sapuan.");
+      if (!(await permission)) throw new Error("Izinkan sensor gerak untuk menjaga garis sapuan.");
       if (token !== this.token) return;
-      this.angle = screenAngle();
-      if (this.angle % 180 !== 0) throw new Error("Pegang HP tegak (portrait) sebelum mulai merekam.");
+      const angle = screenAngle();
+      if (angle % 180 !== 0) throw new Error("Pegang HP tegak sebelum mulai merekam.");
       const video = this.videoRef.current;
       if (!video) throw new Error("Kamera belum siap.");
-      const stream = await startRearCamera(video);
-      if (token !== this.token) return stopStream(stream);
-      this.stream = stream;
-      this.preview = new SweepPreview();
-      this.unsubscribe = subscribeOrientation((s) => this.onSample(s), true);
-      await waitForSensor(this.live);
+      const stream = await startRearCamera(video, signal);
+      checkAborted(signal);
+      watchCamera(stream, angle, signal, (error) => this.fail(error),
+        () => this.view.phase === "capturing" && performance.now() - this.lastRead > 6000);
+      checkAborted(signal);
+      this.startSensor();
+      await waitForSensor(this.live, signal);
       if (token !== this.token) return;
-      this.watchdog = setInterval(() => this.checkDevices(), STALE_POSE_MS);
-      this.update({ phase: "capturing" });
+      const source = new VideoSweepSource(video);
+      this.sweep = new PanoramaSweep();
+      this.preview = new SweepPreview();
+      this.lastRead = performance.now() - READ_INTERVAL_MS;
+      this.update({ phase: "capturing", hint: "Hadapkan kamera ke depan dan putar perlahan ke kanan." });
+      this.stopVideo = watchVideo(video, (now, exposedAt) => this.frame(video, source, now, exposedAt));
     } catch (err) {
       if (token === this.token) this.fail(describeStartError(err));
     }
   }
 
-  // Releases recording resources and returns the modal to the introduction.
+  // Uses orientation for the camera projection while video exposures determine when the panorama grows.
+  private startSensor() {
+    const measureSpeed = createSpeedTracker();
+    this.stopSensor = subscribeOrientation((sample) => {
+      this.live.sample = sample;
+      this.poses.add(sample);
+      this.speed = measureSpeed(sample);
+    }, true);
+  }
+
+  // Clears all local panorama data before another room or a retake.
   reset() {
     this.stop();
-    this.grabbing = false;
-    this.frames.length = this.history.length = 0;
-    this.live.sample = null;
-    this.live.speed = 0;
-    this.speed = createSpeedTracker();
-    this.calibrated = false;
-    this.measuredFov = null;
-    this.previewFov = DEFAULT_PREVIEW_FOV;
-    this.preview = null;
-    this.size = "";
-    this.lastShot = -Infinity;
+    this.bands.length = 0;
+    this.live.sample = this.preview = this.sweep = this.pending = null;
+    this.speed = 0;
+    this.poses = new ExposurePoses();
+    this.lastRead = this.lastPreview = -Infinity;
     this.update(initialSweep);
   }
 
-  // Ends an interrupted capture with an actionable recovery message.
-  private fail(message: string) {
+  // Ends an interrupted recording and offers a new capture.
+  private fail(error: string) {
     this.stop();
-    this.update({ phase: "error", error: message });
+    this.update({ phase: "error", error });
   }
 
-  // Detects interruptions even when the camera or sensor stops sending events entirely.
-  private checkDevices() {
-    if (document.hidden || this.stream?.getVideoTracks()[0]?.readyState !== "live") {
-      return this.fail("Kamera terputus. Buka kamera panorama dan mulai sapuan baru.");
+  // Offers each newly presented exposure to the in-progress panoramic strip while preserving its sensor pose.
+  private frame(video: HTMLVideoElement, source: VideoSweepSource, now: number, exposedAt: number) {
+    const sweep = this.sweep;
+    if (!sweep || this.view.phase !== "capturing" || now - this.lastRead < READ_INTERVAL_MS) return;
+    this.lastRead = now;
+    const sample = this.live.sample;
+    if (!sample || performance.now() - sample.timestamp > POSE_TIMEOUT_MS) {
+      return this.update({ hint: "Gerakkan HP sedikit agar sensor arah kembali aktif." });
     }
-  }
-
-  // Opens the shutter while the camera passes a required heading slowly with the correct tilt.
-  private onSample(sample: OrientationSample) {
-    this.live.sample = sample;
-    this.live.speed = this.speed(sample);
-    if (this.view.phase !== "capturing" || this.grabbing || !this.videoRef.current) return;
-    if (screenAngle() !== this.angle) return this.fail("Layar berputar. Pegang HP tegak dan mulai ulang sapuan.");
-    const target = this.view.targets[this.frames.length];
-    if (!target || this.live.speed > SWEEP_MAX_SPEED_DEG_S || !withinSweepWindow(sample, target)) return;
-    if (sample.timestamp - this.lastShot < RETRY_DELAY_MS) return;
-    this.lastShot = sample.timestamp;
-    void this.takeFrame(this.videoRef.current, sample);
-  }
-
-  // Advances the sequential plan only after both frame pixels and exposure pose pass verification.
-  private async takeFrame(video: HTMLVideoElement, startPose: OrientationSample) {
-    const token = this.token;
-    const target = this.view.targets[this.frames.length];
-    this.grabbing = true;
-    const size = video.videoWidth + "x" + video.videoHeight;
-    if (this.size && size !== this.size) return this.fail("Ukuran gambar berubah. Mulai sapuan baru dengan HP tegak.");
+    if (this.speed > SWEEP_MAX_SPEED_DEG_S) return this.update({ hint: "Perlambat putaran HP." });
+    const exposedPose = this.poses.at(exposedAt);
+    if (!exposedPose) return this.update({ hint: "Perlambat putaran agar gambar dan sensor kembali selaras." });
+    const pose = toWireQuat(exposedPose);
+    const livePose = toWireQuat(sample.quaternion);
+    if (!sweep.wants(pose)) return this.update({ hint: sweep.guide(livePose) });
     try {
-      const { image, frame } = await recordExposure({
-        video, target, startPose, live: this.live, history: this.history, hfov: this.measuredFov,
-        active: () => token === this.token && screenAngle() === this.angle,
-      });
-      if (token !== this.token) return;
-      this.size = size;
-      this.frames.push(frame);
-      this.history.push(image);
-      this.preview!.add(image, this.previewFov);
-      this.update({ count: this.frames.length, preview: this.preview!.thumbnail(), error: "" });
-      if (this.frames.length === 3 && !this.calibrated) await this.calibrate(token);
-      else if (this.frames.length === this.view.targets.length) {
-        this.stop();
-        this.update({ phase: "review" });
+      const issue = sweep.add(source.read(video, pose));
+      if (issue) return this.update({ hint: issue });
+      const meta = sweep.bands[sweep.index];
+      const changes = { index: sweep.index, total: sweep.bands.length, pitch: sweep.pitch,
+        progress: sweep.progress, hint: sweep.guide(livePose), preview: this.view.preview };
+      if (sweep.ready || now - this.lastPreview >= PREVIEW_INTERVAL_MS) {
+        changes.preview = this.preview!.show(sweep.preview(360), meta, sweep.ready);
+        this.lastPreview = now;
+      }
+      this.update(changes);
+      if (sweep.ready) {
+        this.pending = sweep.finish();
+        if (sweep.done) this.stop();
+        void this.saveBand();
       }
     } catch (err) {
-      if (token !== this.token) return;
-      const error = err instanceof Error ? err.message : "Foto gagal diambil. Ulangi bagian sapuan ini.";
-      this.update({ error });
-    } finally {
-      if (token === this.token) this.grabbing = false;
+      this.fail(describeStartError(err));
     }
   }
 
-  // Reuses the three calibration frames when connectivity returns, without repeating the first sweep.
-  retryCalibration() {
-    if (this.view.phase === "calibrationError") void this.calibrate(this.token);
-  }
-
-  // Reuses the first exposures in the full plan and reprojects their preview with the measured lens.
-  private async calibrate(token: number) {
-    this.update({ phase: "calibrating", error: "" });
+  // Encodes a completed band once and retains its pixels if the browser needs an encoding retry.
+  async saveBand() {
+    if (!this.pending || !this.sweep || this.view.phase === "encoding") return;
+    const token = this.token;
+    const { pixels, meta } = this.pending;
+    this.update({ phase: "encoding", error: "" });
     try {
-      const result = await this.measureLens(this.frames);
-      if (token === this.token) this.applyCalibration(result);
+      const blob = await encodeBand(pixels);
+      if (token !== this.token) return;
+      this.bands.push({ blob, meta });
+      this.pending = null;
+      if (this.sweep.done) {
+        this.update({ phase: "review" });
+      } else {
+        this.lastRead = performance.now() - READ_INTERVAL_MS;
+        this.update({ phase: "capturing", pitch: this.sweep.pitch, index: this.sweep.index,
+          progress: 0, hint: "Sesuaikan kemiringan HP untuk putaran berikutnya." });
+      }
     } catch (err) {
-      if (token === this.token) this.update({ phase: "calibrationError", error: describeStartError(err) });
+      if (token === this.token) this.update({ phase: "encodeError", error: describeStartError(err) });
     }
   }
 
-  // Restores the full path and an updated projection only after the returned measurements validate.
-  private applyCalibration(result: CaptureCalibration) {
-    const targets = calibratedTargets(result);
-    if (!Number.isFinite(result.horizontal_fov) || result.horizontal_fov < 25 || result.horizontal_fov > 140) {
-      throw new Error("Pengukuran lensa gagal. Mulai lagi dari bagian ruangan yang memiliki detail.");
+  // Claims a completed recording synchronously so simultaneous save actions cannot submit the same review twice.
+  takeReview(phase: "uploading" | "done") {
+    if (this.view.phase !== "review" || !this.bands.length || this.bands.length !== this.view.total) return null;
+    this.update({ phase, error: "" });
+    return this.bands.slice();
+  }
+
+  // Returns to review on upload failure and suppresses results from a recording that has since closed.
+  async uploadReview<T>(send: (bands: CapturedBand[], signal: AbortSignal) => Promise<T>): Promise<T | null> {
+    const bands = this.takeReview("uploading");
+    if (!bands) return null;
+    this.saving = new AbortController();
+    const { signal } = this.saving;
+    try {
+      const result = await send(bands, signal);
+      if (signal.aborted) return null;
+      this.update({ phase: "done" });
+      return result;
+    } catch (err) {
+      if (!signal.aborted) this.update({ phase: "review", error: err instanceof Error ? err.message : "Gagal mengunggah panorama." });
+      return null;
+    } finally {
+      if (!signal.aborted) this.saving = undefined;
     }
-    this.calibrated = true;
-    this.previewFov = result.horizontal_fov;
-    this.measuredFov = result.calibrated ? result.horizontal_fov : null;
-    this.preview = new SweepPreview();
-    this.history.forEach((image) => this.preview!.add(image, this.previewFov));
-    this.update({ phase: "capturing", targets, preview: this.preview.thumbnail() });
   }
 }

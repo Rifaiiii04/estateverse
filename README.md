@@ -4,7 +4,7 @@
 
 **Jual dan temukan rumah tanpa perantara mahal: tur virtual 360° cukup direkam dari HP.**
 
-EstateVerse membantu **penjual rumah perorangan dan developer kecil** memasarkan rumah sendiri. Penjual merekam tiap ruangan langsung dari browser HP, lalu sistem menggabungkan foto-fotonya menjadi panorama 360° ala Street View. **Pembeli rumah pertama** bisa menjelajah isi rumah sebelum survei, mengecek kemampuan bayar KPR, bertanya ke asisten AI, dan menghubungi penjual langsung.
+EstateVerse membantu **penjual rumah perorangan dan developer kecil** memasarkan rumah sendiri. Penjual merekam panorama setiap ruangan dalam tiga atau lima putaran kamera HP. Server menyatukan hasilnya untuk tur Walk Inside 360°. **Pembeli rumah pertama** bisa menjelajah isi rumah sebelum survei, mengecek kemampuan bayar KPR, bertanya ke asisten AI, dan menghubungi penjual langsung.
 
 Kategori lomba: **Website**. Sub-tema: **SDG 8 — Decent Work and Economic Growth**, pendukung **SDG 12**.
 
@@ -14,7 +14,7 @@ Kategori lomba: **Website**. Sub-tema: **SDG 8 — Decent Work and Economic Grow
 
 | Masalah | Solusi EstateVerse |
 |---|---|
-| Jasa foto 360°/3D profesional mahal bagi penjual perorangan | **Perekam 360° terpandu di browser HP**. Foto diambil otomatis, lalu di-stitch di server |
+| Jasa foto 360°/3D profesional mahal bagi penjual perorangan | **Perekam panorama terpandu di HP**. Setiap putaran menghasilkan satu JPEG yang disambungkan di server |
 | Komisi perantara memotong hasil penjualan | Pembeli menghubungi penjual **langsung** (WhatsApp/formulir survei) |
 | Pembeli survei berkali-kali ke rumah yang tidak cocok | Tur 360° + kalkulator kemampuan bayar **sebelum** survei |
 | Pembeli rumah pertama bingung soal KPR, dokumen, dan biaya | **Asisten Pintar** (LLM via OpenRouter) dengan konteks listing asli |
@@ -32,7 +32,7 @@ Semua angka di dashboard dan bagian "Dampak" dihitung dari database (kunjungan, 
 - Pasang iklan rumah (foto, harga, luas, keunggulan lokasi, nomor WhatsApp).
 - **Rekam Ruangan 360°** dari HP:
   - sapuan panorama terpandu dari satu posisi dengan pratinjau gambar selama merekam
-  - jumlah foto otomatis: tiga foto awal untuk mengukur lensa, lalu backend menghitung sudut tambahan berdasarkan cakupan dan overlap; foto awal dipakai kembali
+  - satu JPEG panorama setiap putaran, dengan tiga atau lima putaran sesuai bidang pandang lensa
   - status pemrosesan dan skor kualitas sambungan
 - Unggah foto 360° yang sudah jadi (kamera 360/Photo Sphere) sebagai alternatif.
 - Atur **panah antar-ruangan** (hotspot) ala Street View.
@@ -48,23 +48,11 @@ Semua angka di dashboard dan bagian "Dampak" dihitung dari database (kunjungan, 
 
 ## Cara Kerja Perekam & Stitching 360°
 
-```
-HP penjual (browser, HTTPS)                        Server Go
-───────────────────────────                        ─────────────────────────────────────────────
-getUserMedia (kamera belakang)                     POST /api/v1/tours/captures
-DeviceOrientation (giroskop+akselerometer+kompas)    → validasi JPEG & quaternion, simpan privat
-  → quaternion kamera tiap foto                      → antrian background (1 worker)
-Sapuan otomatis dengan pemeriksaan gambar dan pose   internal/panorama (Go murni):
-  → upload JPEG + manifest orientasi                 1. proyeksi kamera ↔ arah 3D (quaternion)
-                                                     2. kalibrasi FOV lensa dari area tumpang-tindih
-                                                     3. refine orientasi tiap foto (maks. NCC)
-                                                     4. kompensasi exposure (gain)
-                                                     5. blending → equirectangular 2:1 (4096 + 2048 px)
-                                                     6. status room ready/failed + pemberitahuan klien
-Viewer (React Three Fiber)                       ←  panorama publik + skor kualitas
-```
+1. Kamera belakang merekam sapuan sekeliling ruangan, kemudian bagian atas dan bawah. Klien mengukur bidang pandang lensa, mencocokkan sampel yang bertumpuk, dan mengisi satu gambar panorama per putaran.
+2. Klien mengirim tiga atau lima JPEG beserta batas sudutnya ke `/api/v1/tours/captures`. Server memeriksa kepemilikan, format, ukuran, dan cakupan.
+3. Worker Go menyelaraskan area pertemuan antarputaran, menyeimbangkan kecerahan, lalu menyimpan satu panorama 2:1 dan pratinjau. Setelah status ruangan menjadi `ready`, hasilnya bisa dibuka di Walk Inside dan dihubungkan ke ruangan lain.
 
-Foto di dinding/plafon polos memakai sudut sensor sebagai perkiraan awal. Estimasi lensa menyesuaikan rasio frame kamera; foto dicocokkan lewat area tumpang-tindih sebelum exposure dan blending. Rekaman dengan cakupan kurang dari 98,5% atau skor korelasi sambungan kurang dari 0,45 ditolak, bukan dipublikasikan sebagai tur yang rusak. Angka ini adalah pemeriksaan teknis, bukan jaminan kualitas visual. Lihat [panduan capture](docs/walk-inside-capture.md) untuk metode dan batasannya.
+Lihat [panduan merekam ruangan](docs/walk-inside-capture.md) untuk teknik sapuan, pustaka yang digunakan, dan kompatibilitas rekaman lama.
 
 ## Tech Stack
 
@@ -83,12 +71,12 @@ backend/            Go API
   migrations/         skema MySQL (dijalankan otomatis saat start)
   cmd/seed            data contoh (akun & listing demo)
 frontend/           Next.js
-  src/lib/capture     sensor orientasi, grid target, pengambil frame kamera
+  src/lib/capture     kamera belakang, panduan sapuan, dan pengkodean panorama
   src/components/capture  perekam 360° full-screen
   src/components/tour     viewer 360°, hotspot, pengelola ruangan
 deploy/             docker-compose, Caddyfile, panduan VPS
 mobile/             aplikasi Expo: capture native dan akses ke Go API yang sama dengan website
-shared/             grid capture, quaternion, dan manifest yang dipakai web serta mobile
+shared/             pengukuran lensa, proyeksi sapuan, dan geometri panorama untuk web serta mobile
 ```
 
 ## Menjalankan Secara Lokal

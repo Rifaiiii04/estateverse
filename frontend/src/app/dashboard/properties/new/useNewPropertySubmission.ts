@@ -6,10 +6,10 @@ import { importTourPanorama, uploadTourCapture } from "@/lib/api/tours";
 import type { PropertyInput } from "@/types/property";
 import type { DraftTourRoom } from "@/types/tour";
 
-// Sends the recorded frames or the imported panorama associated with one local room.
+// Sends the completed sweep panoramas or the imported sphere associated with one local room.
 async function uploadRoom(propertyId: number, room: DraftTourRoom) {
-  if (room.kind === "capture" && room.frames) {
-    return uploadTourCapture(propertyId, room.name, { frames: room.frames, extras: room.extras ?? {} });
+  if (room.kind === "capture" && room.bands) {
+    return uploadTourCapture(propertyId, room.name, { bands: room.bands, extras: room.extras ?? {} });
   }
   if (room.kind === "import" && room.file) return importTourPanorama(propertyId, room.name, room.file);
   throw new Error("Berkas panorama tidak tersedia.");

@@ -35,7 +35,7 @@ func (h *TourHandler) CreateCapture(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	extras := services.CaptureExtras{CameraHeightCm: meta.CameraHeightCm, Location: meta.Location}
+	extras := services.CaptureExtras{CaptureID: meta.CaptureID, CameraHeightCm: meta.CameraHeightCm, Location: meta.Location}
 	room, err := h.tours.StartCapture(r.Context(), currentUserID(r), propertyID, meta.Name, frames, extras)
 	respond(w, r, http.StatusAccepted, room, err)
 }
@@ -83,6 +83,9 @@ func parseCaptureForm(w http.ResponseWriter, r *http.Request) (int64, models.Cap
 
 // readCaptureFrames loads each frame file named in the manifest, in manifest order.
 func readCaptureFrames(form *multipart.Form, meta models.CaptureMeta) ([]services.CaptureFrame, error) {
+	if meta.Bands != nil {
+		return readCaptureBands(form, meta)
+	}
 	if len(meta.Frames) == 0 || len(meta.Frames) > 64 {
 		return nil, errors.New("jumlah foto pada manifest tidak valid")
 	}
@@ -95,6 +98,25 @@ func readCaptureFrames(form *multipart.Form, meta models.CaptureMeta) ([]service
 		frames = append(frames, services.CaptureFrame{Data: data, Orientation: fm.Orientation})
 	}
 	return frames, nil
+}
+
+// readCaptureBands loads one completed JPEG per sweep and rejects mixed or ambiguous manifests.
+func readCaptureBands(form *multipart.Form, meta models.CaptureMeta) ([]services.CaptureFrame, error) {
+	if len(meta.Frames) != 0 || len(meta.Bands) < 3 || len(meta.Bands) > 5 || len(form.File) != len(meta.Bands) {
+		return nil, errors.New("manifest membutuhkan 3–5 pita panorama")
+	}
+	bands := make([]services.CaptureFrame, len(meta.Bands))
+	for i, band := range meta.Bands {
+		if band.Index != i {
+			return nil, errors.New("indeks pita panorama tidak berurutan")
+		}
+		data, err := readFormFile(form, fmt.Sprintf("frame_%d", i), services.MaxBandBytes+1)
+		if err != nil {
+			return nil, err
+		}
+		bands[i] = services.CaptureFrame{Data: data, Band: &meta.Bands[i]}
+	}
+	return bands, nil
 }
 
 // readFormFile reads one uploaded file fully, rejecting files above the byte limit.

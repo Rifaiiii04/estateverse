@@ -81,11 +81,21 @@ type CaptureFrameMeta struct {
 	Orientation [4]float64 `json:"orientation"`
 }
 
+// CaptureBandMeta locates a finished 360-degree sweep on a north-up equirectangular canvas in degrees.
+type CaptureBandMeta struct {
+	Index    int     `json:"index"`
+	Pitch    float64 `json:"pitch"`
+	MinPitch float64 `json:"min_pitch"`
+	MaxPitch float64 `json:"max_pitch"`
+}
+
 // CaptureMeta is the JSON manifest sent alongside the captured frames of one room.
 // Camera height and location are optional so older clients keep working.
 type CaptureMeta struct {
+	CaptureID      string             `json:"capture_id,omitempty"`
 	Name           string             `json:"name"`
-	Frames         []CaptureFrameMeta `json:"frames"`
+	Frames         []CaptureFrameMeta `json:"frames,omitempty"`
+	Bands          []CaptureBandMeta  `json:"bands,omitempty"`
 	CameraHeightCm int                `json:"camera_height_cm,omitempty"`
 	Location       *GeoFix            `json:"location,omitempty"`
 }

@@ -31,10 +31,10 @@ export function WalkInsideDraftSection({ rooms, onChange }: WalkInsideDraftSecti
   }, [rooms]);
   useEffect(() => () => roomsRef.current.forEach((r) => URL.revokeObjectURL(r.thumbUrl)), []);
 
-  // Adds a freshly recorded room (frames plus phone height and GPS fix) to the draft list.
-  const addCapture = (name: string, { frames, extras }: CaptureResult) => {
-    if (frames.length === 0 || roomsRef.current.length >= MAX_DRAFT_ROOMS) return;
-    const room: DraftTourRoom = { key: `c-${Date.now()}`, name, kind: "capture", frames, extras, thumbUrl: URL.createObjectURL(frames[0].blob) };
+  // Keeps the completed strip JPEGs with the room until the seller saves the property.
+  const addCapture = (name: string, { bands, extras }: CaptureResult) => {
+    if (bands.length === 0 || roomsRef.current.length >= MAX_DRAFT_ROOMS) return;
+    const room: DraftTourRoom = { key: `c-${Date.now()}`, name, kind: "capture", bands, extras, thumbUrl: URL.createObjectURL(bands[0].blob) };
     onChange([...roomsRef.current, room]);
   };
 

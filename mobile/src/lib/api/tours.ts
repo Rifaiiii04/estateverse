@@ -1,7 +1,7 @@
 import { File } from 'expo-file-system';
-import { buildCaptureManifest, type CaptureCalibration } from '../../../../shared/capturePolicy.ts';
+import { roomManifest } from '../capture/roomManifest';
 import { api, mediaUrl } from './client';
-import type { DraftTourRoom, CapturedFrame } from '@/types/capture';
+import { localTourFiles, type DraftTourRoom } from '@/types/capture';
 import type { TourRoom } from '@/types/property';
 
 export interface ServerTourRoom {
@@ -33,27 +33,15 @@ export async function getOwnerTourRooms(propertyId: number): Promise<TourRoom[]>
   return rooms.map((room) => mapRoom(room, rooms));
 }
 
-// captureManifest serializes the same multipart metadata accepted from the web camera.
-export function captureManifest(name: string, frames: CapturedFrame[]) {
-  return buildCaptureManifest(name, frames);
-}
-
-// uploadTourCapture sends raw JPEGs and poses to Go; no panorama is generated on the device.
+// uploadTourCapture sends the completed panorama bands or a draft created by the older frame recorder.
 export async function uploadTourCapture(propertyId: number, room: DraftTourRoom): Promise<ServerTourRoom> {
-  if (!room.frames?.length) throw new Error('Rekaman foto belum lengkap.');
+  const files = localTourFiles(room);
+  if (!files.length) throw new Error('Rekaman panorama belum lengkap.');
   const form = new FormData();
   form.append('property_id', String(propertyId));
-  form.append('meta', JSON.stringify(captureManifest(room.name, room.frames)));
-  room.frames.forEach((frame, i) => form.append(`frame_${i}`, new File(frame.uri), `frame_${i}.jpg`));
+  form.append('meta', JSON.stringify(roomManifest(room)));
+  files.forEach((file, i) => form.append(`frame_${i}`, new File(file.uri), `frame_${i}.jpg`));
   return api<ServerTourRoom>('/tours/captures', { method: 'POST', body: form });
-}
-
-// calibrateTourCapture sends only the initial raw views so Go computes the lens and remaining capture directions.
-export async function calibrateTourCapture(frames: CapturedFrame[]): Promise<CaptureCalibration> {
-  const form = new FormData();
-  form.append('meta', JSON.stringify(buildCaptureManifest('calibration',frames)));
-  frames.forEach((frame,i) => form.append(`frame_${i}`,new File(frame.uri),`frame_${i}.jpg`));
-  return api<CaptureCalibration>('/tours/calibration',{method:'POST',body:form});
 }
 
 // updateTourRoom updates an owned room without replacing its panorama or navigation links.
